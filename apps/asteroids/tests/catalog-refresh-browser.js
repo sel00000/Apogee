@@ -15,16 +15,12 @@ async (page) => {
     await page.waitForFunction(()=>!window.__app.metrics().scheduled);
     const before=await page.evaluate(()=>window.__app.metrics());
     if(before.screenAlignmentError>.05 || !before.trailVisible) throw Error('Initial alignment '+id);
-    await page.locator('#photo-visible').uncheck();
+    await page.locator('[data-display=model]').click();
     const off=await page.evaluate(()=>window.__app.metrics());
     if(off.photoVisible || JSON.stringify(off.cameraPosition)!==JSON.stringify(before.cameraPosition)) throw Error('Photo toggled camera '+id);
-    await page.locator('#photo-visible').check();
-    const modes=[];
-    for(const mode of ['photo','model','blend']){
-      await page.locator(`[data-composite=${mode}]`).click();
-      modes.push(await page.locator('#image').evaluate(c=>c.toDataURL()));
-    }
-    if(new Set(modes).size!==3)throw Error('Image/model modes '+id);
+    await page.locator('[data-display=photo]').click();
+    if((await page.evaluate(()=>window.__app.metrics())).compositeMode!=='photo')
+      throw Error('Observation panel must stay a real photo '+id);
     await page.locator('#sequence-play').click();
     await page.waitForFunction(id=>window.__app.metrics().observation!==id,before.observation);
     await page.locator('#sequence-play').click();

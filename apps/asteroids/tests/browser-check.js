@@ -8,8 +8,7 @@ async (page) => {
  await page.evaluate(()=>window.__app.choose('913'));
  if(await page.locator('[data-view=observer]').isEnabled())throw Error('Unprepared observer mode enabled');
  if(await page.locator('[data-view=observer]').evaluate(e=>e.classList.contains('active')))throw Error('Stale observer mode');
- await page.locator('.availability summary').click();
- if(!(await page.locator('#availability').textContent()).includes('UNMEASURED'))throw Error('Missing quality explanation');
+ if(await page.locator('#availability').count())throw Error('Removed detail panel is still mounted');
  await page.evaluate(()=>window.__app.choose('433'));
  await page.waitForFunction(()=>document.querySelector('#image-status').textContent.includes('실제 SPHEREx'));
  await page.getByRole('button',{name:'재생',exact:true}).click();

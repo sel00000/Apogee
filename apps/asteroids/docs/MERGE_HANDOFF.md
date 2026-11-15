@@ -8,7 +8,7 @@
 | --- | --- |
 | 병합 대상 | [sel00000/Apogee](https://github.com/sel00000/Apogee), `apps/asteroids/` |
 | 팀 기준 커밋 | `e885b1fcbde09e8527f4e649061189f8009064eb` |
-| 작업 중 도착한 팀 main | `93998d85b40faac16896eafcfb692c8173f2074c` — `6faf879`의 analysis V10과 `93998d8`의 dark select 변경을 모두 반영했다. |
+| 작업 중 도착한 팀 main | `55eef0e7c04b412bf740d2f791f41373976af8e6` — 팀의 analysis V10 rollback, 연구 날짜/JSON 처리, dark select와 발표자료 변경을 보존한다. |
 | 통합 브랜치 | `codex/integrate-asteroid-spherex` |
 | 가져온 소스 | [sel00000/S, 커밋 4a47ed1](https://github.com/sel00000/S/tree/4a47ed19c42ded84cb6f2633e4d81b94279331cc/%ED%95%9C%EA%B2%B0/%EC%86%8C%ED%96%89%EC%84%B13D), `한결/소행성3D/` |
 | 소스 전체 SHA | `4a47ed19c42ded84cb6f2633e4d81b94279331cc` |
@@ -17,6 +17,8 @@
 독립 앱 디렉터리를 통째로 덮어쓰지 않는다. SBDB 소행성 배경, SPHEREx GLB, 상대 측광 보정 산출물, 촬영별 흔적, 시야 확대·재생 제어만 팀의 `mountOrbit()` 생명주기에 맞춰 결합한다. 팀의 연구 작업 공간, 런타임 API 설정, 새 분석의 3D 생성, 언어 전환, Gaia 배경·행성 지도, WASD 비행은 계속 유지한다.
 
 포털의 **Asteroid Analysis 진입은 Orbit 3D로 통일**한다. 포털 상단의 Orbit 3D / Results / Observations 전환 막대와 포털 내부 앱의 연구·궤도 탭 막대를 제거한다. `#asteroids`, 과거 `#moving`, 명시적인 `tab=research`·`tab=observations`도 포털에서는 `tab=orbit`으로 정규화한다. 포털의 자식 URL은 `orbitOnly=1`을 전달하고, `workspace.ts`는 이를 존중한다. 독립 앱에서 사용하는 연구 화면과 API 코드는 삭제하지 않는다. 이후 병합에서 이전 포털 라우팅이나 독립 앱의 탭 UI를 복사해 이 결정을 되돌리지 않는다.
+
+화면 디자인은 사용자가 지정한 원본 Apogee 디자인을 유지한다. 큰 좌우 제목·목록·사진·타임라인의 배치는 유지하고, 기술 설명은 문서에 둔다. 실제사진/3D모형은 같은 관측 카메라에서 사진 평면만 전환한다. ePSF 예측 영상을 3D모형으로 표기하지 않는다. 은하수는 기본 on이며 저전력·시야각·투명도 선택창은 없다. SPHEREx 보이기는 관측 카메라를 움직이지 않는 inset, SPHEREx만 보기는 모델만 렌더하는 별도 보기다. 선택 가능한 24개 천체에는 투영 위치의 클릭 원을 제공하며 40,000개 배경 점과 구분한다.
 
 ## 파일·함수별 책임 경계
 
@@ -31,7 +33,7 @@
 | 좌표·카메라 담당 | `src/scene.ts`의 `loadCraft()`·`placeCraft()`·`view()`·관측 투영, `spacecraft.ts` | 실제 태양 중심 위치와 표시 크기를 분리한다. Earth 위치는 원본 궤도에 고정하고, craft 근접 보기에서 지구는 물리 반경을 사용한다. 우주선의 확대 표시만 허용한다. |
 | 배경·입력 담당 | `src/sky.ts`, `flight.ts`, `scene.ts`의 관련 블록, `public/sky/` | 팀의 좌표 회전·지도 출처·비행 키·포커스 처리·저전력 정책을 보존한다. 파일 전체를 S 버전으로 교체하지 않는다. |
 | 영상·과학 자료 담당 | `src/observations.ts`의 `ObservationViewer`, `trails.ts`, `public/data/` | 원본 이미지·WCS를 유지한 채 보정 atlas와 흔적을 결합한다. 캐시 제한, 취소, 늦은 응답 무시를 유지한다. |
-| 번역·UI 담당 | `src/i18n.ts`, `style.css` | 번역은 기존 사전에 키를 추가한다. 사전 전체 교체나 문자열 하드코딩으로 언어 전환을 깨뜨리지 않는다. 새 Liquid Glass 스타일은 `#orbit-workspace` 아래에 제한하고, 포털 전용 탭 숨김·높이는 `orbitOnly` 상태에 맞춘다. |
+| 번역·UI 담당 | `src/i18n.ts`, `style.css` | 번역은 기존 사전에 키를 추가한다. 사전 전체 교체나 문자열 하드코딩으로 언어 전환을 깨뜨리지 않는다. 기존 Apogee 3열 패널·각진 버튼·민트 강조 디자인을 유지한다. 새 유리 캡슐 디자인과 모바일 전용 화면을 추가하지 않는다. 새 기능 스타일은 `#orbit-workspace` 아래에 제한하고, 포털 전용 탭 숨김·높이는 `orbitOnly` 상태에 맞춘다. |
 
 `main.ts`, workspace/research 모듈, i18n 사전, sky/flight 모듈, API·빌드 설정, 패키지/잠금 파일을 소스 앱 버전으로 일괄 덮어쓰지 않는다. 변경이 필요하면 팀 기준에서 필요한 함수·키·규칙만 패치한다. `dist/`, `public/analysis-data/`, 새 분석의 생성된 장면과 과학 원본 출력은 서로 다른 생성기 소유이므로 수동 복사 대상으로 취급하지 않는다. 팀 빌드가 내보내는 결과는 팀 생성기로 다시 만든다.
 
@@ -97,13 +99,13 @@ npm run build
 npm run test:web
 ```
 
-`test:web`는 먼저 전체 빌드를 완료한 상태에서 실행한다. 최종 실행 결과는 **706개 통과, 실패 0**이다(노드 370개 + Vitest 336개). 전체 사이트 빌드와 최종 소행성 TypeScript/Vite 빌드도 성공했다. macOS의 `/var`→`/private/var` 임시 디렉터리 심볼릭 링크 때문에 기존 경로 비교 테스트가 달라지는 문제는 코드 변경 없이 `TMPDIR=/private/tmp npm run test:web`로 검증했다.
+`test:web`는 먼저 전체 빌드를 완료한 상태에서 실행한다. 전체 회귀 실행 결과는 **696개 통과, 실패 0**이다(노드 370개 + Vitest 326개). 전체 사이트 빌드와 최종 소행성 TypeScript/Vite 빌드도 성공했다. 최종 원본 디자인 복구 후 소행성 테스트 **102개**를 다시 실행해 모두 통과했다. 최종 데스크톱 브라우저에서 원형 클릭·WASD·40,000개 천체·위성 inset·단독 보기·사진/3D 전환을 확인했고 콘솔 오류와 HTTP 실패는 0개였다. macOS의 `/var`→`/private/var` 임시 디렉터리 심볼릭 링크 때문에 기존 경로 비교 테스트가 달라지는 문제는 코드 변경 없이 `TMPDIR=/private/tmp npm run test:web`로 검증했다.
 
-실제 Chromium에서 24개 대상 선택, 사진이 있는 23개 대상의 첫·마지막 촬영 전환, 지구·SPHEREx 표시 좌표와 실제 좌표의 일치, 본체 보기, 원본/보정 전환, 0.5–8× 확대, 재생 속도, 한국어 전환을 확인했다. 이 흐름의 콘솔 오류와 HTTP 실패는 0개다. 1100px·390px 화면에서 시점 버튼과 관측 도구가 겹치지 않았고, WASD 이동·태양계 시간 재생·40,000개 배경 점·일반 모션의 SPHEREx 진입도 확인했다. 원격 API는 두 실제 origin의 모의 작업으로 CORS·인증·결과·생성 장면 등 12개 검사를 통과했다. 새 실제 아카이브 분석은 실행하지 않았다.
+실제 Chromium에서 24개 대상 선택, 사진이 있는 23개 대상의 첫·마지막 촬영 전환, 지구·SPHEREx 표시 좌표와 실제 좌표의 일치, 본체 보기, 원본/보정 전환, 재생 속도, 한국어 전환을 확인했다. 이 흐름의 콘솔 오류와 HTTP 실패는 0개다. WASD 이동·태양계 시간 재생·40,000개 배경 점·일반 모션의 SPHEREx 진입도 확인했다. 원격 API는 두 실제 origin의 모의 작업으로 CORS·인증·결과·생성 장면 등 12개 검사를 통과했다. 새 실제 아카이브 분석은 실행하지 않았다.
 
-자세한 결과는 [integration-validation.json](integration-validation.json), 화면은 [40,000개 태양계](integration-system.png), [실제 지구·위성 위치](integration-earth.png), [모바일](integration-mobile.png)에 있다. 복사된 `correction-validation.json`은 원본 자료의 역사적 검증이며 위 통합 검증과 구분한다.
+자세한 결과는 [integration-validation.json](integration-validation.json), 화면은 [40,000개 태양계](integration-system.png), [실제 지구·위성 위치](integration-earth.png)에 있다. 복사된 `correction-validation.json`은 원본 자료의 역사적 검증이며 위 통합 검증과 구분한다.
 
-브라우저에서는 포털 진입·뒤로 가기, 레거시 주소의 Orbit 정규화, 사라진 탭 막대, 독립 연구 화면·언어 전환, 생성형 `dataBase` 장면의 보정표 없는 원본 재생을 확인한다. 3D에서는 원본/보정 전환, 빠른 대상·촬영 변경과 취소, 재생 정지, 사진 표시/투명도/흔적/확대의 독립 동작, SPHEREx 시점과 본체 보기, 모바일 폭, 저전력·reduced-motion 동작을 확인한다. 기존 `tests/workspace.browser.mjs` 및 `remote-api.browser.mjs`는 `CHROME_PATH`를 사용하는 환경별 브라우저 검사이며, 포털 모드와 독립 앱 모드의 기대값을 구분해 실행한다.
+브라우저에서는 포털 진입·뒤로 가기, 레거시 주소의 Orbit 정규화, 사라진 탭 막대, 독립 연구 화면·언어 전환, 생성형 `dataBase` 장면의 보정표 없는 원본 재생을 확인한다. 3D에서는 원본/보정 전환, 빠른 대상·촬영 변경과 취소, 재생 정지, 실제사진/3D모형 전환과 촬영 흔적, SPHEREx 시점과 본체 보기, 위성 단독 보기·위성 inset·원형 선택 표시을 확인한다. 기존 `tests/workspace.browser.mjs` 및 `remote-api.browser.mjs`는 `CHROME_PATH`를 사용하는 환경별 브라우저 검사이며, 포털 모드와 독립 앱 모드의 기대값을 구분해 실행한다.
 
 보정 알고리즘·자료 제한은 [IMAGE_CORRECTION.md](IMAGE_CORRECTION.md)에 있다. 보정은 품질 플래그 마스킹과 상대 gain/background 적합이다. 재표본화 공분산·모수 불확실성·PSF 차이를 모두 반영하지 않으며, 검출 유의도나 소행성 독립 검출을 의미하지 않는다. 보라색 마스크는 사용할 수 없는 픽셀이다. 낮아진 잔차만으로 바뀐 픽셀을 모두 잡음이라고 판정하지 않는다.
 

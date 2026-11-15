@@ -2,10 +2,7 @@ import { initialBody } from "./research-model";
 import { SolarScene } from "./scene";
 import { ObservationViewer } from "./observations";
 import { date } from "./math";
-import { markSkyUnavailable } from "./sky";
-import { trailDescription } from "./trails";
-import { LocalError, applyI18n, bindAttr, bindHtml, bindText, statusPhrase, t } from "./i18n";
-const tr = t;
+import { LocalError, applyI18n, bindAttr, bindText, t } from "./i18n";
 import type {
   Correction,
   Body,
@@ -54,36 +51,41 @@ async function json<T>(p: string): Promise<T> {
     speed = 10,
     observation: Observation | undefined,
     mode = "system";
-  const freeCaptionKey = matchMedia("(pointer: coarse)").matches
-    ? "o.captionTouch"
-    : "o.captionKeys";
-  const freeCaption = () => t(freeCaptionKey);
-  const SKY_KEY = "spherex-asteroids:sky";
-  let skyOn = true;
-  try {
-    skyOn = localStorage.getItem(SKY_KEY) !== "0";
-  } catch {
-    /* storage unavailable: default on */
-  }
-  app.innerHTML = ` <main><aside class="catalog"><div class="eyebrow">SOLAR SYSTEM EXPLORER</div><h1 data-i18n-html="o.title"></h1><p class="intro" data-i18n-html="o.intro"></p><label class="search"><span>⌕</span><input id="search" data-i18n-ph="o.search" data-i18n-aria="o.search"></label><div class="list-head"><bdi data-i18n="o.listHead"></bdi> <span>${asteroids.length} OBJECTS</span></div><div id="objects" role="list"></div><div id="belt-summary" class="catalog-foot" hidden></div><div class="catalog-foot" data-i18n-html="o.foot"></div></aside>
- <section class="universe"><div id="scene"></div><div class="sky-scrim" aria-hidden="true"></div><div id="observer-tools" hidden><div class="photo-controls"><label><input id="photo-visible" type="checkbox" checked> <bdi data-i18n="o.photoOn"></bdi></label><label><bdi data-i18n="o.photoOpacity"></bdi> <input id="photo-opacity" type="range" data-i18n-aria="o.photoOpacityAria" min="0" max="1" step=".05" value=".65"></label><label><bdi data-i18n="o.zoom"></bdi> <input id="observer-zoom" type="range" min=".5" max="8" step=".05" value="1" data-i18n-aria="o.zoom"></label><span id="observer-fov"></span><button id="observer-zoom-reset" data-i18n="o.zoomReset"></button><button data-view="free" data-i18n="o.freeView"></button></div><span id="sky-label"></span></div><div class="scene-top"><div><div class="eyebrow">HELIOCENTRIC / AU</div><h2 id="target-name"></h2><span id="target-sub" data-i18n="o.targetSubDefault"></span></div><div class="view-switch"><button data-view="system" class="active" data-i18n="o.viewSystem"></button><button data-view="target" data-i18n="o.viewTarget"></button><button data-view="craft" data-i18n="o.viewCraft"></button><button data-view="observer" data-i18n="o.viewObserver"></button></div></div><div class="scene-foot"><div class="compass"><span>Z ↑</span><span data-i18n="o.ecliptic"></span></div><div class="scene-bottom"><span id="scene-caption"></span><span class="scene-toggles"><label><input id="sky" type="checkbox"${skyOn ? " checked" : ""}> <bdi data-i18n="o.sky"></bdi></label><label><input id="low" type="checkbox"> <bdi data-i18n="o.low"></bdi></label></span></div><div class="scale-note"><bdi data-i18n="o.scale"></bdi><span id="sky-credit" hidden data-i18n="o.skyCredit"></span></div></div></section>
- <aside class="compare"><div class="eyebrow">THROUGH SPHEREX</div><div class="panel-title"><h2 data-i18n="o.momentTitle"></h2><span class="badge">REAL IMAGE</span></div><p class="panel-desc" data-i18n="o.momentDesc"></p><div class="image-wrap"><canvas id="image" data-i18n-aria="o.imageAria"></canvas><span class="image-corner">SPHEREx / IRSA</span></div><p id="image-status" role="status"></p><div class="compare-modes processing"><button data-processing="original" data-i18n="o.original"></button><button data-processing="corrected" class="active" data-i18n="o.corrected"></button></div><p id="correction-note" class="science-note"></p><label class="trail-toggle"><input id="show-trail" type="checkbox" checked> <bdi data-i18n="o.showTrail"></bdi></label><div class="trail-legend"><span data-i18n="o.legendPrev"></span><span data-i18n="o.legendNow"></span><span data-i18n="o.legendNext"></span></div><p id="trail-note"></p><div class="compare-modes"><button data-composite="photo" data-i18n="o.compPhoto"></button><button data-composite="model" data-i18n="o.compModel"></button><button data-composite="blend" class="active" data-i18n="o.compBlend"></button></div><div class="overlay-control"><label for="overlay" data-i18n="o.overlay"></label><input id="overlay" type="range" min="0" max="1" step=".05" value=".65"></div><div class="legend"><span class="prediction" data-i18n="o.legendModel"></span></div><button id="sequence-play"></button><label class="sequence-speed"><bdi data-i18n="o.sequenceSpeed"></bdi> <select id="sequence-speed" data-i18n-aria="o.sequenceSpeed"><option value="750">1×</option><option value="375">2×</option><option value="250">3×</option><option value="150">5×</option></select></label><p id="sequence-note"></p><div id="obs-detail"></div><details class="availability"><summary data-i18n="o.availability"></summary><div id="availability"></div></details><label class="obs-label" for="observation" data-i18n="o.pickExposure"></label><select id="observation"></select><div class="step-buttons"><button id="prev" data-i18n="o.prev"></button><button id="next" data-i18n="o.next"></button></div><a id="source" target="_blank" rel="noopener noreferrer" data-i18n="o.source"></a><p class="science-note"></p></aside></main>
- <footer><div class="transport"><button id="play">▶</button><div><span class="eyebrow">SIMULATION TIME · UTC</span><strong id="clock"></strong></div><select id="speed" data-i18n-aria="o.speed"><option value="1" data-i18n="o.speed1"></option><option value="10" selected data-i18n="o.speed10"></option><option value="30" data-i18n="o.speed30"></option></select></div><div class="timeline"><div class="timeline-labels"><span id="range-start">${date(manifest.start).slice(0, 10)}</span><span id="time-note"></span><span id="range-end">${date(manifest.end).slice(0, 10)}</span></div><input id="time" type="range" min="${manifest.start}" max="${manifest.end}" step=".000001"><div id="ticks"></div></div></footer><div id="toast" role="status" hidden></div>`;
-  app.querySelector(".scene-foot")!.prepend(app.querySelector("#observer-tools")!);
+  const isExposureView = (view = mode) => ["observer", "craft", "craft-only"].includes(view);
+  app.innerHTML = `<main>
+    <aside class="catalog">
+      <div class="eyebrow">SOLAR SYSTEM EXPLORER</div><h1 data-i18n-html="o.title"></h1><p class="intro" data-i18n-html="o.intro"></p>
+      <label class="search"><span>⌕</span><input id="search" data-i18n-ph="o.search" data-i18n-aria="o.search"></label>
+      <div class="list-head"><bdi data-i18n="o.listHead"></bdi><span>${asteroids.length} OBJECTS</span></div><div id="objects" role="list"></div>
+    </aside>
+    <section class="universe">
+      <div id="scene"></div><div class="sky-scrim" aria-hidden="true"></div>
+      <div class="scene-top"><div><h2 id="target-name"></h2><div class="coordinates"><span><bdi data-i18n="o.ra"></bdi> <strong id="target-ra">—</strong></span><span><bdi data-i18n="o.dec"></bdi> <strong id="target-dec">—</strong></span></div></div>
+        <div class="view-switch"><button data-view="system" class="active" data-i18n="o.viewSystem"></button><button data-view="target" data-i18n="o.viewTarget"></button><button data-view="craft" data-i18n="o.viewCraft"></button><button data-view="observer" data-i18n="o.viewObserver"></button></div>
+      </div>
+      <div class="scene-foot"><div id="observer-tools" hidden><div class="photo-controls">
+        <label><input id="craft-visible" type="checkbox"><bdi data-i18n="o.showCraft"></bdi></label><button data-view="craft-only" data-i18n="o.craftOnly"></button><button data-view="free" data-i18n="o.freeView"></button>
+      </div></div></div>
+    </section>
+    <aside class="compare">
+      <div class="eyebrow">THROUGH SPHEREX</div><div class="panel-title"><h2 data-i18n="o.momentTitle"></h2><span class="badge">REAL IMAGE</span></div><p class="panel-desc" data-i18n="o.momentDesc"></p>
+      <div class="image-wrap"><canvas id="image" data-i18n-aria="o.imageAria"></canvas><span class="image-corner">SPHEREx / IRSA</span></div><p id="image-status" class="orbit-sr-only" role="status"></p>
+      <div class="compare-modes processing"><button data-processing="original" data-i18n="o.original"></button><button data-processing="corrected" class="active" data-i18n="o.corrected"></button></div>
+      <label class="trail-toggle"><input id="show-trail" type="checkbox" checked><bdi data-i18n="o.showTrail"></bdi></label>
+      <div class="compare-modes" role="group" data-i18n-aria="o.displayMode"><button data-display="photo" class="active" aria-pressed="true" data-i18n="o.compPhoto"></button><button data-display="model" aria-pressed="false" data-i18n="o.comp3d"></button></div>
+      <button id="sequence-play"></button><label class="sequence-speed"><bdi data-i18n="o.sequenceSpeed"></bdi><select id="sequence-speed" data-i18n-aria="o.sequenceSpeed"><option value="750">1×</option><option value="375">2×</option><option value="250">3×</option><option value="150">5×</option></select></label>
+      <label class="obs-label" for="observation" data-i18n="o.pickExposure"></label><select id="observation"></select><div class="step-buttons"><button id="prev" data-i18n="o.prev"></button><button id="next" data-i18n="o.next"></button></div>
+      <a id="source" target="_blank" rel="noopener noreferrer" data-i18n="o.source"></a>
+    </aside>
+  </main>
+  <footer><div class="transport"><button id="play">▶</button><div><span class="eyebrow">SIMULATION TIME · UTC</span><strong id="clock"></strong></div><select id="speed" data-i18n-aria="o.speed"><option value="1" data-i18n="o.speed1"></option><option value="10" selected data-i18n="o.speed10"></option><option value="30" data-i18n="o.speed30"></option></select></div><div class="timeline"><div class="timeline-labels"><span id="range-start">${date(manifest.start).slice(0, 10)}</span><span id="range-end">${date(manifest.end).slice(0, 10)}</span></div><input id="time" type="range" min="${manifest.start}" max="${manifest.end}" step=".000001"><div id="ticks"></div></div></footer><div id="toast" role="status" hidden></div>`;
   applyI18n(app);
   const el = <T extends HTMLElement>(s: string) =>
     app.querySelector<T>(s)!;
-  bindText(el("#scene-caption"), freeCaption);
   bindText(el("#sequence-play"), () => t("o.seqPlay"));
-  bindText(el(".science-note"), () => t("o.scienceSeq"));
-  bindText(el("#time-note"), () => t("o.timeNoteDefault"));
   bindAttr(el("#time"), "aria-label", () => t("o.timeAria"));
   const scene = new SolarScene(el("#scene"), bodies),
     viewer = new ObservationViewer(el("#image"), el("#image-status"), options.dataBase);
-  scene.onBelt = count => {
-    el("#belt-summary").hidden = false;
-    bindText(el("#belt-summary"), () => t("o.backgroundBelt", {n: count.toLocaleString()}));
-  };
   const clock = el("#clock"),
     slider = el<HTMLInputElement>("#time"),
     select = el<HTMLSelectElement>("#observation");
@@ -114,7 +116,7 @@ async function json<T>(p: string): Promise<T> {
           ready().findIndex((o) => o.id === observation?.id),
         ),
       );
-      if (mode === "observer" || mode === "craft") slider.value = select.value;
+      if (isExposureView()) slider.value = select.value;
     }
     sequencePlaying = false;
     ++sequenceGeneration;
@@ -129,7 +131,7 @@ async function json<T>(p: string): Promise<T> {
     }
     if (!sequence()) return;
     setPlaying(false);
-    const entering = mode !== "observer";
+    const entering = !isExposureView();
     if (entering) setView("observer");
     sequencePlaying = true;
     const generation = ++sequenceGeneration;
@@ -159,27 +161,19 @@ async function json<T>(p: string): Promise<T> {
     scene.setPlaying(v);
   }
   let lastClock = 0;
-  let timeNoteKey = "";
   function setTime(t: number) {
     mjd = Math.max(manifest.start, Math.min(manifest.end, t));
     scene.setTime(mjd);
-    slider.value = mode === "observer" || mode === "craft" ? select.value : String(mjd);
+    slider.value = isExposureView() ? select.value : String(mjd);
     if (performance.now() - lastClock > 100 || !playing) {
       clock.textContent = date(mjd);
       lastClock = performance.now();
     }
-    const note =
-      observation && Math.abs(mjd - observation.mjd) < 0.00001
-        ? "o.timeMatch"
-        : "o.timeNote";
-    if (note !== timeNoteKey) {
-      timeNoteKey = note;
-      bindText(el("#time-note"), () => tr(note));
-    }
   }
+
   function setView(v: string) {
     if (
-      (v === "observer" || v === "craft") &&
+      isExposureView(v) &&
       !(observation?.spacecraft && observation.image?.calibration)
     ) {
       const toast = el("#toast");
@@ -188,10 +182,10 @@ async function json<T>(p: string): Promise<T> {
       return;
     }
     el("#toast").hidden = true;
-    if (v !== "observer") stopSequence();
+    if (v !== mode) stopSequence();
     mode = v;
     const items = ready(),
-      isSky = v === "observer" || v === "craft";
+      isSky = isExposureView(v);
     slider.min = String(isSky ? 0 : manifest.start);
     slider.max = String(isSky ? Math.max(0, items.length - 1) : manifest.end);
     slider.step = isSky ? "1" : ".000001";
@@ -212,12 +206,11 @@ async function json<T>(p: string): Promise<T> {
       .forEach((b) =>
         b.classList.toggle("active", b.getAttribute("data-view") === v),
       );
-    if ((v === "observer" || v === "craft") && observation) {
+    if (isExposureView(v) && observation) {
       setPlaying(false);
       setTime(observation.mjd);
     }
-    scene.view(v as "system" | "target" | "observer" | "free" | "craft");
-    bindText(el("#scene-caption"), v === "observer" ? () => t("o.captionObserver") : v === "craft" ? () => t("o.captionCraft") : freeCaption);
+    scene.view(v as "system" | "target" | "observer" | "free" | "craft" | "craft-only");
   }
   async function showObservation(index: number) {
     const generation = ++observationGeneration,
@@ -226,11 +219,9 @@ async function json<T>(p: string): Promise<T> {
     const items = ready();
     if (!items.length) {
       viewer.clear();
-      bindText(el("#trail-note"), () => t("o.noTrail"));
       observation = undefined;
       scene.setObservation(undefined);
       select.disabled = true;
-      bindText(el("#obs-detail"), () => t("o.noImages"));
       el<HTMLAnchorElement>("#source").removeAttribute("href");
       return;
     }
@@ -248,24 +239,18 @@ async function json<T>(p: string): Promise<T> {
     scene.setObservation(observation, viewer.photoCanvas, viewer.trailCanvas);
     const correction = observation.image?.correction;
     el<HTMLButtonElement>('[data-processing="corrected"]').disabled = !correction;
-    bindText(el("#correction-note"), () => correction
-      ? t("o.correctionNote", { status: t(correction.status === "accepted" ? "o.correctionAccepted" : "o.correctionMasked"), gain: correction.gain.toFixed(3), masked: correction.maskedPercent.toFixed(1) })
-      : t("o.correctionNone"));
-    const trail = observation.image?.trail;
-    bindText(el("#trail-note"), () => trailDescription(trail));
     select.disabled = false;
     if (intent === intentGeneration) setTime(observation.mjd);
     el<HTMLButtonElement>("[data-view=observer]").disabled = !(
       observation.spacecraft && observation.image?.calibration
     );
     el<HTMLButtonElement>("[data-view=craft]").disabled = el<HTMLButtonElement>("[data-view=observer]").disabled;
-    const skyLabel = `${date(observation.mjd)} UTC · ${index + 1} / ${items.length} · `,
-      fixed = Boolean(sequence());
-    bindText(el("#sky-label"), () => skyLabel + t(fixed ? "o.fixedSky" : "o.single"));
-    const o = observation;
-    bindHtml(el("#obs-detail"), () =>
-      `<dl><dt>${t("o.dtTime")}</dt><dd>${date(o.mjd)}</dd><dt>${t("o.dtDetector")}</dt><dd>D${o.detector} / ${o.wavelength?.toFixed(2) ?? "—"} μm</dd><dt>${t("o.dtRaDec")}</dt><dd>${o.ra.toFixed(4)}° / ${o.dec.toFixed(4)}°</dd><dt>${t("o.dtQuality")}</dt><dd>${o.quality} / ${o.snr?.toFixed(1) ?? "—"}</dd><dt>${t("o.dtChi2")}</dt><dd>${o.image?.model?.chi2Reduced.toFixed(2) ?? t("o.notReady")}</dd></dl>`);
-    el<HTMLAnchorElement>("#source").href = o.url;
+    const calibrated = Boolean(observation.spacecraft && observation.image?.calibration);
+    el<HTMLButtonElement>('[data-view="craft-only"]').disabled = !calibrated;
+    app.querySelectorAll<HTMLButtonElement>("[data-display]").forEach(button => button.disabled = !calibrated);
+    el("#target-ra").textContent = `${observation.ra.toFixed(4)}°`;
+    el("#target-dec").textContent = `${observation.dec.toFixed(4)}°`;
+    el<HTMLAnchorElement>("#source").href = observation.url;
   }
   function choose(id: string) {
     const body = initialBody(bodies, id);
@@ -278,61 +263,29 @@ async function json<T>(p: string): Promise<T> {
     viewer.clear();
     observation = undefined;
     scene.setObservation(undefined);
-    bindText(el("#obs-detail"), () => t("o.preparing"));
-    bindText(el("#trail-note"), () => t("o.preparing"));
     el<HTMLAnchorElement>("#source").removeAttribute("href");
     selected = id;
     options.onTarget(id);
     scene.setSelected(id);
     if (resetView) setView("system");
     el("#target-name").textContent = body.name;
+    el("#target-ra").textContent = el("#target-dec").textContent = "—";
     app
       .querySelectorAll("[data-object]")
       .forEach((b) =>
         b.classList.toggle("selected", b.getAttribute("data-object") === id),
       );
-    const all = observations.filter((o) => o.objectId === id);
-    const counts = new Map<string, number>();
-    for (const o of all) {
-      const key = o.image
-        ? "ready\u0000" + o.quality
-        : o.availabilityReason !== undefined
-          ? "reason\u0000" + o.availabilityReason
-          : "missing\u0000" + o.quality;
-      counts.set(key, (counts.get(key) ?? 0) + 1);
-    }
-    const availability = el("#availability");
-    availability.replaceChildren();
-    for (const [reason, count] of counts) {
-      const p = document.createElement("p");
-      const [kind, value] = reason.split("\u0000");
-      bindText(p, () => {
-        const shown = kind === "ready" ? t("o.imageReadyQ", { q: value }) : kind === "missing" ? t("o.imageNotReadyQ", { q: value }) : statusPhrase(value);
-        return t("o.rows", { reason: shown, n: count });
-      });
-      availability.append(p);
-    }
     const items = ready();
     el<HTMLInputElement>("#show-trail").disabled = !items.length;
-    el(".trail-legend").hidden = !items.length;
     el<HTMLButtonElement>("#sequence-play").disabled = !sequence();
-    const seqVars = sequence() ? { n: items.length, m: Math.round((items.at(-1)!.mjd - items[0].mjd) * 1440) } : null;
-    bindText(el("#sequence-note"), () => seqVars ? t("o.seqNoteSpeed", {...seqVars, seconds: sequenceDelay / 1000}) : t("o.seqNone"));
-    app
-      .querySelectorAll<HTMLButtonElement>("[data-composite]")
-      .forEach(
-        (b) => (b.disabled = b.dataset.composite !== "photo" && !sequence()),
-      );
-    setComposite(sequence() ? "blend" : "photo");
-    el<HTMLInputElement>("#overlay").disabled = !sequence();
-    el(".legend").hidden = !sequence();
-    const hasSequence = Boolean(sequence());
-    bindText(el(".science-note"), () => t(hasSequence ? "o.scienceSeq" : "o.scienceSingle"));
+    el<HTMLSelectElement>("#sequence-speed").disabled = !sequence();
+    app.querySelectorAll<HTMLButtonElement>("[data-display]").forEach(button => button.disabled = true);
+    setDisplay("photo");
     scene.setObservationTimes(items.map((o) => o.mjd));
     el<HTMLButtonElement>("[data-view=observer]").disabled = true;
     el<HTMLButtonElement>("[data-view=craft]").disabled = true;
     el<HTMLButtonElement>('[data-processing="corrected"]').disabled = true;
-    bindText(el("#correction-note"), () => t("o.correctionNone"));
+    el<HTMLButtonElement>('[data-view="craft-only"]').disabled = true;
     el<HTMLButtonElement>("#prev").disabled = !items.length;
     el<HTMLButtonElement>("#next").disabled = !items.length;
     select.innerHTML = items
@@ -341,9 +294,6 @@ async function json<T>(p: string): Promise<T> {
           `<option value="${i}">${date(o.mjd)} · D${o.detector}</option>`,
       )
       .join("");
-    const subVars = { rows: observations.filter((o) => o.objectId === id).length, n: items.length };
-    el("#target-sub").removeAttribute("data-i18n");
-    bindText(el("#target-sub"), () => t(hasSequence ? "o.targetSubSeq" : "o.targetSubSingle", subVars));
     el("#ticks").innerHTML = items
       .map(
         (o, i) =>
@@ -387,12 +337,12 @@ async function json<T>(p: string): Promise<T> {
   el<HTMLInputElement>("#search").oninput = (e) =>
     list((e.target as HTMLInputElement).value);
   el("#play").onclick = () => {
-    if (mode === "observer" && sequence()) {
+    if (isExposureView() && sequence()) {
       void toggleSequence();
       return;
     }
     if (mjd >= manifest.end) setTime(manifest.start);
-    if (mode === "observer" || mode === "craft") setView("system");
+    if (isExposureView()) setView("system");
     setPlaying(!playing);
   };
   el<HTMLSelectElement>("#speed").onchange = (e) =>
@@ -400,12 +350,11 @@ async function json<T>(p: string): Promise<T> {
   slider.oninput = () => {
     ++intentGeneration;
     stopSequence();
-    if (mode === "observer" || mode === "craft") {
+    if (isExposureView()) {
       void showObservation(Number(slider.value));
       return;
     }
     setPlaying(false);
-    if (mode === "observer" || mode === "craft") setView("system");
     setTime(Number(slider.value));
   };
   select.onchange = () => {
@@ -420,71 +369,41 @@ async function json<T>(p: string): Promise<T> {
     stopSequence();
     void showObservation(Number(select.value) + 1);
   };
-  el<HTMLInputElement>("#overlay").oninput = (e) =>
-    viewer.setOpacity(Number((e.target as HTMLInputElement).value));
-  scene.onSky = (shown) => {
-    el("#sky-credit").hidden = !shown;
-    el(".universe").classList.toggle("sky-on", shown);
-  };
-  scene.onSkyFail = () => {
-    const box = el<HTMLInputElement>("#sky"),
-      label = box.closest("label");
-    markSkyUnavailable(box, label);
-    if (label) applyI18n(label.parentElement ?? label);
-  };
-  scene.setSky(skyOn);
-  el<HTMLInputElement>("#sky").onchange = (e) => {
-    const on = (e.target as HTMLInputElement).checked;
-    try {
-      localStorage.setItem(SKY_KEY, on ? "1" : "0");
-    } catch {
-      /* not remembered */
-    }
-    scene.setSky(on);
-  };
-  el<HTMLInputElement>("#low").onchange = (e) =>
-    scene.quality((e.target as HTMLInputElement).checked);
+  scene.onSky = shown => el(".universe").classList.toggle("sky-on", shown);
+  scene.setSky(true);
   app
     .querySelectorAll<HTMLElement>("[data-view]")
     .forEach((b) => (b.onclick = () => setView(b.dataset.view!)));
-  el<HTMLInputElement>("#photo-visible").onchange = (e) =>
-    scene.setPhotoVisible((e.target as HTMLInputElement).checked);
-  el<HTMLInputElement>("#photo-opacity").oninput = (e) =>
-    scene.setPhotoOpacity(Number((e.target as HTMLInputElement).value));
+  el<HTMLInputElement>("#craft-visible").onchange = e =>
+    scene.setCraftVisible((e.target as HTMLInputElement).checked);
+  scene.setPhotoOpacity(1);
+  viewer.setMode("photo");
   el("#sequence-play").onclick = () => {
     void toggleSequence();
   };
-  function setComposite(value: "photo" | "model" | "blend") {
-    viewer.setMode(value);
-    app
-      .querySelectorAll<HTMLElement>("[data-composite]")
-      .forEach((c) =>
-        c.classList.toggle("active", c.dataset.composite === value),
-      );
+  function setDisplay(value: "photo" | "model") {
+    // Switch the real image plane in the 3D scene, never the ePSF prediction image.
+    scene.setPhotoVisible(value === "photo");
+    app.querySelectorAll<HTMLElement>("[data-display]").forEach(button => {
+      const active = button.dataset.display === value;
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-pressed", String(active));
+    });
   }
-  app
-    .querySelectorAll<HTMLElement>("[data-composite]")
-    .forEach(
-      (b) =>
-        (b.onclick = () =>
-          setComposite(b.dataset.composite as "photo" | "model" | "blend")),
-    );
+  app.querySelectorAll<HTMLElement>("[data-display]").forEach(button => {
+    button.onclick = () => {
+      if (mode !== "observer") setView("observer");
+      setDisplay(button.dataset.display as "photo" | "model");
+    };
+  });
   el<HTMLInputElement>("#show-trail").onchange = (e) => {
     const v = (e.target as HTMLInputElement).checked;
     viewer.setTrailVisible(v);
     scene.setTrailVisible(v);
   };
   viewer.onRedraw = () => scene.refreshTrail();
-  scene.onObserverZoom = (zoom, fov) => {
-    el<HTMLInputElement>("#observer-zoom").value = String(zoom);
-    el("#observer-fov").textContent = `${zoom.toFixed(2)}× · ${(fov * 60).toFixed(2)}′`;
-  };
-  el<HTMLInputElement>("#observer-zoom").oninput = e => scene.setObserverZoom(Number((e.target as HTMLInputElement).value));
-  el("#observer-zoom-reset").onclick = () => scene.setObserverZoom(1);
   el<HTMLSelectElement>("#sequence-speed").onchange = e => {
     sequenceDelay = Number((e.target as HTMLSelectElement).value);
-    const items = ready();
-    bindText(el("#sequence-note"), () => sequence() ? t("o.seqNoteSpeed", {n: items.length, m: Math.round((items.at(-1)!.mjd - items[0].mjd) * 1440), seconds: sequenceDelay / 1000}) : t("o.seqNone"));
   };
   app.querySelectorAll<HTMLElement>("[data-processing]").forEach(b => {
     b.onclick = () => {

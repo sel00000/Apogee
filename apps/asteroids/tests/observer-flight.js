@@ -11,11 +11,11 @@ async(page)=>{
  const on=await page.evaluate(()=>window.__app.metrics());
  if(on.overlayErrorPixels>.01)throw Error('Projection mismatch');
  await page.screenshot({path:'docs/observer-photo-on.png'});
- await page.locator('#photo-visible').uncheck();await page.waitForFunction(()=>!window.__app.metrics().scheduled);
+ await page.locator('[data-display=model]').click();await page.waitForFunction(()=>!window.__app.metrics().scheduled);
  const off=await page.evaluate(()=>window.__app.metrics());
  if(off.photoVisible||JSON.stringify(on.cameraPosition)!==JSON.stringify(off.cameraPosition)||on.cameraFov!==off.cameraFov)throw Error('Photo toggle changed camera');
  await page.screenshot({path:'docs/observer-photo-off.png'});
- await page.locator('#photo-visible').check();await page.locator('#next').click();
+ await page.locator('[data-display=photo]').click();await page.locator('#next').click();
  await page.waitForFunction(id=>window.__app.metrics().observation!==id,on.observation);await page.waitForFunction(()=>!window.__app.metrics().scheduled);
  const next=await page.evaluate(()=>window.__app.metrics());if(next.overlayErrorPixels>.01)throw Error('Next frame alignment lost');
  await page.getByRole('button',{name:'이전 자유 시점',exact:true}).click();await page.waitForFunction(()=>!window.__app.metrics().scheduled);

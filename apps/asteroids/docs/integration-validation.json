@@ -3,13 +3,14 @@
   "sourceCommit": "4a47ed19c42ded84cb6f2633e4d81b94279331cc",
   "teamBaseCommit": "93998d85b40faac16896eafcfb692c8173f2074c",
   "webTests": {
-    "passed": 706,
+    "passed": 696,
     "failed": 0,
     "node": 370,
-    "vitest": 336,
-    "command": "TMPDIR=/private/tmp npm run test:web"
+    "vitest": 326,
+    "command": "TMPDIR=/private/tmp npm run test:web",
+    "note": "Full regression before final original-design restoration; final asteroid tests rerun: 102 passed."
   },
-  "build": "full site build and final asteroid TypeScript/Vite build passed",
+  "build": "Full site built on team base 3a9a06c; final asteroid TypeScript/Vite build passed.",
   "browser": {
     "targets": [
       {
@@ -256,56 +257,16 @@
     "route": "http://127.0.0.1:4187/?verify=integration2#asteroids?target=433&tab=orbit",
     "iframe": "http://127.0.0.1:4187/asteroids/?tab=orbit&target=433&embed=1&orbitOnly=1"
   },
-  "responsive": {
-    "checks": [
-      {
-        "width": 1100,
-        "overflow": 0,
-        "craft": [
-          0.44624686362847044,
-          -6.439076397249123e-13,
-          0.9962074377912404
-        ],
-        "earth": [
-          -0.17354044696625703,
-          -1.287815279449188e-12,
-          0.9962074377912423
-        ],
-        "scene": {
-          "width": 630,
-          "height": 716
-        },
-        "toolsDoNotOverlap": true
-      },
-      {
-        "width": 390,
-        "overflow": -15,
-        "craft": [
-          0.4580164098142372,
-          9.388839720284712e-13,
-          0.9972350264944512
-        ],
-        "earth": [
-          -0.17811749270576618,
-          4.694419860142356e-13,
-          0.9972350264944512
-        ],
-        "scene": {
-          "width": 375,
-          "height": 600
-        },
-        "toolsDoNotOverlap": true
-      }
-    ],
-    "wasdMoved": true
-  },
   "finalBrowser": {
+    "errors": [],
+    "failed": [],
     "backgroundCount": 40000,
-    "beltLabel": "주변 천체 40,000개 · NASA/JPL SBDB 실제 궤도 원소 · 2체 근사. 선택 가능한 분석 대상은 위 목록입니다.",
-    "timePlaybackMovesEarth": true,
-    "normalMotionFlyThrough": true,
-    "alignmentErrorPx": 0.001919183924092414,
-    "errors": []
+    "timePlayback": true,
+    "wasd": true,
+    "clickableMarkers": 24,
+    "insetPreservesCamera": true,
+    "craftOnly": true,
+    "alignment": 0.0017733635756868222
   },
   "remoteApiFixture": {
     "checks": [
@@ -331,5 +292,10 @@
   "limitations": [
     "New live archive/Python analysis was not executed; backend routing was tested with a two-origin fixture.",
     "913 Otila has no prepared image; spacecraft view is disabled for that target."
-  ]
+  ],
+  "finalAsteroidTests": {
+    "passed": 102,
+    "failed": 0
+  },
+  "design": "Original Apogee design from user reference image 2. No new mobile layout."
 }

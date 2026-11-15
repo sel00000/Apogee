@@ -1,4 +1,4 @@
-import { spacecraftAttitude, craftCameraPose, CRAFT_SCALE, EARTH_RADIUS_AU } from "./spacecraft";
+import { spacecraftAttitude, craftCameraPose, craftOnlyCameraPose, craftInsetRect, CRAFT_SCALE, EARTH_RADIUS_AU } from "./spacecraft";
 import { BackgroundBelt } from "./background";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
@@ -143,6 +143,10 @@ export class SolarScene {
     color: 0x6689a3, transparent: true, opacity: 0.65,
   }));
   private craftLabel = document.createElement("span");
+  private craftInset = document.createElement("div");
+  private craftInsetCamera = new T.PerspectiveCamera(42, 1.25, EARTH_RADIUS_AU * .01, 400);
+  private craftEnabled = false;
+  private craftInsetVisible = false;
   private observationPoints: T.Points | null = null;
   private marker: T.Mesh;
   private ray: T.Line;
@@ -206,6 +210,7 @@ export class SolarScene {
   private hidden = false;
   private observer = false;
   private craftView = false;
+  private craftOnly = false;
   private craftFlight = false;
   private observerZoom = 1;
   private craftEpoch = 0;
@@ -218,6 +223,7 @@ export class SolarScene {
   private lastTarget: T.Vector3 | null = null;
   private lastOrbit = 0;
   private labels: { body: Body; el: HTMLSpanElement }[] = [];
+  private asteroidButtons: { body: Body; el: HTMLButtonElement }[] = [];
   private sizes: number[] = [];
   private dtSamples: number[] = [];
   private drawSamples: number[] = [];
@@ -301,8 +307,11 @@ export class SolarScene {
     this.sky.frustumCulled = false;
     this.sky.visible = false;
     this.scene.add(this.sky);
-    this.scene.add(new T.HemisphereLight(0xc9dfff, 0x4f413b, 2.4));
-    this.scene.add(new T.PointLight(0xffe9b5, 3, 0, 0));
+    const ambient = new T.HemisphereLight(0xc9dfff, 0x4f413b, 2.4);
+    const sunlight = new T.PointLight(0xffe9b5, 3, 0, 0);
+    ambient.layers.enable(1); sunlight.layers.enable(1);
+    this.scene.add(ambient, sunlight);
+    this.craftInsetCamera.layers.set(1);
     const sun = new T.Mesh(
       new T.SphereGeometry(SUN_RADIUS, 48, 24),
       new T.ShaderMaterial({ vertexShader: SUN_VERTEX, fragmentShader: SUN_FRAGMENT }),
@@ -579,11 +588,39 @@ export class SolarScene {
       label.hidden = true;
       element.append(label);
       this.labels.push({ body: b, el: label });
+      if (b.kind === "asteroid") {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "asteroid-pick-marker";
+        button.dataset.asteroidId = b.id;
+        button.hidden = true;
+        bindAttr(button, "aria-label", () => bodyName(b));
+        bindAttr(button, "title", () => bodyName(b));
+        for (const type of ["pointerdown", "pointerup", "keydown"])
+          button.addEventListener(type, event => event.stopPropagation());
+        button.addEventListener("click", event => {
+          event.preventDefault();
+          event.stopPropagation();
+          this.onSelect(b.id);
+          // Return flight keys to the canvas after pointer or keyboard selection.
+          canvas.focus({ preventScroll: true });
+        });
+        element.append(button);
+        this.asteroidButtons.push({ body: b, el: button });
+      }
     }
     this.craftLabel.className = "body-label";
     this.craftLabel.textContent = "SPHEREx";
     this.craftLabel.hidden = true;
     element.append(this.craftLabel);
+    this.craftInset.className = "craft-inset";
+    this.craftInset.style.position = "absolute";
+    this.craftInset.style.pointerEvents = "none";
+    this.craftInset.hidden = true;
+    const insetLabel = document.createElement("span");
+    insetLabel.textContent = "SPHEREx";
+    this.craftInset.append(insetLabel);
+    element.append(this.craftInset);
     const first=bodies.find(body=>body.kind === "asteroid");
     if(!first) throw new LocalError("sc.noAsteroid");
     this.setSelected(first.id);
@@ -931,6 +968,8 @@ export class SolarScene {
       g.scene.position.copy(c).multiplyScalar(-k);
       g.scene.scale.setScalar(k);
       holder.add(g.scene);
+      // Layer 1 is shared by the isolated model view and observer inset, never by Earth.
+      holder.traverse(object => object.layers.enable(1));
       holder.visible = false;
       this.craft = holder;
       this.scene.add(holder);
@@ -990,12 +1029,14 @@ export class SolarScene {
     this.craft.position.copy(P);
     this.craft.quaternion.copy(this.craftAttitude(P, F));
     this.craft.scale.setScalar(S);
-    this.controls.minDistance = EARTH_RADIUS_AU * 1.6;
+    this.controls.minDistance = this.craftOnly ? CRAFT_SCALE * 1.2 : EARTH_RADIUS_AU * 1.6;
     this.camera.near = EARTH_RADIUS_AU * .01;
     this.camera.updateProjectionMatrix();
     if (fly) {
       const earth = new T.Vector3(...interpolate(this.byId.get("399")!.samples, utcToTdb(o.mjd)));
-      this.fly(craftCameraPose(P, earth, F, this.camera.aspect));
+      this.fly(this.craftOnly
+        ? craftOnlyCameraPose(P, F, this.camera.aspect)
+        : craftCameraPose(P, earth, F, this.camera.aspect));
     } else {
       const d = P.clone().sub(old);
       this.camera.position.add(d);
@@ -1004,6 +1045,68 @@ export class SolarScene {
     }
     this.dirty = true;
     this.request();
+  }
+
+  /** Show a separate model inset without changing the calibrated observer camera. */
+  setCraftVisible(visible: boolean) {
+    this.craftEnabled = visible;
+    if (!visible) {
+      this.craftInsetVisible = false;
+      this.craftInset.hidden = true;
+    } else {
+      void this.loadCraft().then(() => this.request());
+    }
+    this.request();
+  }
+
+  private renderCraftInset() {
+    this.craftInsetVisible = false;
+    this.craftInset.hidden = true;
+    const o = this.observation;
+    if (!this.observer || !this.craftEnabled || !this.craft || this.tween || !o?.spacecraft || !o.image?.calibration) return;
+    const width = this.element.clientWidth, height = this.element.clientHeight;
+    const container = this.element.parentElement;
+    const bounds = this.element.getBoundingClientRect();
+    const topPanel = container?.querySelector(".scene-top")?.getBoundingClientRect();
+    const bottomPanel = container?.querySelector(".scene-foot")?.getBoundingClientRect();
+    const rect = craftInsetRect(width, height, {
+      top: topPanel?.height ? topPanel.bottom - bounds.top + 12 : 92,
+      bottom: bottomPanel?.height ? bottomPanel.top - bounds.top - 12 : height - 12,
+    });
+    if (rect.width <= 0 || rect.height <= 0) return;
+    const position = new T.Vector3(...o.spacecraft), pointing = new T.Vector3(...skyDirection(o.ra, o.dec));
+    this.craft.position.copy(position);
+    this.craft.quaternion.copy(this.craftAttitude(position, pointing));
+    this.craft.scale.setScalar(CRAFT_SCALE);
+    const pose = craftOnlyCameraPose(position, pointing, rect.width / rect.height);
+    const camera = this.craftInsetCamera;
+    camera.aspect = rect.width / rect.height;
+    camera.position.copy(pose.position); camera.up.copy(pose.up); camera.fov = pose.fov;
+    camera.lookAt(pose.target); camera.updateProjectionMatrix();
+    const viewport = this.renderer.getViewport(new T.Vector4());
+    const scissor = this.renderer.getScissor(new T.Vector4());
+    const scissorTest = this.renderer.getScissorTest();
+    const clearColor = this.renderer.getClearColor(new T.Color()), clearAlpha = this.renderer.getClearAlpha();
+    const wasVisible = this.craft.visible;
+    this.craft.visible = true;
+    try {
+      this.renderer.setViewport(rect.left, height - rect.top - rect.height, rect.width, rect.height);
+      this.renderer.setScissor(rect.left, height - rect.top - rect.height, rect.width, rect.height);
+      this.renderer.setScissorTest(true);
+      this.renderer.setClearColor(0x09121d, 1);
+      this.renderer.render(this.scene, camera);
+    } finally {
+      this.craft.visible = wasVisible;
+      this.renderer.setViewport(viewport);
+      this.renderer.setScissor(scissor);
+      this.renderer.setScissorTest(scissorTest);
+      this.renderer.setClearColor(clearColor, clearAlpha);
+    }
+    Object.assign(this.craftInset.style, {
+      left: `${rect.left}px`, top: `${rect.top}px`, width: `${rect.width}px`, height: `${rect.height}px`,
+    });
+    this.craftInset.hidden = false;
+    this.craftInsetVisible = true;
   }
 
   setObservationTimes(times: number[]) {
@@ -1027,6 +1130,21 @@ export class SolarScene {
     );
     this.scene.add(this.observationPoints);
     this.request();
+  }
+  private updateAsteroidButtons() {
+    const width = this.element.clientWidth, height = this.element.clientHeight;
+    for (const { body, el } of this.asteroidButtons) {
+      const selected = body.id === this.chosen;
+      el.classList.toggle("selected", selected);
+      el.setAttribute("aria-pressed", String(selected));
+      if (this.observer || this.craftView) { el.hidden = true; continue; }
+      const point = new T.Vector3(...interpolate(body.samples, utcToTdb(this.mjd))).project(this.camera);
+      el.hidden = point.z < -1 || point.z > 1 || Math.abs(point.x) > 1 || Math.abs(point.y) > 1;
+      if (!el.hidden) {
+        el.style.left = `${(point.x + 1) * width / 2}px`;
+        el.style.top = `${(1 - point.y) * height / 2}px`;
+      }
+    }
   }
   refreshObservationPhoto(photo: HTMLCanvasElement) {
     this.photoTexture.image = photo;
@@ -1193,7 +1311,8 @@ export class SolarScene {
   }
   setSelected(id: string) {
     this.chosen = id;
-    this.craftView = false; this.craftFlight = false; ++this.craftEpoch;
+    this.craftView = false; this.craftOnly = false; this.craftFlight = false; ++this.craftEpoch;
+    this.camera.layers.set(0);
     this.controls.minDistance = .01; this.camera.near = .001;
     this.observer = false;
     this.following = false;
@@ -1271,7 +1390,9 @@ export class SolarScene {
     for(const geometry of geometries)geometry.dispose();
     for(const material of materials)material.dispose();
     this.photoTexture.dispose();this.trailTexture.dispose();for(const texture of this.textures)texture.dispose();this.renderer.dispose();
-    this.renderer.domElement.remove();for(const label of this.labels)label.el.remove();this.craftLabel.remove();
+    this.renderer.domElement.remove();for(const label of this.labels)label.el.remove();
+    for(const button of this.asteroidButtons)button.el.remove();
+    this.craftLabel.remove();this.craftInset.remove();
   }
   quality(low: boolean) {
     this.low = low;
@@ -1280,22 +1401,24 @@ export class SolarScene {
     if (!low && this.firstFrame) void this.loadSky();
     this.request();
   }
-  view(mode: "system" | "target" | "observer" | "free" | "craft") {
-    if ((mode === "observer" || mode === "craft") && !(this.observation?.spacecraft && this.observation.image?.calibration)) {
+  view(mode: "system" | "target" | "observer" | "free" | "craft" | "craft-only") {
+    const craftMode = mode === "craft" || mode === "craft-only";
+    if ((mode === "observer" || craftMode) && !(this.observation?.spacecraft && this.observation.image?.calibration)) {
       this.onError(() => t("sc.noWcs"));
       return;
     }
-    if ((mode === "observer" || mode === "craft") && !this.observer && !this.craftView)
+    if ((mode === "observer" || craftMode) && !this.observer && !this.craftView)
       this.freePose = {
         position: this.camera.position.clone(),
         target: this.controls.target.clone(),
         up: this.camera.up.clone(),
         fov: this.camera.fov,
       };
-    this.craftView = mode === "craft"; this.craftFlight = false;
+    this.craftView = craftMode; this.craftOnly = mode === "craft-only"; this.craftFlight = false;
+    this.camera.layers.set(this.craftOnly ? 1 : 0);
     const craftEpoch = ++this.craftEpoch;
     this.tween = null; this.controls.enabled = true; this.controls.minDistance = .01;
-    this.camera.near = mode === "craft" || mode === "observer" ? EARTH_RADIUS_AU * .01 : .001; this.camera.updateProjectionMatrix();
+    this.camera.near = craftMode || mode === "observer" ? EARTH_RADIUS_AU * .01 : .001; this.camera.updateProjectionMatrix();
     this.observer = mode === "observer";
     this.following = mode === "target";
     this.projectionGroup.visible = this.observer;
@@ -1503,7 +1626,10 @@ export class SolarScene {
     this.marker.quaternion.copy(this.camera.quaternion);
     const labelWidth = this.element.clientWidth,
       labelHeight = this.element.clientHeight;
+    this.camera.updateMatrixWorld();
+    this.updateAsteroidButtons();
     for (const { body, el } of this.labels) {
+      if (this.craftOnly) { el.hidden = true; continue; }
       if (body.kind === "asteroid" && body.id !== this.chosen) {
         el.hidden = true;
         continue;
@@ -1540,13 +1666,14 @@ export class SolarScene {
       }
     }
     this.craftLabel.hidden = true;
-    if (this.craftView && this.craft) {
+    if (this.craftView && !this.craftOnly && this.craft) {
       const v = this.craft.position.clone().project(this.camera);
       this.craftLabel.hidden = v.z < -1 || v.z > 1 || Math.abs(v.x) > 1 || Math.abs(v.y) > 1;
       this.craftLabel.style.left = ((v.x + 1) * labelWidth / 2 + 12) + "px";
       this.craftLabel.style.top = ((1 - v.y) * labelHeight / 2 - 8) + "px";
     }
     this.renderer.render(this.scene, this.camera);
+    this.renderCraftInset();
     this.drawSamples.push(performance.now() - begin);
     if (dt > 0) this.dtSamples.push(dt * 1000);
     if (this.dtSamples.length > 600) this.dtSamples.shift();
@@ -1651,7 +1778,12 @@ export class SolarScene {
         .toArray(),
       observer: this.observer,
       craftView: this.craftView,
-      craftVisible: this.craft?.visible ?? false,
+      craftOnly: this.craftOnly,
+      craftEnabled: this.craftEnabled,
+      craftInsetVisible: this.craftInsetVisible,
+      craftVisible: (this.craft?.visible ?? false) || this.craftInsetVisible,
+      selectableAsteroids: this.asteroidButtons.length,
+      visibleAsteroidMarkers: this.asteroidButtons.filter(button => !button.el.hidden).length,
       craftSunAngle: this.craftSunAngle,
       craftPosition: this.craft?.position.toArray(),
       spacecraftPhysical: this.observation?.spacecraft,
@@ -1662,7 +1794,7 @@ export class SolarScene {
       earthPosition: this.planets.find(m => m.userData.id === "399")?.position.toArray(),
       observerZoom: this.observerZoom,
       backgroundCount: this.belt.count,
-      backgroundVisible: this.belt.points?.visible ?? false,
+      backgroundVisible: !this.craftOnly && (this.belt.points?.visible ?? false),
       flying: !!this.tween,
       photoVisible: this.projectionGroup.visible && this.photoPlane.visible,
       photoOpacity: this.photoMaterial.opacity,

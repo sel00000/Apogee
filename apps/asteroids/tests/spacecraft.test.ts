@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
-import { Box3, BufferGeometry, Group, Mesh, PerspectiveCamera, Vector3 } from 'three';
+import { Box3, BufferGeometry, Color, Group, Mesh, PerspectiveCamera, Vector3, Vector4 } from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { spacecraftAttitude, craftCameraPose, CRAFT_SCALE, EARTH_RADIUS_AU } from '../src/spacecraft';
+import { spacecraftAttitude, craftCameraPose, craftOnlyCameraPose, craftInsetRect, CRAFT_SCALE, EARTH_RADIUS_AU } from '../src/spacecraft';
 import { SolarScene } from '../src/scene';
 import { interpolate, skyDirection, utcToTdb } from '../src/math';
 import comparisons from '../public/data/comparisons.json';
@@ -87,6 +87,43 @@ describe('SPHEREx model orientation and physical Earth', () => {
       expect(sunAngle).toBeCloseTo(90,10);
     }
   });
+  it('frames the spacecraft alone at its unchanged physical position on every viewport', () => {
+    for (const o of prepared) {
+      const position = new Vector3(...o.spacecraft!), forward = new Vector3(...skyDirection(o.ra, o.dec));
+      for (const aspect of [.35, 1, 1.25, 3]) {
+        const pose = craftOnlyCameraPose(position, forward, aspect);
+        expect(pose.target.distanceTo(position)).toBe(0);
+        const camera = new PerspectiveCamera(pose.fov, aspect, EARTH_RADIUS_AU * .01, 400);
+        camera.position.copy(pose.position); camera.up.copy(pose.up); camera.lookAt(pose.target); camera.updateMatrixWorld();
+        for (const axis of [new Vector3(1,0,0), new Vector3(0,1,0), new Vector3(0,0,1)]) {
+          for (const sign of [-1, 1]) {
+            const screen = position.clone().addScaledVector(axis, sign * CRAFT_SCALE * .83).project(camera);
+            expect(Math.abs(screen.x)).toBeLessThan(.9);
+            expect(Math.abs(screen.y)).toBeLessThan(.9);
+            expect(screen.z).toBeGreaterThan(-1);
+            expect(screen.z).toBeLessThan(1);
+          }
+        }
+      }
+    }
+  });
+  it('keeps the inset inside mobile and desktop viewports', () => {
+    for (const [width, height] of [[320, 300], [380, 700], [800, 450], [1400, 900]]) {
+      const rect = craftInsetRect(width, height);
+      expect(rect.left).toBeGreaterThanOrEqual(12);
+      expect(rect.top).toBeGreaterThanOrEqual(12);
+      expect(rect.left + rect.width).toBeLessThanOrEqual(width - 12);
+      expect(rect.top + rect.height).toBeLessThanOrEqual(height - 12);
+    }
+  });
+  it('fits the inset between the measured scene header and lower controls', () => {
+    const rect = craftInsetRect(380, 520, { top: 190, bottom: 350 });
+    expect(rect.top).toBe(190);
+    expect(rect.height).toBeLessThanOrEqual(160);
+    expect(rect.top + rect.height).toBeLessThanOrEqual(350);
+    expect(rect.left + rect.width).toBeLessThanOrEqual(368);
+    expect(craftInsetRect(380, 520, { top: 300, bottom: 320 }).width).toBe(0);
+  });
 });
 
 // Exercise view state without creating a WebGL renderer or a browser DOM.
@@ -97,7 +134,8 @@ function sceneState() {
     controls: { target: new Vector3(), minDistance: .01, enabled: true },
     byId: new Map(bodies.map(b => [b.id, b])), chosen: prepared[0].objectId,
     mjd: prepared[0].mjd, observation: prepared[0],
-    observer: false, craftView: false, craftFlight: false, craftEpoch: 0,
+    observer: false, craftView: false, craftOnly: false, craftFlight: false, craftEpoch: 0,
+    craftInset: { hidden: true, style: {} },
     projectionGroup: new Group(),
     fly: vi.fn(), request: vi.fn(), onError: vi.fn(), alignObserver: vi.fn(), placeCraft: vi.fn(),
     loadCraft: vi.fn(() => Promise.resolve()),
@@ -165,5 +203,78 @@ describe('spacecraft view transitions', () => {
     scene.setObserverZoom(2);
     expect(scene.observerZoom).toBe(2);
     expect(scene.alignObserver).toHaveBeenCalledWith(false);
+  });
+  it('isolates the spacecraft by camera layer and restores the full scene afterward', async () => {
+    const scene = sceneState();
+    scene.view('craft-only');
+    await Promise.resolve();
+    expect(scene.craftView).toBe(true);
+    expect(scene.craftOnly).toBe(true);
+    expect(scene.camera.layers.mask).toBe(2);
+    expect(scene.placeCraft).toHaveBeenCalledWith(true);
+    scene.view('system');
+    expect(scene.craftOnly).toBe(false);
+    expect(scene.camera.layers.mask).toBe(1);
+    expect(scene.camera.near).toBe(.001);
+  });
+  it('renders the optional inset with a separate camera and restores the main viewport', async () => {
+    const scene = sceneState();
+    const viewport = new Vector4(0, 0, 1000, 700), scissor = viewport.clone();
+    const renderer = {
+      getViewport: (out: Vector4) => out.copy(viewport),
+      getScissor: (out: Vector4) => out.copy(scissor),
+      getScissorTest: () => false,
+      getClearColor: (out: Color) => out.set(0x090e17),
+      getClearAlpha: () => 1,
+      setViewport: vi.fn(), setScissor: vi.fn(), setScissorTest: vi.fn(), setClearColor: vi.fn(), render: vi.fn(),
+    };
+    Object.assign(scene, {
+      observer: true, renderer, scene: new Group(), craft: new Group(),
+      craftInsetCamera: new PerspectiveCamera(42, 1.25, EARTH_RADIUS_AU * .01, 400),
+      element: { clientWidth: 1000, clientHeight: 700, getBoundingClientRect: () => ({ top: 0 }) },
+    });
+    scene.craft.visible = false;
+    const position = scene.camera.position.clone(), quaternion = scene.camera.quaternion.clone();
+    const fov = scene.camera.fov, target = scene.controls.target.clone();
+    scene.setCraftVisible(true);
+    await Promise.resolve();
+    scene.renderCraftInset();
+    expect(scene.craftInsetVisible).toBe(true);
+    expect(renderer.render).toHaveBeenCalledWith(scene.scene, scene.craftInsetCamera);
+    expect(renderer.setViewport.mock.lastCall?.[0]).toEqual(viewport);
+    expect(renderer.setScissor.mock.lastCall?.[0]).toEqual(scissor);
+    expect(renderer.setScissorTest.mock.lastCall).toEqual([false]);
+    expect(scene.camera.position.distanceTo(position)).toBe(0);
+    expect(scene.camera.quaternion.angleTo(quaternion)).toBe(0);
+    expect(scene.camera.fov).toBe(fov);
+    expect(scene.controls.target.distanceTo(target)).toBe(0);
+    expect(scene.craft.position.toArray()).toEqual(prepared[0].spacecraft);
+    expect(scene.craft.visible).toBe(false);
+    scene.setCraftVisible(false);
+    expect(scene.craftInsetVisible).toBe(false);
+    expect(scene.craftInset.hidden).toBe(true);
+  });
+  it('positions 24 selectable target markers and hides them in observation and spacecraft modes', () => {
+    const scene = sceneState();
+    scene.element = { clientWidth: 1000, clientHeight: 700 };
+    scene.asteroidButtons = bodies.filter(body => body.kind === 'asteroid').map(body => ({
+      body, el: { hidden: true, style: {}, classList: { toggle: vi.fn() }, setAttribute: vi.fn() },
+    }));
+    scene.camera.up.set(0, 0, 1);
+    scene.camera.lookAt(0, 0, 0);
+    scene.camera.updateMatrixWorld();
+    scene.updateAsteroidButtons();
+    expect(scene.asteroidButtons).toHaveLength(24);
+    const chosen = scene.asteroidButtons.find((button: any) => button.body.id === scene.chosen);
+    expect(chosen.el.hidden).toBe(false);
+    expect(chosen.el.setAttribute).toHaveBeenCalledWith('aria-pressed', 'true');
+    const point = new Vector3(...interpolate(chosen.body.samples, utcToTdb(scene.mjd))).project(scene.camera);
+    expect(parseFloat(chosen.el.style.left)).toBeCloseTo((point.x + 1) * 500, 8);
+    expect(parseFloat(chosen.el.style.top)).toBeCloseTo((1 - point.y) * 350, 8);
+    for (const [observer, craftView] of [[true, false], [false, true]]) {
+      scene.observer = observer; scene.craftView = craftView;
+      scene.updateAsteroidButtons();
+      expect(scene.asteroidButtons.every((button: any) => button.el.hidden)).toBe(true);
+    }
   });
 });

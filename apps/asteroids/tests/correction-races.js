@@ -1,7 +1,8 @@
 async (page) => {
   await page.goto("http://127.0.0.1:8710");
   await page.waitForFunction(() => window.__app?.metrics().fixedSky);
-  await page.locator("[data-composite=model]").click();
+  await page.locator("[data-view=observer]").click();
+  await page.locator("[data-display=model]").click();
   await page.evaluate(() => window.__app.choose("10"));
   await page.waitForFunction(
     () =>
@@ -11,7 +12,7 @@ async (page) => {
   results.honestFallback = await page.evaluate(
     () =>
       document
-        .querySelector("[data-composite=photo]")
+        .querySelector("[data-display=photo]")
         .classList.contains("active") &&
       window.__app.metrics().compositeMode === "photo",
   );
@@ -26,7 +27,7 @@ async (page) => {
   await page.evaluate(() => window.__app.choose("16"));
   results.selectionCleared = await page.evaluate(
     () =>
-      !document.querySelector("#source").hasAttribute("href") &&
+      document.querySelector("#target-ra").textContent === "—" &&
       document.querySelector("[data-view=observer]").disabled,
   );
   await page.evaluate(() => window.__app.setPlaying(true));

@@ -2,10 +2,9 @@ async(page)=>{
  const errors=[];page.on('pageerror',e=>errors.push(String(e)));
  await page.emulateMedia({reducedMotion:'reduce'});await page.setViewportSize({width:1440,height:960});await page.goto('http://127.0.0.1:8710/?view=motion-circles');await page.waitForFunction(()=>window.__app?.metrics().trailCurrent&&!document.querySelector('[data-view=observer]').disabled);
  await page.evaluate(async()=>{window.__app.choose('69');await window.__app.showObservation(1);window.__app.setView('observer');});await page.waitForFunction(()=>!window.__app.metrics().scheduled);
- await page.locator('#photo-opacity').evaluate(e=>{e.value='1';e.dispatchEvent(new Event('input',{bubbles:true}));});
  const hesperia=await page.evaluate(()=>window.__app.metrics());if(!hesperia.trailVisible||hesperia.trailPoints.length!==hesperia.frameCount||!hesperia.sharedTrailGeometry)throw Error('Hesperia trail missing');
  await page.screenshot({path:'docs/movement-hesperia.png'});
- await page.locator('[data-composite=photo]').click();
+ await page.locator('[data-display=photo]').click();
  const core=()=>page.locator('#image').evaluate(c=>{const p=window.__app.metrics().predicted;return [...c.getContext('2d').getImageData(Math.floor((p[0]+.5)*4)-1,Math.floor((p[1]+.5)*4)-1,3,3).data];});
  const coreOn=await core();
  const on=await page.locator('#image').evaluate(c=>c.toDataURL());

@@ -32,3 +32,28 @@ export function craftCameraPose(position: Vector3, earth: Vector3, pointing: Vec
   return {position: target.clone().addScaledVector(side, distance), target,
     up: new Vector3().crossVectors(side, outward).normalize(), fov};
 }
+
+/** Inspect the observatory without moving it from its physical heliocentric position. */
+export function craftOnlyCameraPose(position: Vector3, pointing: Vector3, aspect = 1) {
+  const { quaternion } = spacecraftAttitude(position, pointing);
+  const direction = new Vector3(1, .7, -1.5).normalize().applyQuaternion(quaternion);
+  const fov = 42;
+  const halfAngle = Math.atan(Math.tan(fov * Math.PI / 360) * Math.min(1, aspect));
+  const distance = CRAFT_SCALE * .9 / Math.sin(halfAngle) * 1.25;
+  return {
+    position: position.clone().addScaledVector(direction, distance),
+    target: position.clone(),
+    up: pointing.clone().normalize(),
+    fov,
+  };
+}
+
+/** CSS-pixel rectangle shared by the GL viewport and its unobtrusive label/border. */
+export function craftInsetRect(width: number, height: number, available?: { top: number; bottom: number }) {
+  const top = Math.min(Math.max(12, available?.top ?? 92), height - 12);
+  const bottom = Math.min(height - 12, available?.bottom ?? height - 12);
+  const room = Math.max(0, bottom - top);
+  const insetWidth = room < 48 ? 0 : Math.max(0, Math.min(220, Math.max(100, width * .28), width - 24, room / .8));
+  const insetHeight = insetWidth * .8;
+  return { left: width - insetWidth - 12, top, width: insetWidth, height: insetHeight };
+}

@@ -5,6 +5,12 @@ export type Lang = 'en' | 'ko';
 export const LANG_KEY = 'spherex-lang';
 
 const en = {
+  "o.ra": "RA",
+  "o.dec": "Dec",
+  "o.comp3d": "3D model",
+  "o.displayMode": "Observation display",
+  "o.showCraft": "Show SPHEREx",
+  "o.craftOnly": "SPHEREx only",
   "o.backgroundBelt": "{n} background bodies · NASA/JPL SBDB orbital elements · two-body approximation. Selectable targets are listed above.",
   "o.viewCraft": "SPHEREx spacecraft",
   "o.captionCraft": "Exposure-time SPHEREx position · telescope points at the asteroid · Earth stays on its orbit · spacecraft size enlarged",
@@ -273,6 +279,12 @@ const en = {
 export type Key = keyof typeof en;
 
 const ko: Record<Key, string> = {
+  "o.ra": "적경",
+  "o.dec": "적위",
+  "o.comp3d": "3D 모형",
+  "o.displayMode": "관측 표시",
+  "o.showCraft": "SPHEREx 보이기",
+  "o.craftOnly": "SPHEREx만 보기",
   "o.backgroundBelt": "주변 천체 {n}개 · NASA/JPL SBDB 실제 궤도 원소 · 2체 근사. 선택 가능한 분석 대상은 위 목록입니다.",
   "o.viewCraft": "SPHEREx 본체",
   "o.captionCraft": "촬영 순간의 SPHEREx 위치 · 망원경은 소행성 방향 · 지구는 실제 궤도 위 · 위성 크기만 확대",

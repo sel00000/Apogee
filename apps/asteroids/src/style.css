@@ -918,592 +918,93 @@ button:disabled {
   }
 }
 
-/* Orbit glass follows the portal's smoky capsules, ivory selection and fine lit rims.
-   Keep these tokens and overrides local: research has its own form hierarchy. */
-#orbit-workspace {
-  --orbit-text: #f4f2ee;
-  --orbit-dim: #a8b8c3;
-  --orbit-mint: #b5e9d8;
-  --orbit-line: rgb(225 240 244 / 0.13);
-  --orbit-rim: rgb(255 255 255 / 0.25);
-  --orbit-glass: rgb(18 27 36 / 0.78);
-  --orbit-button: linear-gradient(160deg, rgb(255 255 255 / 0.11), rgb(255 255 255 / 0.025) 52%, rgb(181 233 216 / 0.055));
-  --orbit-button-hover: linear-gradient(160deg, rgb(255 255 255 / 0.18), rgb(255 255 255 / 0.055) 52%, rgb(181 233 216 / 0.1));
-  --orbit-shadow: inset 0 1px 0 var(--orbit-rim), inset 0 -1px 0 rgb(255 255 255 / 0.035), 0 6px 16px -10px rgb(0 0 0 / 0.8);
-  --orbit-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
-  color: var(--orbit-text);
-  background: #090e17;
-}
-
-/* The portal opens one orbit workspace; the standalone research workspace keeps its tabs. */
-#app.orbit-only .workspace-tabs {
-  display: none;
-}
-
-#app.embedded.orbit-only #orbit-workspace main {
-  height: calc(100dvh - 110px);
-}
-
-#orbit-workspace :is(button, select, .search) {
-  border: 1px solid var(--orbit-line);
-  border-radius: 999px;
-  color: var(--orbit-text);
-  background: var(--orbit-button), var(--orbit-glass);
-  box-shadow: var(--orbit-shadow);
-  transition: background 180ms var(--orbit-ease), border-color 180ms var(--orbit-ease), box-shadow 180ms var(--orbit-ease), transform 180ms var(--orbit-ease);
-}
-
-#orbit-workspace button {
-  min-height: 36px;
-  font-weight: 500;
-  line-height: 1.35;
-}
-
-#orbit-workspace :is(button, select, input, a, summary):focus-visible {
-  outline: 2px solid var(--orbit-mint);
-  outline-offset: 3px;
-}
-
-#orbit-workspace .search:focus-within {
-  border-color: var(--orbit-mint);
-  box-shadow: var(--orbit-shadow), 0 0 0 3px rgb(181 233 216 / 0.1);
-}
-
-#orbit-workspace :is(button, select):disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-  box-shadow: none;
-  transform: none;
-}
-
-@media (hover: hover) {
-  #orbit-workspace :is(button, select):not(:disabled):hover {
-    background: var(--orbit-button-hover), var(--orbit-glass);
-    border-color: rgb(225 240 244 / 0.3);
-  }
-}
-
-#orbit-workspace button:not(:disabled):active {
-  transform: scale(0.98);
-}
-
-#orbit-workspace :is(.catalog, .compare) {
-  background: linear-gradient(155deg, rgb(255 255 255 / 0.022), transparent 45%), #0c141e;
-  border-color: var(--orbit-line);
-}
-
-#orbit-workspace .eyebrow {
-  color: #94a9b5;
-}
-
-#orbit-workspace :is(.intro, .panel-desc, .science-note, #image-status, #sequence-note, #trail-note) {
-  color: var(--orbit-dim);
-}
-
-#orbit-workspace .search {
-  min-height: 42px;
-  padding: 8px 12px;
-}
-
-#orbit-workspace .search input {
-  min-width: 0;
-  font-size: 12px;
-}
-
-#orbit-workspace .search input::placeholder {
-  color: #95a9b6;
-  opacity: 1;
-}
-
-#orbit-workspace #objects {
-  padding: 3px;
-  margin-inline: -3px;
-  scrollbar-color: #486064 transparent;
-}
-
-#orbit-workspace .object {
-  border-color: transparent;
-  border-radius: 14px;
-  min-height: 62px;
-  background: transparent;
-  box-shadow: none;
-  margin-block: 4px;
-}
-
-#orbit-workspace .object.selected {
-  color: #e0f5ed;
-  background: linear-gradient(145deg, rgb(181 233 216 / 0.13), rgb(181 233 216 / 0.045));
-  border-color: rgb(181 233 216 / 0.27);
-  box-shadow: inset 0 1px 0 rgb(226 255 245 / 0.13);
-}
-
-#orbit-workspace .object small {
-  color: #98aeb9;
-}
-
-#orbit-workspace .catalog-foot {
-  border-color: var(--orbit-line);
-}
-
-#orbit-workspace .scene-top {
-  flex-wrap: wrap;
-  gap: 14px;
-}
-
-#orbit-workspace :is(.view-switch, .compare-modes, .photo-controls) {
-  border: 1px solid var(--orbit-line);
-  background: var(--orbit-button), var(--orbit-glass);
-  box-shadow: var(--orbit-shadow), 0 14px 32px -18px rgb(0 0 0 / 0.8);
-}
-
-/* Only floating surfaces blur the scene; nested controls do not stack blur layers. */
-#orbit-workspace :is(.view-switch, .photo-controls, footer) {
-  -webkit-backdrop-filter: blur(18px) saturate(1.4);
-  backdrop-filter: blur(18px) saturate(1.4);
-}
-
-#orbit-workspace .view-switch {
-  max-width: 100%;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 3px;
-  padding: 4px;
-  border-radius: 24px;
-  margin-left: auto;
-}
-
-#orbit-workspace :is(.view-switch, .compare-modes) button {
-  min-width: 0;
-  border: 1px solid transparent;
-  background: transparent;
-  box-shadow: none;
-  color: #c5d0d6;
-  padding: 8px 11px;
-  font-size: 11px;
-  white-space: normal;
-  word-break: keep-all;
-}
-
-#orbit-workspace :is(.view-switch, .compare-modes) button.active {
-  color: #142522;
-  background: linear-gradient(160deg, #f4f2ee, #d7e6df);
-  border-color: rgb(255 255 255 / 0.52);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.8), 0 3px 9px rgb(0 0 0 / 0.22);
-  font-weight: 650;
-}
-
-#orbit-workspace .scene-foot {
-  gap: 7px;
-}
-
-#orbit-workspace .scene-bottom {
-  gap: 4px 14px;
-  color: var(--orbit-dim);
-  line-height: 1.6;
-}
-
-#orbit-workspace .scene-toggles {
-  flex-wrap: wrap;
-  gap: 6px 14px;
-}
-
-#orbit-workspace .scene-bottom label {
-  min-height: 32px;
-  padding-block: 4px;
-}
-
-#orbit-workspace :is(.scale-note, #sky-credit, .scene-top #target-sub) {
-  color: #94a9b5;
-  line-height: 1.6;
-}
-
-#orbit-workspace #observer-tools {
-  pointer-events: auto;
-}
-
-/* Keep tools and their explanation in the same flow as labels wrap. */
-#orbit-workspace .scene-foot #observer-tools {
-  position: static;
-  width: 100%;
-  margin-bottom: 5px;
-}
-
-#orbit-workspace .photo-controls {
-  max-width: 100%;
-  flex-wrap: wrap;
-  gap: 6px 14px;
-  padding: 10px 12px;
-  border-radius: 20px;
-  text-align: left;
-  color: #dce7e5;
-}
-
-#orbit-workspace .photo-controls label {
-  min-height: 32px;
-  min-width: 0;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-#orbit-workspace .photo-controls button {
-  padding-inline: 12px;
-}
-
-#orbit-workspace .photo-controls :is(#observer-zoom, #photo-opacity) {
-  width: 85px;
-  max-width: 100%;
-}
-
-#orbit-workspace #observer-fov {
-  font-size: 10px;
-  color: var(--orbit-mint);
-  font-variant-numeric: tabular-nums;
-}
-
-#orbit-workspace #sky-label {
-  margin-top: 7px;
-  line-height: 1.5;
-  text-wrap: pretty;
-}
-
-#orbit-workspace .image-wrap {
-  border-color: rgb(225 240 244 / 0.2);
-  border-radius: 16px;
-  box-shadow: 0 14px 32px -22px #000;
-}
-
-#orbit-workspace .image-corner {
-  border: 1px solid var(--orbit-line);
-  border-radius: 999px;
-  padding: 5px 8px;
-  background: rgb(9 14 23 / 0.84);
-}
-
-#orbit-workspace .badge {
-  border-radius: 999px;
-  padding: 5px 8px;
-  border-color: rgb(181 233 216 / 0.25);
-  background: rgb(181 233 216 / 0.06);
-  color: #b5d9cb;
-}
-
-#orbit-workspace .compare-modes {
-  padding: 4px;
-  gap: 3px;
-  border-radius: 23px;
-}
-
-#orbit-workspace .compare-modes button {
-  padding-inline: 6px;
-  font-size: 10px;
-}
-
-#orbit-workspace #correction-note {
-  line-height: 1.65;
-}
-
-#orbit-workspace :is(.trail-toggle, .overlay-control) {
-  min-height: 36px;
-  color: #c3d2d9;
-}
-
-#orbit-workspace #sequence-play {
-  min-height: 42px;
-  color: #142b25;
-  border-color: rgb(227 255 244 / 0.65);
-  background: linear-gradient(150deg, #d6f1e5, #a7d9c7);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.72), 0 7px 22px -13px rgb(157 225 199 / 0.5);
-  font-weight: 650;
-}
-
-#orbit-workspace .sequence-speed {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: 12px;
-  font-size: 11px;
-  color: var(--orbit-dim);
-}
-
-#orbit-workspace select {
-  min-height: 38px;
-  padding: 8px 12px;
-  font-size: 11px;
-}
-
-#orbit-workspace select option {
-  color: var(--orbit-text);
-  background: #14212b;
-}
-
-#orbit-workspace #sequence-speed {
-  min-width: 66px;
-  font-variant-numeric: tabular-nums;
-}
-
-#orbit-workspace #observation {
-  border-radius: 13px;
-}
-
-#orbit-workspace :is(.step-buttons button, #source) {
-  min-height: 38px;
-}
-
-#orbit-workspace #source {
-  display: inline-flex;
-  align-items: center;
-  color: var(--orbit-mint);
-}
-
-#orbit-workspace dl {
-  border-color: var(--orbit-line);
-  row-gap: 12px;
-}
-
-#orbit-workspace dt {
-  color: #94a9b5;
-}
-
-#orbit-workspace dd {
-  color: #d0dce1;
-}
-
-#orbit-workspace input[type="checkbox"] {
-  width: 15px;
-  height: 15px;
-  flex: 0 0 auto;
-  margin: 0;
-  accent-color: var(--orbit-mint);
-  cursor: pointer;
-}
-
-#orbit-workspace input[type="range"] {
-  height: 22px;
-  min-width: 0;
-  accent-color: var(--orbit-mint);
-}
-
-#orbit-workspace footer {
-  border-color: var(--orbit-line);
-  background: linear-gradient(110deg, rgb(255 255 255 / 0.035), transparent 55%), rgb(12 20 29 / 0.92);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04);
-}
-
-#orbit-workspace .transport {
-  min-width: 0;
-  flex-shrink: 0;
-  gap: 12px;
-}
-
-#orbit-workspace .transport button {
-  width: 46px;
-  height: 46px;
-  flex: 0 0 46px;
-  border-color: rgb(255 255 255 / 0.5);
-  background: linear-gradient(145deg, #f4f2ee, #cbded5);
-  color: #152a23;
-  box-shadow: inset 0 1px 0 #fff, 0 6px 20px -12px rgb(181 233 216 / 0.55);
-}
-
-#orbit-workspace .transport strong {
-  white-space: nowrap;
-}
-
-#orbit-workspace #ticks button {
-  min-height: 0;
-  background: var(--orbit-mint);
-  border: 0;
-  border-radius: 2px;
-  box-shadow: none;
-  transform: translateX(-50%);
-}
-
-#orbit-workspace #toast {
-  z-index: 30;
-  max-width: min(440px, calc(100% - 32px));
-  border-radius: 16px;
-  background: #352b26;
-  border-color: #a58a6c;
-  box-shadow: 0 16px 40px rgb(0 0 0 / 0.3);
-  line-height: 1.6;
-}
-
-@media (hover: hover) {
-  #orbit-workspace :is(.view-switch, .compare-modes) button.active:hover {
-    color: #142522;
-    background: linear-gradient(160deg, #fff, #e2efe8);
-  }
-  #orbit-workspace #sequence-play:not(:disabled):hover,
-  #orbit-workspace .transport button:not(:disabled):hover {
-    color: #142b25;
-    background: linear-gradient(150deg, #eefaf4, #bce6d6);
-  }
-}
-
-@media (max-width: 1150px) {
-  #orbit-workspace .scene-top {
-    flex-direction: column;
-  }
-  #orbit-workspace .view-switch {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    width: 100%;
-    margin-left: 0;
-    border-radius: 23px;
-  }
-  #orbit-workspace .view-switch button {
-    padding-inline: 7px;
-  }
-}
-
-@media (max-width: 800px) {
-  /* research.css follows this sheet; the extra specificity keeps this breakpoint aligned. */
-  #app #orbit-workspace main,
-  #app.embedded.orbit-only #orbit-workspace main {
-    height: auto;
-    min-height: 0;
-  }
-  #orbit-workspace .catalog {
-    padding-bottom: 10px;
-  }
-  #orbit-workspace #objects {
-    width: calc(100% + 6px);
-    margin-top: 8px;
-    max-height: 96px;
-    gap: 6px;
-  }
-  #orbit-workspace .object {
-    min-width: 160px;
-    flex-shrink: 0;
-  }
-  #orbit-workspace .universe {
-    height: 600px;
-    min-height: 600px;
-  }
-  #orbit-workspace .scene-top {
-    top: 22px;
-  }
-  #orbit-workspace .view-switch {
-    width: min(100%, 460px);
-  }
-  #orbit-workspace .view-switch button,
-  #orbit-workspace .photo-controls button,
-  #orbit-workspace .compare-modes button,
-  #orbit-workspace .step-buttons button {
-    min-height: 42px;
-  }
-  #orbit-workspace .photo-controls {
-    gap: 6px 12px;
-    padding: 8px 10px;
-  }
-  #orbit-workspace .scene-foot {
-    left: 16px;
-    right: 16px;
-    gap: 5px;
-  }
-  #orbit-workspace .scene-bottom {
-    gap: 4px;
-  }
-  #orbit-workspace .scene-bottom label {
-    min-height: 36px;
-  }
-  #orbit-workspace .compare {
-    padding: 24px 20px calc(156px + env(safe-area-inset-bottom, 0px));
-  }
-  #orbit-workspace footer {
-    height: calc(124px + env(safe-area-inset-bottom, 0px));
-    padding: 12px 16px calc(10px + env(safe-area-inset-bottom, 0px));
-  }
-  #orbit-workspace .transport {
-    width: 100%;
-    gap: 10px;
-  }
-  #orbit-workspace .transport strong {
-    font-size: 12px;
-  }
-  #orbit-workspace #speed {
-    margin-left: auto;
-    max-width: 110px;
-    padding-inline: 8px;
-  }
-  #orbit-workspace .timeline {
-    margin-top: 9px;
-  }
-}
-
-@media (max-width: 370px) {
-  #orbit-workspace .transport {
-    gap: 7px;
-  }
-  #orbit-workspace .transport button {
-    width: 40px;
-    height: 40px;
-    flex-basis: 40px;
-    padding: 7px;
-  }
-  #orbit-workspace .transport strong {
-    font-size: 11px;
-  }
-  #orbit-workspace #speed {
-    max-width: 90px;
-    font-size: 10px;
-  }
-}
-
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  #orbit-workspace {
-    --orbit-glass: #16222e;
-  }
-  #orbit-workspace footer {
-    background: #111c27;
-  }
-}
-
-@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
-  #orbit-workspace {
-    --orbit-glass: #16222e;
-    --orbit-line: rgb(225 240 244 / 0.5);
-    --orbit-dim: #c6d3db;
-  }
-  #orbit-workspace :is(.view-switch, .photo-controls, footer) {
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
-  #orbit-workspace footer {
-    background: #111c27;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  #orbit-workspace :is(button, select, .search) {
-    transition: none;
-  }
-  #orbit-workspace button:not(:disabled):active {
-    transform: none;
-  }
-  #orbit-workspace #ticks button:active {
-    transform: translateX(-50%);
-  }
-}
-
-@media (forced-colors: active) {
-  #orbit-workspace :is(button, select, .search, .view-switch, .compare-modes, .photo-controls) {
-    border-color: ButtonText;
-    box-shadow: none;
-  }
-  #orbit-workspace :is(.view-switch, .compare-modes) button.active,
-  #orbit-workspace .object.selected {
-    outline: 2px solid Highlight;
-    outline-offset: -3px;
-  }
-  #orbit-workspace :is(button, select, input, a, summary):focus-visible {
-    outline-color: Highlight;
-  }
-}
-
 /* Native drop-down lists: the list of options opens on the page's dark surface with readable text,
    never as a white box with pale letters. */
 select { color-scheme: dark; }
 select option, select optgroup { background-color: #0d141d; color: #e8f0f4; }
 select option:disabled { color: #7f8f9c; }
+
+/* New observation controls retain the original Apogee surfaces and spacing. */
+#orbit-workspace .coordinates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  color: #bacbd6;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 5px #000;
+}
+#orbit-workspace .coordinates strong {
+  color: #dce6ee;
+  font-weight: 500;
+}
+#orbit-workspace .scene-foot #observer-tools {
+  position: static;
+  pointer-events: auto;
+}
+#orbit-workspace .photo-controls {
+  flex-wrap: wrap;
+}
+#orbit-workspace .sequence-speed {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 10px 0 18px;
+  font-size: 10px;
+  color: #91a4b0;
+}
+#orbit-workspace .orbit-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  min-height: 0;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+#orbit-workspace .craft-inset {
+  z-index: 2;
+  pointer-events: none;
+  border: 1px solid #31424e;
+  border-radius: 6px;
+}
+#orbit-workspace .craft-inset span {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  color: #c5d0d7;
+  font-size: 10px;
+  text-shadow: 0 1px 5px #000;
+}
+/* Put click targets above the WebGL canvas and below the scene controls. */
+#orbit-workspace .asteroid-pick-marker {
+  position: absolute;
+  z-index: 2;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  transform: translate(-50%, -50%);
+  border: 1px solid #7baca8;
+  border-radius: 50%;
+  background: transparent;
+  pointer-events: auto;
+}
+#orbit-workspace .asteroid-pick-marker:hover,
+#orbit-workspace .asteroid-pick-marker.selected {
+  border-color: #aef5de;
+  background: rgb(126 240 208 / 0.12);
+}
+#orbit-workspace .scene-top,
+#orbit-workspace .scene-foot {
+  z-index: 3;
+}
+/* Technical edge captions are gone; the lower sky no longer needs an opaque shade. */
+#orbit-workspace .universe.sky-on:not(.observing) .sky-scrim {
+  background:
+    linear-gradient(to bottom, rgb(9 14 23 / 0.45), transparent 160px),
+    linear-gradient(to top, rgb(9 14 23 / 0.08), transparent 70px);
+}

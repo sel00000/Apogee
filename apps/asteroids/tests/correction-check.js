@@ -9,13 +9,18 @@ async (page) => {
   await page.getByRole("button", { name: "SPHEREx 시점", exact: true }).click();
   await page.waitForFunction(() => !window.__app.metrics().scheduled);
   await page.screenshot({ path: "docs/correction-overlay.png" });
-  const modes = {};
-  for (const mode of ["photo", "model", "blend"]) {
-    await page.locator(`[data-composite=${mode}]`).click();
-    modes[mode] = await page.locator("#image").evaluate((c) => c.toDataURL());
+  const realImage = await page.locator("#image").evaluate(c => c.toDataURL());
+  const camera = await page.evaluate(() => window.__app.metrics().cameraPosition);
+  for (const mode of ["model", "photo"]) {
+    await page.locator(`[data-display=${mode}]`).click();
+    const state = await page.evaluate(() => window.__app.metrics());
+    if (state.photoVisible !== (mode === "photo") || state.compositeMode !== "photo")
+      throw Error("Display toggle changed the wrong image layer");
+    if (JSON.stringify(state.cameraPosition) !== JSON.stringify(camera))
+      throw Error("Display toggle moved the calibrated camera");
+    if (await page.locator("#image").evaluate(c => c.toDataURL()) !== realImage)
+      throw Error("Real observation panel changed when toggling the 3D plane");
   }
-  if (new Set(Object.values(modes)).size !== 3)
-    throw Error("Comparison modes render identical images");
   const first = await page.evaluate(() => window.__app.metrics().predicted);
   await page.locator("#sequence-play").click();
   await page.waitForFunction(
