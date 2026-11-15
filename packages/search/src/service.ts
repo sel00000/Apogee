@@ -61,6 +61,8 @@ function aborted(signal?: AbortSignal) {
   if (signal?.aborted) throw signal.reason ?? tagged(new DOMException(t('en', 'cancelled'), 'AbortError'), 'cancelled');
 }
 const BOTH: Lang[] = ['en', 'ko'];
+/** Notes of federatedSearch that only concern the ask function itself ('model: …', 'model did not understand …'). */
+const MODEL_NOTE = /^model(?::| did not understand)/;
 export async function boundedFetch(fetchFn: typeof fetch, url: string, init: RequestInit = {}, timeoutMs = 6000): Promise<Response> {
   const controller = new AbortController();
   const parent = init.signal;
@@ -210,7 +212,9 @@ export function createSearchService(options: SearchOptions = {}) {
     }, {signal});
     aborted(signal);
     const items = (result.items ?? []).map(item => choiceFromItem(item, lang()));
-    const partial = result.notes.length > 0;
+    // The language-model fallback is optional: when it fails or does not understand, the visitor sees the
+    // ordinary "nothing found" answer, not a warning about an unreachable service.
+    const partial = result.notes.some(note => !MODEL_NOTE.test(note));
     const describe: Describe = l => items.length
       ? (result.summary?.[l] ?? t(l, 'chooseCount', {n: items.length})) + (partial ? t(l, 'partialSuffix') : '')
       : partial ? t(l, 'noneExternal') : t(l, 'noneFound');

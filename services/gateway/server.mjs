@@ -40,7 +40,7 @@ function proxy(req,res,url,base) {
     req.pipe(upstream);
   });
 }
-export function createSiteServer({webRoot,asteroids,observationsUrl='',experienceUrl='',observationError='',
+export function createSiteServer({webRoot,asteroids,observationsUrl='',experienceUrl='',askUrl='',observationError='',
   access = createPublicAccess(), admission = createAdmission(), observationsAlive, stopObservations}={}) {
   if(!webRoot)throw new Error('webRoot is required.');
   const root=resolve(webRoot);
@@ -53,7 +53,7 @@ export function createSiteServer({webRoot,asteroids,observationsUrl='',experienc
       const url=new URL(req.url||'/','http://localhost');
       url.pathname=url.pathname.replace(/^\/(analysis|asteroids)\/api(?=\/|$)/,'/api');
       if(url.pathname.startsWith('/api/') && access.cors(req,res))return;
-      if(url.pathname==='/config.json')return json(res,200,{version:'5.0.0',apiBase:'',experienceUrl,localServices:true,publicMode:access.enabled,limits:access.limits,observationsAvailable:!!observationsUrl && (!observationsAlive || observationsAlive())});
+      if(url.pathname==='/config.json')return json(res,200,{version:'5.0.0',apiBase:'',experienceUrl,askUrl,localServices:true,publicMode:access.enabled,limits:access.limits,observationsAvailable:!!observationsUrl && (!observationsAlive || observationsAlive())});
       if(url.pathname==='/api/health')return json(res,200,{status:'ok',version:'5.0.0',publicMode:access.enabled,busy:admission.busy,observations:!!observationsUrl && (!observationsAlive || observationsAlive()),experience:!!experienceUrl});
       if(url.pathname==='/api/session'){
         if(req.method!=='GET')return json(res,405,{error:'Method not allowed.'});

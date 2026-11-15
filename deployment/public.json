@@ -1,4 +1,5 @@
 {
   "apiBase": "",
-  "experienceUrl": "https://spherex-experience-jp-feynman.j-p-feynman.chatgpt.site"
+  "experienceUrl": "https://spherex-experience-jp-feynman.j-p-feynman.chatgpt.site",
+  "askUrl": "https://trueblink.pages.dev/api/ask"
 }

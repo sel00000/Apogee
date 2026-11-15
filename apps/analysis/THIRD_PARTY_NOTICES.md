@@ -2,12 +2,15 @@
 
 ## TrueBlink (팀원 경보, `경보/trueblink`, Apache License 2.0)
 
-아래 파일은 TrueBlink에서 가져왔습니다. 첫 줄의 "AI-assisted code (Claude)" 고지와 원래 주석을 그대로 두었고, 바꾼 곳은 아래에 적었습니다. 전체 라이선스는 `경보/trueblink/LICENSE`에 있습니다.
+아래 파일은 TrueBlink에서 가져왔습니다. 2026-11-15 저녁(KST)에 지면 보기와 최신 `SkyGlobe.ts`를 다시 가져왔습니다. 첫 줄의 "AI-assisted code (Claude)" 고지와 원래 주석을 그대로 두었고, 바꾼 곳은 아래에 적었습니다. 전체 라이선스는 `경보/trueblink/LICENSE`에 있습니다.
 
 | 이 폴더 | 원본 | 바꾼 점 |
 |---|---|---|
-| `src/gl/SkyGlobe.ts` | `src/gl/SkyGlobe.ts` | 타입 경로(`./skyTypes`), 사용하지 않던 필드를 읽는 `element` 접근자 추가 |
-| `src/gl/globe/healpix.ts`, `tiles.ts`, `view.ts` | `src/gl/globe/*` | 없음 |
+| `src/gl/SkyGlobe.ts` | `src/gl/SkyGlobe.ts` | TrueBlink의 최신 파일입니다. 이 앱에서 더한 것: 별자리 선·이름 층(`setConstellations` 등), 타입 경로(`./skyTypes`), 사용하지 않던 필드를 읽는 `element` 접근자, `outline:none` |
+| `src/gl/globe/ground.ts`, `horizon.ts`, `view.ts` | `src/gl/globe/ground.ts`, `horizon.ts`, `view.ts` | 최신 파일, 바꾼 곳 없음 (지면 보기와 지평선 계산) |
+| `src/gl/globe/healpix.ts`, `tiles.ts` | `src/gl/globe/*` | 없음 |
+| `src/gl/globe/ground.test.ts` | `tests/ground.test.ts` | import 경로. 지면 메쉬 부분만 가져왔고, TrueBlink 앱 쪽의 기억 스위치·첫 방문 시점 시험은 쓰지 않았습니다 |
+| `src/gl/globe/horizon.test.ts`, `fixtures/horizon_golden.json` | `tests/horizon.test.ts`, `tests/fixtures/horizon_golden.json` | 시험은 import 경로만 다릅니다. 고정 자료는 같습니다 |
 | `src/gl/globe/healpix.test.ts`, `fixtures/golden_cube.json` | `tests/healpix.test.ts`, `tests/fixtures/golden_cube.json` | import 경로 |
 | `src/lib/catalogNet.ts` | `src/core/catalogs/net.ts` | 없음 |
 

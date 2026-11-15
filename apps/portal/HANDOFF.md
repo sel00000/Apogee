@@ -34,6 +34,30 @@
 - iframe 메시지는 실제 자식 창과 허용된 origin을 모두 검증합니다.
 - 기존 `#moving` 링크는 이동 천체 관측 화면으로 연결합니다.
 
+## 언어 파일
+
+사이트의 기본 언어는 영어이고, 상단 바의 `EN | 한`이 전체를 한국어로 바꿉니다. 포털 쪽 파일은 셋입니다.
+
+- `i18n.js`: 언어 엔진. `readStoredLang`, `t(key, vars)`(없는 키는 영어, 그다음 키 이름으로 대신), `applyI18n(root)`, `onLangChange(cb)`, `setLang`, `startI18n`을 내보냅니다. `setLang`은 `localStorage['spherex-lang']`에 쓰고, `<html lang>`을 바꾸고, `spherex-lang-change` 이벤트를 내보내고, 같은 출처의 하위 iframe 모두에 `{type:'spherex-lang', lang}`을 보냅니다. iframe이 불러와질 때마다 한 번 더 보냅니다. 탐험 화면(다른 출처)에는 보내지 않습니다.
+- `i18n/en.js`, `i18n/ko.js`: 문구표. 두 파일의 키는 같아야 하고, 한국어 값은 통합 전의 한국어 문구 그대로입니다. 영어는 영국식 철자와 문장형 대소문자를 씁니다(`docs/spec-i18n.md`의 D3·D4는 이 저장소 밖 설계 문서이므로, 같은 규칙을 이 파일의 기존 문구에서 따라 하십시오).
+
+문구를 더하는 법:
+
+1. `en.js`와 `ko.js`에 같은 키를 넣습니다. 키가 하나라도 빠지면 `tests/i18n.test.js`가 실패합니다.
+2. 고정된 HTML은 요소에 `data-i18n="키"`(글자), `data-i18n-html="키"`(태그가 든 문구), `data-i18n-attr="aria-label:키"`(속성)를 답니다. `index.html`의 첫 화면 글자는 영어 값과 같아야 하고, 이것도 시험이 확인합니다.
+3. 스크립트가 만드는 글은 `t('키')`를 쓰고, 화면에 남는 글은 `onLangChange`로 다시 그립니다. 오류에는 `error.i18nKey`를 달아 화면에서 번역합니다.
+4. 영어 화면에 한글이 남으면 안 됩니다. 한국어 고유 이름만 그 요소에 `lang="ko"`를 붙여 둡니다.
+
+하위 앱과 패키지는 각자 문구 파일을 갖고 같은 키 `spherex-lang`를 따릅니다(분석 앱 `src/lib/i18n.ts`의 `L(ko, en)`, 소행성 앱 `src/i18n.ts`, 플라네타리움 `src/i18n.js`, 튜토리얼 `packages/tutorial/i18n.js`, 검색 `packages/search/src/i18n.ts`). 계약의 전체는 `docs/architecture.md`의 "언어 계약"에 있습니다.
+
+## 천구 관찰과 보조 줄
+
+상단 메뉴의 `Sky View`(`천구 관찰`)는 `#analysis?view=sky`로 가서 분석 앱의 탐색(Find) 화면을 엽니다. 플라네타리움(`#planetarium`)은 같은 항목의 두 번째 보기라서 두 화면 모두에서 이 항목이 강조됩니다(`routing.js`의 `headerCurrent`). 홈의 `플라네타리움` 카드와 그 주소는 그대로입니다.
+
+- 분석 앱이 이미 떠 있으면 상단 항목을 눌러도 iframe을 새로 만들지 않습니다. 포털이 `{type:'spherex-analysis-stage', stage:'sky'|'workbench'}`를 보내고(`headerStage`), 분석 앱이 화면을 바꾼 뒤 `spherex-analysis-url`로 주소를 알려 오면 강조를 맞춥니다.
+- 플라네타리움 보기에서만 보조 줄 `#sky-navigation`(`SPHEREx 천구` · `플라네타리움`)이 보입니다. `SPHEREx 천구`는 플라네타리움의 `getState().center`(`{ra, dec, fov}`, 도)를 읽어 `#analysis?view=sky&sky=<ra>,<dec>,<fov>`로 갑니다(`skyReturnHash`). 값을 못 읽으면 `sky` 없이 갑니다. 이 줄이 보이는 동안 플라네타리움 영역의 높이를 `calc(100svh - 118px)`로 줄입니다.
+- 분석 앱 쪽에서 플라네타리움으로 가는 길은 `spherex-navigate`(`view:'planetarium'`, `params`)입니다.
+
 ## 홈 자산
 
 홈의 블랙홀 배경, 글라스 카드, 미션 이야기, 전천 비교와 출처 설명을 보존했습니다. 망원경 모형 소스는 `home-src/mission-model.js`, 배포 번들은 `assets/model/mission-model.js`입니다. 루트 설치 후 이 폴더에서 `node scripts/build-home-model.mjs`로 재생성할 수 있습니다. 스크립트는 이웃 `apps/analysis`의 Vite와 포털의 vendored Three.js를 사용합니다.

@@ -80,6 +80,15 @@ function selectedSearch(target,action){
  }
  return analyze(target);
 }
+// The search box's language-model fallback address comes from config.json (deployment/public.json askUrl).
+// Read once, when the search dialog is first opened; an empty or missing value keeps the fallback off.
+let searchConfig=null;
+function readSearchConfig(){
+ searchConfig ||= fetch(new URL('config.json',document.baseURI),{cache:'no-store'})
+  .then(response=>response.ok?response.json():{}).catch(()=>({}))
+  .then(config=>typeof config?.askUrl==='string'&&config.askUrl.trim()?{askUrl:config.askUrl.trim()}:{});
+ return searchConfig;
+}
 async function openSearch(){
  openDialog($('#search-dialog'));
  if(searchController){searchController.focus();return;}
@@ -87,10 +96,10 @@ async function openSearch(){
  host.replaceChildren();const prep=document.createElement('span');prep.dataset.i18n='search.preparing';prep.textContent=t('search.preparing');host.append(prep);
  try{
   searchLoading ||= import(new URL('search/search.js',document.baseURI).href);
-  const {mountSearch}=await searchLoading;
+  const [{mountSearch},askOption]=await Promise.all([searchLoading,readSearchConfig()]);
   if(!searchController){
    host.replaceChildren();
-   searchController=mountSearch(host,{onSelect:selectedSearch,indexUrl:new URL('search/sky-index.json',document.baseURI).href});
+   searchController=mountSearch(host,{onSelect:selectedSearch,indexUrl:new URL('search/sky-index.json',document.baseURI).href,...askOption});
   }
   await searchController.ready;
   if($('#search-dialog').open)searchController.focus();

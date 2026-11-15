@@ -4,6 +4,7 @@ import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { projectRoot } from './paths.mjs';
 import { findPython } from './python.mjs';
+import { publicAskUrl } from './public-config.mjs';
 import { createSiteServer, listenOnAvailablePort } from '../services/gateway/server.mjs';
 import { createAsteroidApi } from '../services/gateway/asteroid-api.mjs';
 import { createPublicAccess, createAdmission } from '../services/gateway/public-access.mjs';
@@ -31,6 +32,8 @@ export async function startSiteServer(args=process.argv.slice(2)) {
   const portAt=args.indexOf('--port'),port=Number(portAt<0?(process.env.PORT||4173):args[portAt+1]);
   if(!Number.isInteger(port)||port<0||port>65535)throw new Error('Use --port 0–65535.');
   const webRoot=join(projectRoot,'dist');await stat(join(webRoot,'index.html')).catch(()=>{throw new Error('Run npm run build first.');});
+  // Same search helper address as the built config.json (deployment/public.json, SPHEREX_ASK_URL overrides).
+  const askUrl=await publicAskUrl(projectRoot);
   const observations=await startObservations();
   if(observations.error)console.warn(observations.error);
   let experience=null,experienceUrl=process.env.SPHEREX_EXPERIENCE_URL||'';
@@ -47,7 +50,7 @@ export async function startSiteServer(args=process.argv.slice(2)) {
     }catch(error){console.warn(`Experience service: ${error.message}. The saved experience port was kept to preserve flight records; choose SPHEREX_EXPERIENCE_PORT if necessary.`);}
   }
   const asteroids=createAsteroidApi({projectRoot,access,admission});
-  const server=createSiteServer({webRoot,asteroids,observationsUrl:observations.url,observationError:observations.error,experienceUrl,
+  const server=createSiteServer({webRoot,asteroids,observationsUrl:observations.url,observationError:observations.error,experienceUrl,askUrl,
     access,admission,observationsAlive:observations.isAlive,stopObservations:observations.close});
   let actualPort;
   try { actualPort=await listenOnAvailablePort(server,{port,host:process.env.HOST||'127.0.0.1',automatic:portAt<0&&!process.env.PORT}); }
