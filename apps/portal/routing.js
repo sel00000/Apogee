@@ -29,8 +29,8 @@ export function parseRoute(hash = '') {
   const name = (split < 0 ? raw : raw.slice(0, split)) || 'home';
   const params = new URLSearchParams(split < 0 ? '' : raw.slice(split + 1));
   params.delete('embed');
-  if (name === 'moving') {
-    if (!params.has('tab')) params.set('tab', 'observations');
+  if (name === 'moving' || name === 'asteroids') {
+    params.set('tab', 'orbit');
     return { view: 'asteroids', params, anchor: null };
   }
   if (HOME_ANCHORS.has(name)) return { view: 'home', params: new URLSearchParams(), anchor: name };
@@ -125,6 +125,7 @@ export function childURL(view, params, base) {
   const url = new URL(`${view}/`, base);
   for (const [key, value] of params) if (key !== 'embed') url.searchParams.set(key, value);
   url.searchParams.set('embed', '1');
+  if (view === 'asteroids') { url.searchParams.set('tab', 'orbit'); url.searchParams.set('orbitOnly', '1'); }
   if (view === 'analysis' && !url.searchParams.has('target') && !url.searchParams.has('ra') && !url.searchParams.has('q')) url.searchParams.set('target', 'barnard');
   return url;
 }

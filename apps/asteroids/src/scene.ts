@@ -1,3 +1,7 @@
+import { spacecraftAttitude, craftCameraPose, CRAFT_SCALE, EARTH_RADIUS_AU } from "./spacecraft";
+import { BackgroundBelt } from "./background";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { LocalError, bindAttr, bindText, bodyName, t } from "./i18n";
 import * as T from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
@@ -72,6 +76,7 @@ const PLANET_ATMOSPHERE: Record<string, [number, number]> = {
 };
 /** Sun disc (AU), its on-screen minimum (px) and cap (AU), and its additive halo (radius in disc radii). */
 const SUN_RADIUS = 0.12;
+const SUN_PHYSICAL_RADIUS = 695700 / 149597870.7;
 const SUN_MIN_PX = 11;
 const SUN_MAX_RADIUS = 0.3;
 const SUN_GLOW_SCALE = 4.5;
@@ -133,6 +138,11 @@ export class SolarScene {
   private resizeObserver: ResizeObserver | null = null;
   private path: T.Line | null = null;
   private referencePath: T.Line | null = null;
+  private orbitalGuides: T.LineSegments[] = [];
+  private earthTrack = new T.Line(new T.BufferGeometry(), new T.LineBasicMaterial({
+    color: 0x6689a3, transparent: true, opacity: 0.65,
+  }));
+  private craftLabel = document.createElement("span");
   private observationPoints: T.Points | null = null;
   private marker: T.Mesh;
   private ray: T.Line;
@@ -147,6 +157,8 @@ export class SolarScene {
     fromFov: number;
     toFov: number;
     up: T.Vector3;
+    duration?: number;
+    done?: () => void;
   } | null = null;
   private freePose: {
     position: T.Vector3;
@@ -193,6 +205,14 @@ export class SolarScene {
   private playing = false;
   private hidden = false;
   private observer = false;
+  private craftView = false;
+  private craftFlight = false;
+  private observerZoom = 1;
+  private craftEpoch = 0;
+  private craftEnvironment: T.WebGLRenderTarget | null = null;
+  onObserverZoom: (zoom: number, fov: number) => void = () => {};
+  private belt = new BackgroundBelt();
+  onBelt: (count: number) => void = () => {};
   private following = false;
   private observation: Observation | undefined;
   private lastTarget: T.Vector3 | null = null;
@@ -371,8 +391,12 @@ export class SolarScene {
         opacity: kind === "planet" ? 0.65 : FAINT_ORBIT_OPACITY,
       });
       if (kind !== "planet") this.faintOrbitMaterials.push(material);
-      this.scene.add(new T.LineSegments(geometry, material));
+      const guide = new T.LineSegments(geometry, material);
+      this.orbitalGuides.push(guide);
+      this.scene.add(guide);
     }
+    this.earthTrack.visible = false;
+    this.scene.add(this.earthTrack);
     const rocks = bodies.filter((b) => b.kind === "asteroid");
     for (let k = 0; k < 4; k++) {
       const geo = new T.IcosahedronGeometry(1, k === 3 ? 0 : 1),
@@ -533,6 +557,7 @@ export class SolarScene {
       this.renderer.setSize(w, h);
       this.camera.aspect = w / h;
       if (this.observer && !this.tween) this.alignObserver(false);
+      if (this.craftView) this.placeCraft(true);
       this.camera.updateProjectionMatrix();
       this.request();
     });
@@ -555,9 +580,22 @@ export class SolarScene {
       element.append(label);
       this.labels.push({ body: b, el: label });
     }
+    this.craftLabel.className = "body-label";
+    this.craftLabel.textContent = "SPHEREx";
+    this.craftLabel.hidden = true;
+    element.append(this.craftLabel);
     const first=bodies.find(body=>body.kind === "asteroid");
     if(!first) throw new LocalError("sc.noAsteroid");
     this.setSelected(first.id);
+    this.renderer.domElement.addEventListener("wheel", e => {
+      if (!this.observer || this.tween) return;
+      e.preventDefault(); this.setObserverZoom(this.observerZoom * Math.exp(-Math.max(-150, Math.min(150, e.deltaY)) * .002));
+    }, { passive: false, signal: this.lifecycle.signal });
+    void this.belt.load(import.meta.env.BASE_URL, this.lifecycle.signal).then(points => {
+      if (this.disposed) { this.belt.dispose(); return; }
+      this.scene.add(points); this.belt.setAppear(1); this.onBelt(this.belt.count); this.dirty = true; this.request();
+    }).catch(() => { if (!this.disposed) this.onError(() => t("sc.beltFailed")); });
+    void this.loadCraft();
     this.warmup = this.renderer.compileAsync(this.scene, this.camera);
   }
   ready() {
@@ -782,10 +820,10 @@ export class SolarScene {
   // ---------- Textured planets ----------
   private planetPixels(mesh: T.Mesh) {
     const d = this.camera.position.distanceTo(mesh.position),
-      r: number = mesh.userData.radius;
+      r: number = mesh.userData.radius * mesh.scale.x;
     if (d <= r) return Infinity;
     return (
-      (Math.asin(Math.min(1, (r * mesh.scale.x) / d)) / ((this.camera.fov * Math.PI) / 360)) *
+      (Math.asin(Math.min(1, r / d)) / ((this.camera.fov * Math.PI) / 360)) *
       (this.element.clientHeight / 2)
     );
   }
@@ -868,6 +906,106 @@ export class SolarScene {
     const pole = new T.Vector3(...poleToEcliptic(...PLANET_POLES["699"]));
     mesh.quaternion.setFromUnitVectors(new T.Vector3(0, 1, 0), pole);
   }
+  refreshTrail() { this.trailTexture.needsUpdate = true; this.request(); }
+  /** SPHEREx (user's lite model). Illustrative size: the real observatory is 2.6 m. */
+  private craft: T.Object3D | null = null;
+  private craftLoading: Promise<void> | null = null;
+  private loadCraft() {
+    if (this.craftLoading) return this.craftLoading;
+    this.craftLoading = new GLTFLoader().loadAsync(`${import.meta.env.BASE_URL}model/spherex-lite.glb`).then((g) => {
+      if (this.disposed) {
+        g.scene.traverse(o => { const m = o as T.Mesh; m.geometry?.dispose(); if (m.material) for (const mat of (Array.isArray(m.material) ? m.material : [m.material])) mat.dispose(); });
+        return;
+      }
+      const pmrem = new T.PMREMGenerator(this.renderer), room = new RoomEnvironment();
+      this.craftEnvironment = pmrem.fromScene(room, 0.03);
+      const env = this.craftEnvironment.texture; room.dispose(); pmrem.dispose();
+      g.scene.traverse((o) => {
+        const m = (o as T.Mesh).material as T.MeshStandardMaterial | undefined;
+        if (m && "envMap" in m) { m.envMap = env; m.envMapIntensity = 0.9; }
+      });
+      const holder = new T.Group();
+      // normalise: pivot at the model's centre, largest dimension = 1 unit
+      const box = new T.Box3().setFromObject(g.scene), size = box.getSize(new T.Vector3()), c = box.getCenter(new T.Vector3());
+      const k = 1 / Math.max(size.x, size.y, size.z);
+      g.scene.position.copy(c).multiplyScalar(-k);
+      g.scene.scale.setScalar(k);
+      holder.add(g.scene);
+      holder.visible = false;
+      this.craft = holder;
+      this.scene.add(holder);
+    }).catch(() => { this.craftLoading = null; if (!this.disposed) this.onError(() => t("sc.craftFailed")); });
+    return this.craftLoading;
+  }
+  private flyThroughSpacecraft(pose: { position: T.Vector3; target: T.Vector3; up: T.Vector3; fov: number }) {
+    const o = this.observation, f = o?.image?.calibration;
+    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!o?.spacecraft || !f || !this.craft || reduce) { this.fly(pose); void this.loadCraft(); return; }
+    const P = new T.Vector3(...o.spacecraft), F = new T.Vector3(...f.forward).normalize(),
+      U = new T.Vector3(...f.up).normalize(), R = new T.Vector3(...f.right).normalize();
+    const D = EARTH_RADIUS_AU * 3, S = CRAFT_SCALE;
+    // telescope boresight (+Y of the model) points at the asteroid's direction in this exposure
+    this.craft.position.copy(P);
+    this.craft.quaternion.copy(this.craftAttitude(P, F));
+    this.craft.scale.setScalar(S);
+    this.craftFlight = true;
+    const epoch = ++this.craftEpoch;
+    const chase = {
+      position: P.clone().addScaledVector(F, -D).addScaledVector(U, D * 0.32).addScaledVector(R, D * 0.22),
+      target: P.clone().addScaledVector(F, D * 0.5),
+      up: U.clone(),
+      fov: 40,
+    };
+    this.fly(chase);
+    if (this.tween) {
+      this.tween.duration = 1600;
+      this.tween.done = () => {
+        if (!this.observer || this.disposed || epoch !== this.craftEpoch) { this.craftFlight = false; return; }
+        this.fly(pose);
+        if (this.tween) { this.tween.duration = 1500; this.tween.done = () => { this.craftFlight = false; this.request(); }; }
+        setTimeout(() => { if (epoch === this.craftEpoch) { this.craftFlight = false; this.request(); } }, 650);
+      };
+    }
+  }
+  /** Put the observatory at its real position for the current exposure, boresight (+Y) on the
+   *  asteroid's apparent direction, and either fly the camera next to it or keep the camera's
+   *  offset (when the exposure changes). Size is illustrative, like every body in this scene. */
+  /** SPHEREx attitude. Model axes (measured from the GLB): telescope boresight = +Y, solar-cell
+   *  normal = −Z (perpendicular to the boresight). The boresight is pointed at the target and the
+   *  craft is rolled about it so the array faces the Sun as squarely as that pointing allows —
+   *  how SPHEREx actually flies (it observes near 90° from the Sun with its array sun-facing). */
+  private craftAttitude(P: T.Vector3, F: T.Vector3) {
+    const result = spacecraftAttitude(P, F);
+    this.craftSunAngle = result.sunAngle;
+    return result.quaternion;
+  }
+  /** angle between the solar-array normal and the Sun direction (deg), for checks */
+  private craftSunAngle = NaN;
+  private placeCraft(fly: boolean) {
+    const o = this.observation, f = o?.image?.calibration;
+    if (!o?.spacecraft || !f || !this.craft) return;
+    const S = CRAFT_SCALE, P = new T.Vector3(...o.spacecraft);
+    const F = this.apparentPosition.clone().sub(P).normalize();
+    const old = this.craft.position.clone();
+    this.craft.position.copy(P);
+    this.craft.quaternion.copy(this.craftAttitude(P, F));
+    this.craft.scale.setScalar(S);
+    this.controls.minDistance = EARTH_RADIUS_AU * 1.6;
+    this.camera.near = EARTH_RADIUS_AU * .01;
+    this.camera.updateProjectionMatrix();
+    if (fly) {
+      const earth = new T.Vector3(...interpolate(this.byId.get("399")!.samples, utcToTdb(o.mjd)));
+      this.fly(craftCameraPose(P, earth, F, this.camera.aspect));
+    } else {
+      const d = P.clone().sub(old);
+      this.camera.position.add(d);
+      this.controls.target.add(d);
+      this.controls.update();
+    }
+    this.dirty = true;
+    this.request();
+  }
+
   setObservationTimes(times: number[]) {
     if (this.observationPoints) {
       this.scene.remove(this.observationPoints);
@@ -890,12 +1028,19 @@ export class SolarScene {
     this.scene.add(this.observationPoints);
     this.request();
   }
+  refreshObservationPhoto(photo: HTMLCanvasElement) {
+    this.photoTexture.image = photo;
+    this.photoTexture.needsUpdate = true;
+    this.dirty = true;
+    this.request();
+  }
   setObservation(
     o: Observation | undefined,
     photo?: HTMLCanvasElement,
     trail?: HTMLCanvasElement,
   ) {
     this.observation = o;
+    if (o) this.mjd = o.mjd;
     const f = o?.image?.calibration;
     if (!o?.spacecraft || !f) {
       this.projectionGroup.visible = false;
@@ -954,6 +1099,12 @@ export class SolarScene {
     this.photoPlane.visible = this.photoEnabled;
     this.photoBacking.visible = this.photoEnabled;
     if (this.observer) this.alignObserver(false);
+    if (this.craftView) {
+      const entering = !!this.tween;
+      this.tween = null;
+      this.controls.enabled = true;
+      this.placeCraft(entering);
+    }
     this.dirty = true;
     this.request();
   }
@@ -973,6 +1124,22 @@ export class SolarScene {
     this.photoMaterial.opacity = alpha;
     this.request();
   }
+  setObserverZoom(value: number) {
+    if (!Number.isFinite(value)) return;
+    this.observerZoom = Math.max(.5, Math.min(8, value));
+    const o = this.observation;
+    if (this.observer && o?.image?.calibration) {
+      const base = calibratedPose(o, o.image.calibration, this.observerRange, this.camera.aspect).fov;
+      const fov = 2 * Math.atan(Math.tan(base * Math.PI / 360) / this.observerZoom) * 180 / Math.PI;
+      // The fly-through's second stage captured its original FOV. A deliberate zoom
+      // completes that transition at the current exposure instead of restoring stale zoom.
+      if (this.tween && this.craftFlight) this.alignObserver(false);
+      else if (this.tween) this.tween.toFov = fov;
+      else { this.camera.fov = fov; this.camera.updateProjectionMatrix(); }
+      this.onObserverZoom(this.observerZoom, fov);
+    }
+    this.request();
+  }
   private alignObserver(animate: boolean) {
     const o = this.observation;
     if (!o?.image?.calibration) return;
@@ -982,9 +1149,12 @@ export class SolarScene {
       this.observerRange,
       this.camera.aspect,
     );
-    if (animate) this.fly(pose);
+    pose.fov = 2 * Math.atan(Math.tan(pose.fov * Math.PI / 360) / this.observerZoom) * 180 / Math.PI;
+    this.onObserverZoom(this.observerZoom, pose.fov);
+    if (animate) this.flyThroughSpacecraft(pose);
     else {
       this.tween = null;
+      this.craftFlight = false; ++this.craftEpoch;
       this.camera.position.copy(pose.position);
       this.camera.up.copy(pose.up);
       this.camera.lookAt(pose.target);
@@ -1023,6 +1193,8 @@ export class SolarScene {
   }
   setSelected(id: string) {
     this.chosen = id;
+    this.craftView = false; this.craftFlight = false; ++this.craftEpoch;
+    this.controls.minDistance = .01; this.camera.near = .001;
     this.observer = false;
     this.following = false;
     this.tween = null;
@@ -1088,6 +1260,7 @@ export class SolarScene {
   }
   dispose() {
     if(this.disposed)return;this.disposed=true;this.setActive(false);
+    ++this.craftEpoch; this.craftEnvironment?.dispose(); this.belt.dispose();
     this.lifecycle.abort();this.resizeObserver?.disconnect();this.controls.dispose();
     const geometries=new Set<T.BufferGeometry>(), materials=new Set<T.Material>();
     this.scene.traverse(object=>{
@@ -1098,26 +1271,31 @@ export class SolarScene {
     for(const geometry of geometries)geometry.dispose();
     for(const material of materials)material.dispose();
     this.photoTexture.dispose();this.trailTexture.dispose();for(const texture of this.textures)texture.dispose();this.renderer.dispose();
-    this.renderer.domElement.remove();for(const label of this.labels)label.el.remove();
+    this.renderer.domElement.remove();for(const label of this.labels)label.el.remove();this.craftLabel.remove();
   }
   quality(low: boolean) {
     this.low = low;
+    this.belt.setPixelRatio(low ? 1 : Math.min(devicePixelRatio, 2));
     this.renderer.setPixelRatio(low ? 1 : Math.min(devicePixelRatio, 1.5));
     if (!low && this.firstFrame) void this.loadSky();
     this.request();
   }
-  view(mode: "system" | "target" | "observer" | "free") {
-    if (mode === "observer" && !this.observation?.image?.calibration) {
+  view(mode: "system" | "target" | "observer" | "free" | "craft") {
+    if ((mode === "observer" || mode === "craft") && !(this.observation?.spacecraft && this.observation.image?.calibration)) {
       this.onError(() => t("sc.noWcs"));
       return;
     }
-    if (mode === "observer" && !this.observer)
+    if ((mode === "observer" || mode === "craft") && !this.observer && !this.craftView)
       this.freePose = {
         position: this.camera.position.clone(),
         target: this.controls.target.clone(),
         up: this.camera.up.clone(),
         fov: this.camera.fov,
       };
+    this.craftView = mode === "craft"; this.craftFlight = false;
+    const craftEpoch = ++this.craftEpoch;
+    this.tween = null; this.controls.enabled = true; this.controls.minDistance = .01;
+    this.camera.near = mode === "craft" || mode === "observer" ? EARTH_RADIUS_AU * .01 : .001; this.camera.updateProjectionMatrix();
     this.observer = mode === "observer";
     this.following = mode === "target";
     this.projectionGroup.visible = this.observer;
@@ -1125,6 +1303,10 @@ export class SolarScene {
     if (this.observer) {
       this.alignObserver(true);
       return;
+    }
+    if (this.craftView) {
+      void this.loadCraft().then(() => { if (this.craftView && !this.disposed && craftEpoch === this.craftEpoch) this.placeCraft(true); });
+      this.request(); return;
     }
     const target = new T.Vector3(
       ...interpolate(this.byId.get(this.chosen)!.samples, utcToTdb(this.mjd)),
@@ -1193,9 +1375,24 @@ export class SolarScene {
         });
         mesh.instanceMatrix.needsUpdate = true;
       }
+      this.belt.setTime(epoch);
       for (const mesh of this.planets) {
         interpolate(this.byId.get(mesh.userData.id)!.samples, epoch, this.p);
         mesh.position.set(...(this.p as [number, number, number]));
+      }
+      if (this.craftView) {
+        // A short, densely sampled segment of Earth's actual trajectory. Daily straight
+        // segments and the initial osculating ellipse are too coarse at spacecraft scale.
+        const samples = this.byId.get("399")!.samples;
+        const center = new T.Vector3(...interpolate(samples, epoch));
+        const points: T.Vector3[] = [];
+        for (let i = -20; i <= 20; i++) {
+          const time = Math.max(samples[0][0], Math.min(samples.at(-1)![0], epoch + i * .005));
+          points.push(new T.Vector3(...interpolate(samples, time)).sub(center));
+        }
+        this.earthTrack.geometry.setFromPoints(points);
+        this.earthTrack.geometry.computeBoundingSphere();
+        this.earthTrack.position.copy(center);
       }
       interpolate(this.byId.get(this.chosen)!.samples, epoch, this.p);
       this.marker.position.set(...(this.p as [number, number, number]));
@@ -1220,7 +1417,8 @@ export class SolarScene {
       this.lastTarget = this.marker.position.clone();
       const earth = this.planets.find((b) => b.userData.id === "399")!;
       const a = this.ray.geometry.getAttribute("position");
-      a.setXYZ(0, earth.position.x, earth.position.y, earth.position.z);
+      const origin = this.craftView && this.observation?.spacecraft ? new T.Vector3(...this.observation.spacecraft) : earth.position;
+      a.setXYZ(0, origin.x, origin.y, origin.z);
       a.setXYZ(1, ...(this.p as [number, number, number]));
       a.needsUpdate = true;
       this.ray.geometry.computeBoundingSphere();
@@ -1231,7 +1429,7 @@ export class SolarScene {
         this.tween.to.add(delta);
         this.tween.target.copy(this.marker.position);
       }
-      const u = Math.min(1, (t - this.tween.start) / 1100),
+      const u = Math.min(1, (t - this.tween.start) / (this.tween.duration ?? 1100)),
         ease = u * u * (3 - 2 * u);
       this.camera.position.lerpVectors(this.tween.from, this.tween.to, ease);
       this.controls.target.lerpVectors(
@@ -1254,11 +1452,20 @@ export class SolarScene {
       this.camera.updateProjectionMatrix();
       if (u === 1) {
         this.camera.up.copy(this.tween.up);
+        const done = this.tween.done;
         this.tween = null;
+        if (done) queueMicrotask(done);
         this.controls.enabled = !this.observer;
         if (!this.observer) this.controls.update();
       }
     }
+    if (this.craft) this.craft.visible = this.craftView || (this.craftFlight && this.observer);
+    for (const guide of this.orbitalGuides) guide.visible = !this.craftView;
+    if (this.path) this.path.visible = !this.craftView;
+    if (this.referencePath) this.referencePath.visible = !this.craftView;
+    if (this.observationPoints) this.observationPoints.visible = !this.observer && !this.craftView;
+    this.earthTrack.visible = this.craftView;
+    if (this.belt.points) this.belt.points.visible = !this.observer && !this.low;
     const flying = this.flightStep(dt);
     this.sky.position.copy(this.camera.position);
     // Illustrative sizes: each body at least its minimum on screen, true size close up and in SPHEREx view.
@@ -1269,6 +1476,7 @@ export class SolarScene {
       mesh.scale.setScalar(
         planetDrawRadius(base, PLANET_MIN_PX[mesh.userData.id] ?? 0, ppa, mesh.position.length(), this.observer) / base,
       );
+      if ((this.craftView || this.observer) && mesh.userData.id === "399") mesh.scale.setScalar(EARTH_RADIUS_AU / base);
       // Even illustrative light (sky.ts illustrativeLight): shader uniform once mapped, emissive floor of the flat fill before.
       const k = illustrativeWeight(mesh.scale.x),
         material = mesh.material as T.ShaderMaterial & T.MeshStandardMaterial;
@@ -1278,11 +1486,11 @@ export class SolarScene {
     }
     {
       const ppa = pixelsPerAu(this.camera.position.length(), this.camera.fov, viewHeight),
-        r = this.observer ? SUN_RADIUS : drawRadius(SUN_RADIUS, SUN_MIN_PX, ppa, SUN_MAX_RADIUS);
+        r = this.craftView ? SUN_PHYSICAL_RADIUS : this.observer ? SUN_RADIUS : drawRadius(SUN_RADIUS, SUN_MIN_PX, ppa, SUN_MAX_RADIUS);
       this.sun.scale.setScalar(r / SUN_RADIUS);
       this.sunGlow.scale.setScalar(2 * SUN_GLOW_SCALE * r);
       // No glow in Low power, nor in SPHEREx view where nothing may brighten the photograph plane.
-      this.sunGlow.visible = !this.low && !this.observer;
+      this.sunGlow.visible = !this.low && !this.observer && !this.craftView;
     }
     for (const mesh of this.planets)
       if (
@@ -1304,7 +1512,7 @@ export class SolarScene {
       const v = (
         this.observer && body.id === this.chosen
           ? this.apparentPosition.clone()
-          : new T.Vector3(...p)
+          : this.craftView && body.id === "399" ? this.planets.find(m => m.userData.id === "399")!.position.clone() : new T.Vector3(...p)
       ).project(this.camera);
       el.hidden = v.z < -1 || v.z > 1 || Math.abs(v.x) > 1 || Math.abs(v.y) > 1;
       if (!el.hidden) {
@@ -1325,10 +1533,18 @@ export class SolarScene {
           const dx = Math.max(left - sx, 0, sx - left - w),
             dy = Math.max(y - 8 - sy, 0, sy - (y - 8 + h));
           if (s.z < 1 && dx * dx + dy * dy < sr * sr) left = x - r - 6 - w;
+          if (this.craftView && body.id === "399") left = x - r - 6 - w;
         }
         el.style.left = left + "px";
         el.style.top = ((-v.y + 1) * labelHeight) / 2 - 8 + "px";
       }
+    }
+    this.craftLabel.hidden = true;
+    if (this.craftView && this.craft) {
+      const v = this.craft.position.clone().project(this.camera);
+      this.craftLabel.hidden = v.z < -1 || v.z > 1 || Math.abs(v.x) > 1 || Math.abs(v.y) > 1;
+      this.craftLabel.style.left = ((v.x + 1) * labelWidth / 2 + 12) + "px";
+      this.craftLabel.style.top = ((1 - v.y) * labelHeight / 2 - 8) + "px";
     }
     this.renderer.render(this.scene, this.camera);
     this.drawSamples.push(performance.now() - begin);
@@ -1434,6 +1650,19 @@ export class SolarScene {
         .project(this.camera)
         .toArray(),
       observer: this.observer,
+      craftView: this.craftView,
+      craftVisible: this.craft?.visible ?? false,
+      craftSunAngle: this.craftSunAngle,
+      craftPosition: this.craft?.position.toArray(),
+      spacecraftPhysical: this.observation?.spacecraft,
+      earthPhysical: this.byId.has("399") ? interpolate(this.byId.get("399")!.samples, utcToTdb(this.mjd)) : null,
+      craftScreen: this.craft?.position.clone().project(this.camera).toArray(),
+      earthScreen: this.planets.find(m => m.userData.id === "399")?.position.clone().project(this.camera).toArray(),
+      earthRadiusAU: (this.planets.find(m => m.userData.id === "399")?.scale.x ?? 1) * .027,
+      earthPosition: this.planets.find(m => m.userData.id === "399")?.position.toArray(),
+      observerZoom: this.observerZoom,
+      backgroundCount: this.belt.count,
+      backgroundVisible: this.belt.points?.visible ?? false,
       flying: !!this.tween,
       photoVisible: this.projectionGroup.visible && this.photoPlane.visible,
       photoOpacity: this.photoMaterial.opacity,

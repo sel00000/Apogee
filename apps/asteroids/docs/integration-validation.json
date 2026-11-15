@@ -1,0 +1,335 @@
+{
+  "dateKST": "2026-11-15",
+  "sourceCommit": "4a47ed19c42ded84cb6f2633e4d81b94279331cc",
+  "teamBaseCommit": "93998d85b40faac16896eafcfb692c8173f2074c",
+  "webTests": {
+    "passed": 706,
+    "failed": 0,
+    "node": 370,
+    "vitest": 336,
+    "command": "TMPDIR=/private/tmp npm run test:web"
+  },
+  "build": "full site build and final asteroid TypeScript/Vite build passed",
+  "browser": {
+    "targets": [
+      {
+        "id": "10",
+        "frames": 2,
+        "earthError": 0,
+        "craftError": 0,
+        "visible": true,
+        "sunAngle": 6.74491176505651,
+        "observation": "2025W38_2C_0242_2-D1",
+        "lastObservation": "2026W11_2A_0576_1-D2"
+      },
+      {
+        "id": "16",
+        "frames": 3,
+        "earthError": 0,
+        "craftError": 0,
+        "visible": true,
+        "sunAngle": 2.3281415283911744,
+        "observation": "2025W36_2B_0462_1-D5",
+        "lastObservation": "2025W36_2B_0462_3-D5"
+      },
+      {
+        "id": "2045",
+        "frames": 3,
+        "earthError": 0,
+        "craftError": 0,
+        "visible": true,
+        "sunAngle": 23.61246500445994,
+        "observation": "2025W21_1B_0606_4-D1",
+        "lastObservation": "2025W21_1B_0618_2-D1"
+      },
+      {
+        "id": "216",
+        "frames": 5,
+        "earthError": 0,
+        "craftError": 0,
+        "visible": true,
+        "sunAngle": 22.966556187411193,
+        "observation": "2025W25_2A_0379_1-D2",
+        "lastObservation": "2025W25_2A_0392_4-D2"
+      },
+      {
+        "id": "221",
+        "frames": 3,
+        "earthError": 0,
+        "craftError": 0,
+        "visible": true,
+        "sunAngle": 6.767254929726656,
+        "observation": "2026W30_2A_0166_1-D1",
+        "lastObservation": "2026W30_2A_0166_3-D1"
+      },
+      {
+        "id": "236",
+        "frames": 4,
+        "earthError": 0,
+        "craftError": 0,
+        "visible": true,
+        "sunAngle": 3.14281581241306,
+        "observation": "2026W24_2B_0153_1-D6",
+        "lastObservation": "2026W24_2B_0153_4-D6"
+      },
+      {
+        "id": "246",
+        "frames": 4,
+        "earthError": 0,
+        "craftError": 0,
+        "visible": true,
+        "sunAngle": 4.224882606190095,
+        "observation": "2025W42_2A_0183_1-D4",
+        "lastObservation": "2025W42_2A_0183_4-D4"
+      },
+      {
+        "id": "2566",
+        "frames": 3,
+        "earthError": 0,
+        "craftError": 0,
+        "visible": true,
+        "sunAngle": 7.935778745036916,
+        "observation": "2026W18_2A_0754_2-D1",
+        "lastObservation": "2026W18_2A_0776_1-D1"
+      },
+      {
+        "id": "2851",
+        "frames": 4,
+        "earthError": 0,
+        "craftError": 0,
+        "visible": true,
+        "sunAngle": 5.744900669832555,
+        "observation": "2025W35_1A_0628_1-D1",
+        "lastObservation": "2025W35_1A_0628_4-D1"
+      },
+      {
+        "id": "308",
+        "frames": 4,
+        "earthError": 0,
+        "craftError": 0,
+        "visible": true,
+        "sunAngle": 1.2021315869261515,
+        "observation": "2026W02_1A_0067_1-D1",
+        "lastObservation": "2026W02_1A_0067_4-D1"
+      },
+      {
+        "id": "35107",
+        "frames": 2,
+        "earthError": 0,
+        "craftError": 0,
+        "visible": true,
+        "sunAngle": 9.738299469927993,
+        "observation": "2026W14_1A_0199_1-D2",
+        "lastObservation": "2026W14_1A_0199_2-D2"
+      },
+      {
+        "id": "387",
+        "frames": 4,
+        "earthError": 0,
+        "craftError": 0,
+        "visible": true,
+        "sunAngle": 1.7950259410212224,
+        "observation": "2025W52_2A_0657_1-D5",
+        "lastObservation": "2025W52_2A_0657_4-D5"
+      },
+      {
+        "id": "433",
+        "frames": 6,
+        "earthError": 0,
+        "craftError": 0,
+        "visible": true,
+        "sunAngle": 0.19084849527861628,
+        "observation": "2025W28_1B_0525_2-D5",
+        "lastObservation": "2025W28_1B_0537_4-D5"
+      },
+      {
+        "id": "579",
+        "frames": 6,
+        "earthError": 0,
+        "craftError": 0,
+        "visible": true,
+        "sunAngle": 1.1994984892863616,
+        "observation": "2025W32_1A_0431_1-D3",
+        "lastObservation": "2025W32_1A_0443_2-D3"
+      },
+      {
+        "id": "596",
+        "frames": 5,
+        "earthError": 0,
+        "craftError": 0,
+        "visible": true,
+        "sunAngle": 0.9642249801175674,
+        "observation": "2025W45_2A_0670_1-D3",
+        "lastObservation": "2025W45_2A_0684_4-D3"
+      },
+      {
+        "id": "624",
+        "frames": 6,
+        "earthError": 0,
+        "craftError": 0,
+        "visible": true,
+        "sunAngle": 3.7846340093903588,
+        "observation": "2026W26_1A_0597_1-D2",
+        "lastObservation": "2026W26_1A_0612_1-D2"
+      },
+      {
+        "id": "64",
+        "frames": 6,
+        "earthError": 0,
+        "craftError": 0,
+        "visible": true,
+        "sunAngle": 0.20069573744825722,
+        "observation": "2026W33_2A_0504_1-D5",
+        "lastObservation": "2026W33_2A_0516_3-D5"
+      },
+      {
+        "id": "653",
+        "frames": 5,
+        "earthError": 0,
+        "craftError": 0,
+        "visible": true,
+        "sunAngle": 27.153254417933177,
+        "observation": "2025W28_1B_0484_4-D5",
+        "lastObservation": "2025W28_1B_0495_4-D5"
+      },
+      {
+        "id": "69",
+        "frames": 5,
+        "earthError": 0,
+        "craftError": 0,
+        "visible": true,
+        "sunAngle": 27.79413688118638,
+        "observation": "2026W24_1A_0241_1-D5",
+        "lastObservation": "2026W24_1A_0257_3-D5"
+      },
+      {
+        "id": "729",
+        "frames": 4,
+        "earthError": 0,
+        "craftError": 0,
+        "visible": true,
+        "sunAngle": 2.954277363623295,
+        "observation": "2026W10_2B_0420_1-D1",
+        "lastObservation": "2026W10_2B_0420_4-D1"
+      },
+      {
+        "id": "92",
+        "frames": 4,
+        "earthError": 0,
+        "craftError": 0,
+        "visible": true,
+        "sunAngle": 0.26584633691592113,
+        "observation": "2025W23_2B_0007_1-D6",
+        "lastObservation": "2025W23_2B_0021_3-D6"
+      },
+      {
+        "id": "96",
+        "frames": 4,
+        "earthError": 0,
+        "craftError": 0,
+        "visible": true,
+        "sunAngle": 3.4449535228835044,
+        "observation": "2026W33_1A_0430_1-D5",
+        "lastObservation": "2026W33_1A_0430_4-D5"
+      },
+      {
+        "id": "764",
+        "frames": 6,
+        "earthError": 0,
+        "craftError": 0,
+        "visible": true,
+        "sunAngle": 3.7031441342306244,
+        "observation": "2026W20_2A_0272_2-D3",
+        "lastObservation": "2026W20_2A_0282_3-D3"
+      },
+      {
+        "id": "913",
+        "noPhoto": true
+      }
+    ],
+    "errors": [],
+    "failedRequests": [],
+    "languageState": {
+      "selected": "433",
+      "craft": true
+    },
+    "route": "http://127.0.0.1:4187/?verify=integration2#asteroids?target=433&tab=orbit",
+    "iframe": "http://127.0.0.1:4187/asteroids/?tab=orbit&target=433&embed=1&orbitOnly=1"
+  },
+  "responsive": {
+    "checks": [
+      {
+        "width": 1100,
+        "overflow": 0,
+        "craft": [
+          0.44624686362847044,
+          -6.439076397249123e-13,
+          0.9962074377912404
+        ],
+        "earth": [
+          -0.17354044696625703,
+          -1.287815279449188e-12,
+          0.9962074377912423
+        ],
+        "scene": {
+          "width": 630,
+          "height": 716
+        },
+        "toolsDoNotOverlap": true
+      },
+      {
+        "width": 390,
+        "overflow": -15,
+        "craft": [
+          0.4580164098142372,
+          9.388839720284712e-13,
+          0.9972350264944512
+        ],
+        "earth": [
+          -0.17811749270576618,
+          4.694419860142356e-13,
+          0.9972350264944512
+        ],
+        "scene": {
+          "width": 375,
+          "height": 600
+        },
+        "toolsDoNotOverlap": true
+      }
+    ],
+    "wasdMoved": true
+  },
+  "finalBrowser": {
+    "backgroundCount": 40000,
+    "beltLabel": "주변 천체 40,000개 · NASA/JPL SBDB 실제 궤도 원소 · 2체 근사. 선택 가능한 분석 대상은 위 목록입니다.",
+    "timePlaybackMovesEarth": true,
+    "normalMotionFlyThrough": true,
+    "alignmentErrorPx": 0.001919183924092414,
+    "errors": []
+  },
+  "remoteApiFixture": {
+    "checks": [
+      "prepared results survive an unavailable remote server",
+      "server retry enables new analysis without a page reload",
+      "relative result URL uses the external API deployment prefix",
+      "CSV artifacts point to the same trusted job directory",
+      "public scientific CSV is readable cross-origin without a session header",
+      "all result plots decode from the API origin",
+      "job mutation and status use the owner session",
+      "the browser performed authenticated CORS preflight",
+      "generated scene JSON and observation PNG load from the API origin",
+      "scene deep links and owner sessions survive iframe reload",
+      "public artifacts do not receive the session token",
+      "no browser runtime errors"
+    ],
+    "errors": [],
+    "fixtures": true,
+    "sessionCalls": 1,
+    "browser": "157.0.8103.51",
+    "generatedAt": "2026-11-15T14:38:18.123Z"
+  },
+  "limitations": [
+    "New live archive/Python analysis was not executed; backend routing was tested with a two-origin fixture.",
+    "913 Otila has no prepared image; spacecraft view is disabled for that target."
+  ]
+}

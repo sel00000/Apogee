@@ -7,6 +7,7 @@ import { trailDescription } from "./trails";
 import { LocalError, applyI18n, bindAttr, bindHtml, bindText, statusPhrase, t } from "./i18n";
 const tr = t;
 import type {
+  Correction,
   Body,
   Observation,
   Manifest,
@@ -24,7 +25,7 @@ async function json<T>(p: string): Promise<T> {
   return r.json();
 }
 
-  const [manifest, bodies, observations, sequences, sightlines, trails] =
+  const [manifest, bodies, observations, sequences, sightlines, trails, corrections] =
     await Promise.all([
       json<Manifest>("manifest.json"),
       json<Body[]>("bodies.json"),
@@ -32,10 +33,15 @@ async function json<T>(p: string): Promise<T> {
       json<Sequence[]>("comparisons.json"),
       json<Record<string, Sightline>>("sightlines.json"),
       json<Record<string, ImageTrail>>("trails.json"),
+      // Prepared corrections belong to the bundled images, not arbitrary analysis jobs.
+      options.dataBase === new URL("./data/", location.href).href
+        ? json<Record<string, Correction>>("corrections.json").catch(error => { if (lifecycle.signal.aborted) throw error; return {} as Record<string, Correction>; })
+        : Promise.resolve({} as Record<string, Correction>),
     ]);
   lifecycle.signal.throwIfAborted();
   for (const o of [...observations, ...sequences.flatMap((s) => s.frames)])
     if (o.image) {
+      o.image.correction = corrections[o.image.path];
       o.image.calibration = sightlines[o.image.path];
       o.image.trail = trails[o.image.path];
     }
@@ -59,10 +65,11 @@ async function json<T>(p: string): Promise<T> {
   } catch {
     /* storage unavailable: default on */
   }
-  app.innerHTML = ` <main><aside class="catalog"><div class="eyebrow">SOLAR SYSTEM EXPLORER</div><h1 data-i18n-html="o.title"></h1><p class="intro" data-i18n-html="o.intro"></p><label class="search"><span>⌕</span><input id="search" data-i18n-ph="o.search" data-i18n-aria="o.search"></label><div class="list-head"><bdi data-i18n="o.listHead"></bdi> <span>${asteroids.length} OBJECTS</span></div><div id="objects" role="list"></div><div class="catalog-foot" data-i18n-html="o.foot"></div></aside>
- <section class="universe"><div id="scene"></div><div class="sky-scrim" aria-hidden="true"></div><div id="observer-tools" hidden><div class="photo-controls"><label><input id="photo-visible" type="checkbox" checked> <bdi data-i18n="o.photoOn"></bdi></label><label><bdi data-i18n="o.photoOpacity"></bdi> <input id="photo-opacity" type="range" data-i18n-aria="o.photoOpacityAria" min="0" max="1" step=".05" value=".65"></label><button data-view="free" data-i18n="o.freeView"></button></div><span id="sky-label"></span></div><div class="scene-top"><div><div class="eyebrow">HELIOCENTRIC / AU</div><h2 id="target-name"></h2><span id="target-sub" data-i18n="o.targetSubDefault"></span></div><div class="view-switch"><button data-view="system" class="active" data-i18n="o.viewSystem"></button><button data-view="target" data-i18n="o.viewTarget"></button><button data-view="observer" data-i18n="o.viewObserver"></button></div></div><div class="scene-foot"><div class="compass"><span>Z ↑</span><span data-i18n="o.ecliptic"></span></div><div class="scene-bottom"><span id="scene-caption"></span><span class="scene-toggles"><label><input id="sky" type="checkbox"${skyOn ? " checked" : ""}> <bdi data-i18n="o.sky"></bdi></label><label><input id="low" type="checkbox"> <bdi data-i18n="o.low"></bdi></label></span></div><div class="scale-note"><bdi data-i18n="o.scale"></bdi><span id="sky-credit" hidden data-i18n="o.skyCredit"></span></div></div></section>
- <aside class="compare"><div class="eyebrow">THROUGH SPHEREX</div><div class="panel-title"><h2 data-i18n="o.momentTitle"></h2><span class="badge">REAL IMAGE</span></div><p class="panel-desc" data-i18n="o.momentDesc"></p><div class="image-wrap"><canvas id="image" data-i18n-aria="o.imageAria"></canvas><span class="image-corner">SPHEREx / IRSA</span></div><p id="image-status" role="status"></p><label class="trail-toggle"><input id="show-trail" type="checkbox" checked> <bdi data-i18n="o.showTrail"></bdi></label><div class="trail-legend"><span data-i18n="o.legendPrev"></span><span data-i18n="o.legendNow"></span><span data-i18n="o.legendNext"></span></div><p id="trail-note"></p><div class="compare-modes"><button data-composite="photo" data-i18n="o.compPhoto"></button><button data-composite="model" data-i18n="o.compModel"></button><button data-composite="blend" class="active" data-i18n="o.compBlend"></button></div><div class="overlay-control"><label for="overlay" data-i18n="o.overlay"></label><input id="overlay" type="range" min="0" max="1" step=".05" value=".65"></div><div class="legend"><span class="prediction" data-i18n="o.legendModel"></span></div><button id="sequence-play"></button><p id="sequence-note"></p><div id="obs-detail"></div><details class="availability"><summary data-i18n="o.availability"></summary><div id="availability"></div></details><label class="obs-label" for="observation" data-i18n="o.pickExposure"></label><select id="observation"></select><div class="step-buttons"><button id="prev" data-i18n="o.prev"></button><button id="next" data-i18n="o.next"></button></div><a id="source" target="_blank" rel="noopener noreferrer" data-i18n="o.source"></a><p class="science-note"></p></aside></main>
+  app.innerHTML = ` <main><aside class="catalog"><div class="eyebrow">SOLAR SYSTEM EXPLORER</div><h1 data-i18n-html="o.title"></h1><p class="intro" data-i18n-html="o.intro"></p><label class="search"><span>⌕</span><input id="search" data-i18n-ph="o.search" data-i18n-aria="o.search"></label><div class="list-head"><bdi data-i18n="o.listHead"></bdi> <span>${asteroids.length} OBJECTS</span></div><div id="objects" role="list"></div><div id="belt-summary" class="catalog-foot" hidden></div><div class="catalog-foot" data-i18n-html="o.foot"></div></aside>
+ <section class="universe"><div id="scene"></div><div class="sky-scrim" aria-hidden="true"></div><div id="observer-tools" hidden><div class="photo-controls"><label><input id="photo-visible" type="checkbox" checked> <bdi data-i18n="o.photoOn"></bdi></label><label><bdi data-i18n="o.photoOpacity"></bdi> <input id="photo-opacity" type="range" data-i18n-aria="o.photoOpacityAria" min="0" max="1" step=".05" value=".65"></label><label><bdi data-i18n="o.zoom"></bdi> <input id="observer-zoom" type="range" min=".5" max="8" step=".05" value="1" data-i18n-aria="o.zoom"></label><span id="observer-fov"></span><button id="observer-zoom-reset" data-i18n="o.zoomReset"></button><button data-view="free" data-i18n="o.freeView"></button></div><span id="sky-label"></span></div><div class="scene-top"><div><div class="eyebrow">HELIOCENTRIC / AU</div><h2 id="target-name"></h2><span id="target-sub" data-i18n="o.targetSubDefault"></span></div><div class="view-switch"><button data-view="system" class="active" data-i18n="o.viewSystem"></button><button data-view="target" data-i18n="o.viewTarget"></button><button data-view="craft" data-i18n="o.viewCraft"></button><button data-view="observer" data-i18n="o.viewObserver"></button></div></div><div class="scene-foot"><div class="compass"><span>Z ↑</span><span data-i18n="o.ecliptic"></span></div><div class="scene-bottom"><span id="scene-caption"></span><span class="scene-toggles"><label><input id="sky" type="checkbox"${skyOn ? " checked" : ""}> <bdi data-i18n="o.sky"></bdi></label><label><input id="low" type="checkbox"> <bdi data-i18n="o.low"></bdi></label></span></div><div class="scale-note"><bdi data-i18n="o.scale"></bdi><span id="sky-credit" hidden data-i18n="o.skyCredit"></span></div></div></section>
+ <aside class="compare"><div class="eyebrow">THROUGH SPHEREX</div><div class="panel-title"><h2 data-i18n="o.momentTitle"></h2><span class="badge">REAL IMAGE</span></div><p class="panel-desc" data-i18n="o.momentDesc"></p><div class="image-wrap"><canvas id="image" data-i18n-aria="o.imageAria"></canvas><span class="image-corner">SPHEREx / IRSA</span></div><p id="image-status" role="status"></p><div class="compare-modes processing"><button data-processing="original" data-i18n="o.original"></button><button data-processing="corrected" class="active" data-i18n="o.corrected"></button></div><p id="correction-note" class="science-note"></p><label class="trail-toggle"><input id="show-trail" type="checkbox" checked> <bdi data-i18n="o.showTrail"></bdi></label><div class="trail-legend"><span data-i18n="o.legendPrev"></span><span data-i18n="o.legendNow"></span><span data-i18n="o.legendNext"></span></div><p id="trail-note"></p><div class="compare-modes"><button data-composite="photo" data-i18n="o.compPhoto"></button><button data-composite="model" data-i18n="o.compModel"></button><button data-composite="blend" class="active" data-i18n="o.compBlend"></button></div><div class="overlay-control"><label for="overlay" data-i18n="o.overlay"></label><input id="overlay" type="range" min="0" max="1" step=".05" value=".65"></div><div class="legend"><span class="prediction" data-i18n="o.legendModel"></span></div><button id="sequence-play"></button><label class="sequence-speed"><bdi data-i18n="o.sequenceSpeed"></bdi> <select id="sequence-speed" data-i18n-aria="o.sequenceSpeed"><option value="750">1×</option><option value="375">2×</option><option value="250">3×</option><option value="150">5×</option></select></label><p id="sequence-note"></p><div id="obs-detail"></div><details class="availability"><summary data-i18n="o.availability"></summary><div id="availability"></div></details><label class="obs-label" for="observation" data-i18n="o.pickExposure"></label><select id="observation"></select><div class="step-buttons"><button id="prev" data-i18n="o.prev"></button><button id="next" data-i18n="o.next"></button></div><a id="source" target="_blank" rel="noopener noreferrer" data-i18n="o.source"></a><p class="science-note"></p></aside></main>
  <footer><div class="transport"><button id="play">▶</button><div><span class="eyebrow">SIMULATION TIME · UTC</span><strong id="clock"></strong></div><select id="speed" data-i18n-aria="o.speed"><option value="1" data-i18n="o.speed1"></option><option value="10" selected data-i18n="o.speed10"></option><option value="30" data-i18n="o.speed30"></option></select></div><div class="timeline"><div class="timeline-labels"><span id="range-start">${date(manifest.start).slice(0, 10)}</span><span id="time-note"></span><span id="range-end">${date(manifest.end).slice(0, 10)}</span></div><input id="time" type="range" min="${manifest.start}" max="${manifest.end}" step=".000001"><div id="ticks"></div></div></footer><div id="toast" role="status" hidden></div>`;
+  app.querySelector(".scene-foot")!.prepend(app.querySelector("#observer-tools")!);
   applyI18n(app);
   const el = <T extends HTMLElement>(s: string) =>
     app.querySelector<T>(s)!;
@@ -73,6 +80,10 @@ async function json<T>(p: string): Promise<T> {
   bindAttr(el("#time"), "aria-label", () => t("o.timeAria"));
   const scene = new SolarScene(el("#scene"), bodies),
     viewer = new ObservationViewer(el("#image"), el("#image-status"), options.dataBase);
+  scene.onBelt = count => {
+    el("#belt-summary").hidden = false;
+    bindText(el("#belt-summary"), () => t("o.backgroundBelt", {n: count.toLocaleString()}));
+  };
   const clock = el("#clock"),
     slider = el<HTMLInputElement>("#time"),
     select = el<HTMLSelectElement>("#observation");
@@ -81,6 +92,7 @@ async function json<T>(p: string): Promise<T> {
   const ready = () =>
     sequence()?.frames ??
     observations.filter((o) => o.objectId === selected && o.image);
+  let sequenceDelay = 750;
   let sequencePlaying = false,
     sequenceTimer = 0,
     sequenceGeneration = 0,
@@ -102,7 +114,7 @@ async function json<T>(p: string): Promise<T> {
           ready().findIndex((o) => o.id === observation?.id),
         ),
       );
-      if (mode === "observer") slider.value = select.value;
+      if (mode === "observer" || mode === "craft") slider.value = select.value;
     }
     sequencePlaying = false;
     ++sequenceGeneration;
@@ -127,11 +139,11 @@ async function json<T>(p: string): Promise<T> {
       if (generation !== sequenceGeneration || document.hidden) return;
       await showObservation((Number(select.value) + 1) % ready().length);
       if (generation === sequenceGeneration)
-        sequenceTimer = window.setTimeout(advance, 750);
+        sequenceTimer = window.setTimeout(advance, sequenceDelay);
     };
     sequenceTimer = window.setTimeout(
       advance,
-      entering || scene.metrics().flying ? 1300 : 750,
+      entering || scene.metrics().flying ? 3400 : sequenceDelay,
     );
   }
   document.addEventListener("visibilitychange", () => {
@@ -151,7 +163,7 @@ async function json<T>(p: string): Promise<T> {
   function setTime(t: number) {
     mjd = Math.max(manifest.start, Math.min(manifest.end, t));
     scene.setTime(mjd);
-    slider.value = mode === "observer" ? select.value : String(mjd);
+    slider.value = mode === "observer" || mode === "craft" ? select.value : String(mjd);
     if (performance.now() - lastClock > 100 || !playing) {
       clock.textContent = date(mjd);
       lastClock = performance.now();
@@ -167,7 +179,7 @@ async function json<T>(p: string): Promise<T> {
   }
   function setView(v: string) {
     if (
-      v === "observer" &&
+      (v === "observer" || v === "craft") &&
       !(observation?.spacecraft && observation.image?.calibration)
     ) {
       const toast = el("#toast");
@@ -179,7 +191,7 @@ async function json<T>(p: string): Promise<T> {
     if (v !== "observer") stopSequence();
     mode = v;
     const items = ready(),
-      isSky = v === "observer";
+      isSky = v === "observer" || v === "craft";
     slider.min = String(isSky ? 0 : manifest.start);
     slider.max = String(isSky ? Math.max(0, items.length - 1) : manifest.end);
     slider.step = isSky ? "1" : ".000001";
@@ -195,17 +207,17 @@ async function json<T>(p: string): Promise<T> {
     slider.value = isSky ? select.value : String(mjd);
     el(".universe").classList.toggle("observing", v === "observer");
     el("#observer-tools").hidden = v !== "observer";
-    document
+    app
       .querySelectorAll("[data-view]")
       .forEach((b) =>
         b.classList.toggle("active", b.getAttribute("data-view") === v),
       );
-    if (v === "observer" && observation) {
+    if ((v === "observer" || v === "craft") && observation) {
       setPlaying(false);
       setTime(observation.mjd);
     }
-    scene.view(v as "system" | "target" | "observer" | "free");
-    bindText(el("#scene-caption"), v === "observer" ? () => t("o.captionObserver") : freeCaption);
+    scene.view(v as "system" | "target" | "observer" | "free" | "craft");
+    bindText(el("#scene-caption"), v === "observer" ? () => t("o.captionObserver") : v === "craft" ? () => t("o.captionCraft") : freeCaption);
   }
   async function showObservation(index: number) {
     const generation = ++observationGeneration,
@@ -234,6 +246,11 @@ async function json<T>(p: string): Promise<T> {
     if (generation !== observationGeneration) return;
     observation = nextObservation;
     scene.setObservation(observation, viewer.photoCanvas, viewer.trailCanvas);
+    const correction = observation.image?.correction;
+    el<HTMLButtonElement>('[data-processing="corrected"]').disabled = !correction;
+    bindText(el("#correction-note"), () => correction
+      ? t("o.correctionNote", { status: t(correction.status === "accepted" ? "o.correctionAccepted" : "o.correctionMasked"), gain: correction.gain.toFixed(3), masked: correction.maskedPercent.toFixed(1) })
+      : t("o.correctionNone"));
     const trail = observation.image?.trail;
     bindText(el("#trail-note"), () => trailDescription(trail));
     select.disabled = false;
@@ -241,6 +258,7 @@ async function json<T>(p: string): Promise<T> {
     el<HTMLButtonElement>("[data-view=observer]").disabled = !(
       observation.spacecraft && observation.image?.calibration
     );
+    el<HTMLButtonElement>("[data-view=craft]").disabled = el<HTMLButtonElement>("[data-view=observer]").disabled;
     const skyLabel = `${date(observation.mjd)} UTC · ${index + 1} / ${items.length} · `,
       fixed = Boolean(sequence());
     bindText(el("#sky-label"), () => skyLabel + t(fixed ? "o.fixedSky" : "o.single"));
@@ -268,7 +286,7 @@ async function json<T>(p: string): Promise<T> {
     scene.setSelected(id);
     if (resetView) setView("system");
     el("#target-name").textContent = body.name;
-    document
+    app
       .querySelectorAll("[data-object]")
       .forEach((b) =>
         b.classList.toggle("selected", b.getAttribute("data-object") === id),
@@ -299,8 +317,8 @@ async function json<T>(p: string): Promise<T> {
     el(".trail-legend").hidden = !items.length;
     el<HTMLButtonElement>("#sequence-play").disabled = !sequence();
     const seqVars = sequence() ? { n: items.length, m: Math.round((items.at(-1)!.mjd - items[0].mjd) * 1440) } : null;
-    bindText(el("#sequence-note"), () => seqVars ? t("o.seqNote", seqVars) : t("o.seqNone"));
-    document
+    bindText(el("#sequence-note"), () => seqVars ? t("o.seqNoteSpeed", {...seqVars, seconds: sequenceDelay / 1000}) : t("o.seqNone"));
+    app
       .querySelectorAll<HTMLButtonElement>("[data-composite]")
       .forEach(
         (b) => (b.disabled = b.dataset.composite !== "photo" && !sequence()),
@@ -312,6 +330,9 @@ async function json<T>(p: string): Promise<T> {
     bindText(el(".science-note"), () => t(hasSequence ? "o.scienceSeq" : "o.scienceSingle"));
     scene.setObservationTimes(items.map((o) => o.mjd));
     el<HTMLButtonElement>("[data-view=observer]").disabled = true;
+    el<HTMLButtonElement>("[data-view=craft]").disabled = true;
+    el<HTMLButtonElement>('[data-processing="corrected"]').disabled = true;
+    bindText(el("#correction-note"), () => t("o.correctionNone"));
     el<HTMLButtonElement>("#prev").disabled = !items.length;
     el<HTMLButtonElement>("#next").disabled = !items.length;
     select.innerHTML = items
@@ -371,7 +392,7 @@ async function json<T>(p: string): Promise<T> {
       return;
     }
     if (mjd >= manifest.end) setTime(manifest.start);
-    if (mode === "observer") setView("system");
+    if (mode === "observer" || mode === "craft") setView("system");
     setPlaying(!playing);
   };
   el<HTMLSelectElement>("#speed").onchange = (e) =>
@@ -379,12 +400,12 @@ async function json<T>(p: string): Promise<T> {
   slider.oninput = () => {
     ++intentGeneration;
     stopSequence();
-    if (mode === "observer") {
+    if (mode === "observer" || mode === "craft") {
       void showObservation(Number(slider.value));
       return;
     }
     setPlaying(false);
-    if (mode === "observer") setView("system");
+    if (mode === "observer" || mode === "craft") setView("system");
     setTime(Number(slider.value));
   };
   select.onchange = () => {
@@ -423,7 +444,7 @@ async function json<T>(p: string): Promise<T> {
   };
   el<HTMLInputElement>("#low").onchange = (e) =>
     scene.quality((e.target as HTMLInputElement).checked);
-  document
+  app
     .querySelectorAll<HTMLElement>("[data-view]")
     .forEach((b) => (b.onclick = () => setView(b.dataset.view!)));
   el<HTMLInputElement>("#photo-visible").onchange = (e) =>
@@ -435,13 +456,13 @@ async function json<T>(p: string): Promise<T> {
   };
   function setComposite(value: "photo" | "model" | "blend") {
     viewer.setMode(value);
-    document
+    app
       .querySelectorAll<HTMLElement>("[data-composite]")
       .forEach((c) =>
         c.classList.toggle("active", c.dataset.composite === value),
       );
   }
-  document
+  app
     .querySelectorAll<HTMLElement>("[data-composite]")
     .forEach(
       (b) =>
@@ -453,6 +474,25 @@ async function json<T>(p: string): Promise<T> {
     viewer.setTrailVisible(v);
     scene.setTrailVisible(v);
   };
+  viewer.onRedraw = () => scene.refreshTrail();
+  scene.onObserverZoom = (zoom, fov) => {
+    el<HTMLInputElement>("#observer-zoom").value = String(zoom);
+    el("#observer-fov").textContent = `${zoom.toFixed(2)}× · ${(fov * 60).toFixed(2)}′`;
+  };
+  el<HTMLInputElement>("#observer-zoom").oninput = e => scene.setObserverZoom(Number((e.target as HTMLInputElement).value));
+  el("#observer-zoom-reset").onclick = () => scene.setObserverZoom(1);
+  el<HTMLSelectElement>("#sequence-speed").onchange = e => {
+    sequenceDelay = Number((e.target as HTMLSelectElement).value);
+    const items = ready();
+    bindText(el("#sequence-note"), () => sequence() ? t("o.seqNoteSpeed", {n: items.length, m: Math.round((items.at(-1)!.mjd - items[0].mjd) * 1440), seconds: sequenceDelay / 1000}) : t("o.seqNone"));
+  };
+  app.querySelectorAll<HTMLElement>("[data-processing]").forEach(b => {
+    b.onclick = () => {
+      viewer.setProcessing(b.dataset.processing as "original" | "corrected");
+      app.querySelectorAll<HTMLElement>("[data-processing]").forEach(c => c.classList.toggle("active", c === b));
+      scene.refreshObservationPhoto(viewer.photoCanvas);
+    };
+  });
   scene.onSelect = choose;
   scene.onTick = (dt) => {
     setTime(mjd + dt * speed);
@@ -475,6 +515,7 @@ async function json<T>(p: string): Promise<T> {
       playing,
       selected,
       sequencePlaying,
+      sequenceDelay,
       frameCount: ready().length,
     }),
     choose,
@@ -490,7 +531,7 @@ async function json<T>(p: string): Promise<T> {
     setActive(active: boolean) {
       if(!active&&!suspended){resumePlaying=playing;resumeSequence=sequencePlaying;suspended=true;stopSequence();setPlaying(false);viewer.cancelPending();}
       scene.setActive(active);
-      if(active&&suspended){suspended=false;if(resumeSequence)void toggleSequence();else if(resumePlaying)setPlaying(true);}
+      if(active&&suspended){suspended=false;if(resumeSequence)void toggleSequence();else if(resumePlaying)setPlaying(true);else if(!observation&&ready().length)void showObservation(Number(select.value)||0);}
     },
     dispose() { lifecycle.abort();stopSequence();scene.dispose();viewer.dispose();app.replaceChildren(); },
   };

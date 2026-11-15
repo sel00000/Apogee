@@ -83,7 +83,7 @@ export function go(view,params={}){
 }
 function selectedSearch(target,action){
  $('#search-dialog').close();
- if(action==='asteroids'||target.kind==='asteroid')return go('asteroids',{target:target.id||target.name,tab:'research'});
+ if(action==='asteroids'||target.kind==='asteroid')return go('asteroids',{target:target.id||target.name,tab:'orbit'});
  if(action==='planetarium'){
   const q={name:target.name};
   if(Number.isFinite(target.raDeg)&&Number.isFinite(target.decDeg))Object.assign(q,{ra:target.raDeg,dec:target.decDeg,frame:target.frame||'ICRS',coordinateEpoch:target.coordinateEpoch||'J2000'});
@@ -126,15 +126,6 @@ document.addEventListener('keydown',event=>{
  if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='k'){event.preventDefault();openSearch();}
 });
 
-function syncAsteroidNavigation(params){
- const tabs=$('#asteroid-navigation');
- tabs.hidden=currentView!=='asteroids';
- if(tabs.hidden)return;
- for(const a of tabs.querySelectorAll('[data-asteroid-tab]')){
-  const values=new URLSearchParams(params);values.set('tab',a.dataset.asteroidTab);a.href=routeHash('asteroids',values);
-  if((params.get('tab')||'orbit')===a.dataset.asteroidTab)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');
- }
-}
 function syncHeader(view,params){
  const current=headerCurrent(view,params);
  for(const a of document.querySelectorAll('[data-view]')){if(a.dataset.view===current)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');}
@@ -219,7 +210,7 @@ function navigate(){
    $('#home-view').hidden=currentView!=='home';$('#workspace-view').hidden=currentView==='home';
    $('.site-header nav').classList.remove('open');$('.menu-toggle').setAttribute('aria-expanded','false');$('.menu-toggle').setAttribute('aria-label',t('menu.open'));
    syncHeader(currentView,next.params);
-   syncAsteroidNavigation(next.params);syncSkyNavigation(next.params);
+   syncSkyNavigation(next.params);
    syncTitles();
    updateMotion();
    if(currentView==='home'){
@@ -233,13 +224,10 @@ function navigate(){
    void (async()=>{
     try{
      let mounted;
-     if(currentView==='analysis'||(currentView==='asteroids'&&next.params.get('tab')!=='observations'))mounted=mountFrame(currentView,next.params,body);
+     if(currentView==='analysis'||currentView==='asteroids')mounted=mountFrame(currentView,next.params,body);
      else if(currentView==='planetarium'){
       const mod=await import('./adapters/planetarium.js');if(id!==generation){resolve(false);return;}
       body.replaceChildren();mounted=adaptController(await mod.mountPlanetarium(body,{onAnalyze:analyze,onNavigate:go,toast,toastKeyed,params:next.params,onShare:sharePlanetarium}));
-     }else if(currentView==='asteroids'){
-      const mod=await import('./moving/index.js');if(id!==generation){resolve(false);return;}
-      body.replaceChildren();mounted=adaptController(await mod.mountMoving(body,{onAnalyze:analyze,toast}));
      }
      if(id!==generation){mounted?.dispose?.();resolve(false);return;}
      feature=mounted;updateMotion();await mounted?.ready;
@@ -261,7 +249,7 @@ function navigate(){
 function syncChildRoute(view,query){
  const params=new URLSearchParams(query);params.delete('embed');
  const hash=routeHash(view,params);history.replaceState(null,'',hash);route=hash;
- if(view==='asteroids')syncAsteroidNavigation(params);
+
  if(view==='analysis')syncHeader(view,params);
 }
 async function sharePlanetarium(query){
@@ -278,7 +266,7 @@ window.addEventListener('message',event=>{
  else if(currentView==='analysis'&&data.type==='spherex-analysis-url'&&typeof data.query==='string'&&data.query.length<=8192)syncChildRoute('analysis',data.query);
  else if(currentView==='asteroids'&&data.type==='spherex-asteroid-state'){
   const q=new URLSearchParams();if(typeof data.target==='string'&&data.target.length<=160)q.set('target',data.target);
-  if(['research','orbit'].includes(data.tab))q.set('tab',data.tab);
+  q.set('tab','orbit');
   syncChildRoute('asteroids',q);
  }
 });

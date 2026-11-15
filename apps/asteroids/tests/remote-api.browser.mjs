@@ -48,6 +48,8 @@ const check=(name,value)=>{assert.ok(value,name);checks.push(name);};
 try{
  browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_PATH||'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',args:['--use-angle=swiftshader','--enable-unsafe-swiftshader']});
  const page=await browser.newPage({viewport:{width:1280,height:900}});page.setDefaultTimeout(30000);page.on('pageerror',error=>errors.push(error.message));
+ // This fixture asserts Korean labels; select Korean explicitly instead of relying on the app default.
+ await page.addInitScript(() => localStorage.setItem('spherex-lang','ko'));
  await page.goto(siteOrigin+'/Apogee/asteroids/?embed=1&target=433');
  await page.locator('#result-content .result-heading h2').filter({hasText:'Eros'}).waitFor();
  await page.locator('#capabilities').filter({hasText:'Fixture unavailable'}).waitFor();

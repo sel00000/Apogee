@@ -23,6 +23,7 @@ export interface Observation {
   spacecraft?: number[];
   sequenceId?: string;
   image: null | {
+    correction?: Correction;
     atlas?: boolean;
     calibration?: Sightline;
     trail?: ImageTrail;
@@ -76,4 +77,16 @@ export interface ImageTrail {
   currentId: string;
   objectId: string;
   source: string;
+}
+
+export interface Correction {
+  path: string;
+  status: string;
+  gain: number;
+  background: number[];
+  maskedPercent: number;
+  validationBefore?: number;
+  validationAfter?: number;
+  improvementPercent?: number;
+  method: string;
 }

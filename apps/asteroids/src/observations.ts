@@ -1,6 +1,6 @@
-import { LocalError, bindText, t } from "./i18n";
+import { LocalError, bindText, onLang, t } from "./i18n";
 import type { Observation } from "./types";
-import { drawTrail, visibleTrail } from "./trails";
+import { currentPoint, drawTrail, visibleTrail } from "./trails";
 export async function fetchImage(
   url: string,
   signal: AbortSignal,
@@ -20,14 +20,21 @@ export async function fetchImage(
 }
 /** One bitmap atlas per frame; bounded cache; stale responses never replace the selection. */
 export class ObservationViewer {
+  private unbindLanguage: () => void;
   private cache = new Map<string, ImageBitmap>();
   private generation = 0;
   private controller: AbortController | null = null;
   private current: Observation | null = null;
   private bitmap: ImageBitmap | null = null;
+  private processing: "original" | "corrected" = "corrected";
+  setProcessing(value: "original" | "corrected") { this.processing = value; this.draw(); }
   private alpha = 0.65;
   private mode: "photo" | "model" | "blend" = "blend";
   private trailEnabled = true;
+  /** current ring slides from the previous exposure of the same fixed-sky sequence */
+  private glide: { from: { x: number; y: number }; to: { x: number; y: number }; start: number } | null = null;
+  private glideFrame = 0;
+  onRedraw: () => void = () => {};
   readonly trailCanvas = document.createElement("canvas");
   readonly photoCanvas = document.createElement("canvas");
   private modelCanvas = document.createElement("canvas");
@@ -39,6 +46,7 @@ export class ObservationViewer {
     this.trailCanvas.width = this.trailCanvas.height = 512;
     this.canvas.width = this.canvas.height = 512;
     this.modelCanvas.width = this.modelCanvas.height = 512;
+    this.unbindLanguage = onLang(() => { this.draw(); this.onRedraw(); });
   }
   setTrailVisible(v: boolean) {
     this.trailEnabled = v;
@@ -59,7 +67,7 @@ export class ObservationViewer {
       this.clear();
       return false;
     }
-    const key = obs.image.path;
+    const key = obs.image.correction?.path ?? obs.image.path;
     bindText(this.status, () => t("v.opening"));
     try {
       let bitmap = this.cache.get(key);
@@ -83,6 +91,13 @@ export class ObservationViewer {
         }
       }
       if (generation !== this.generation) return false;
+      const prev = this.current;
+      const from = prev?.image && prev.sequenceId && prev.sequenceId === obs.sequenceId
+        ? currentPoint(prev.image.trail, prev.image.width, prev.image.height) : null;
+      const to = currentPoint(obs.image.trail, obs.image.width, obs.image.height);
+      cancelAnimationFrame(this.glideFrame);
+      this.glide = from && to && !matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? { from, to, start: performance.now() } : null;
       this.current = obs;
       this.bitmap = bitmap;
       const atlas = obs.image.atlas;
@@ -91,6 +106,7 @@ export class ObservationViewer {
       return true;
     } catch (e) {
       if (generation !== this.generation) return false;
+      cancelAnimationFrame(this.glideFrame); this.glide = null;
       this.current = null;
       this.bitmap = null;
       this.draw();
@@ -99,12 +115,14 @@ export class ObservationViewer {
     }
   }
   cancelPending() {
+    cancelAnimationFrame(this.glideFrame); this.glide = null;
     ++this.generation;
     this.controller?.abort();
     const real = Boolean(this.current);
     bindText(this.status, () => t(real ? "v.pausedReal" : "v.paused"));
   }
   clear() {
+    cancelAnimationFrame(this.glideFrame); this.glide = null;
     ++this.generation;
     this.controller?.abort();
     this.current = null;
@@ -113,11 +131,14 @@ export class ObservationViewer {
     bindText(this.status, () => t("v.none"));
   }
   dispose() {
+    this.unbindLanguage();
+    cancelAnimationFrame(this.glideFrame); this.glide = null;
     this.controller?.abort();++this.generation;
     for(const bitmap of this.cache.values()) bitmap.close();
     this.cache.clear();this.current=null;this.bitmap=null;
   }
   private draw() {
+    cancelAnimationFrame(this.glideFrame);
     const c = this.canvas,
       ctx = c.getContext("2d")!;
     ctx.globalAlpha = 1;
@@ -128,14 +149,14 @@ export class ObservationViewer {
       const im = this.current.image;
       ctx.imageSmoothingEnabled = false;
       if (this.mode !== "model" || !im.atlas)
-        ctx.drawImage(this.bitmap, 0, 0, im.width, im.height, 0, 0, 512, 512);
+        this.drawPhoto(ctx, 512, 512);
       if (im.atlas && this.mode !== "photo") {
         const mc = this.modelCanvas.getContext("2d")!;
         mc.imageSmoothingEnabled = false;
         mc.globalCompositeOperation = "source-over";
         mc.drawImage(
           this.bitmap,
-          im.width,
+          im.correction ? (this.processing === "original" ? 2 : 3) * im.width : im.width,
           0,
           im.width,
           im.height,
@@ -161,7 +182,14 @@ export class ObservationViewer {
     trailCtx.clearRect(0, 0, 512, 512);
     if (this.trailEnabled && this.bitmap && this.current?.image) {
       const im = this.current.image;
-      drawTrail(trailCtx, im.trail, im.width, im.height);
+      let at: { x: number; y: number } | undefined;
+      if (this.glide) {
+        const u = Math.min(1, (performance.now() - this.glide.start) / 520), e = 1 - Math.pow(1 - u, 3);
+        at = { x: this.glide.from.x + (this.glide.to.x - this.glide.from.x) * e, y: this.glide.from.y + (this.glide.to.y - this.glide.from.y) * e };
+        if (u < 1) this.glideFrame = requestAnimationFrame(() => { this.draw(); this.onRedraw(); });
+        else this.glide = null;
+      }
+      drawTrail(trailCtx, im.trail, im.width, im.height, 512, at);
       ctx.drawImage(this.trailCanvas, 0, 0);
     }
 
@@ -170,25 +198,20 @@ export class ObservationViewer {
       const im = this.current.image;
       photo.width = im.width;
       photo.height = im.height;
-      photo
-        .getContext("2d")!
-        .drawImage(
-          this.bitmap,
-          0,
-          0,
-          im.width,
-          im.height,
-          0,
-          0,
-          im.width,
-          im.height,
-        );
+      this.drawPhoto(photo.getContext("2d")!, im.width, im.height);
     } else {
       photo.getContext("2d")!.clearRect(0, 0, photo.width, photo.height);
     }
   }
+  private drawPhoto(ctx: CanvasRenderingContext2D, width: number, height: number) {
+    const im = this.current!.image!;
+    const offset = im.correction && this.processing !== "original" ? im.width : 0;
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(this.bitmap!, offset, 0, im.width, im.height, 0, 0, width, height);
+  }
   metrics() {
     return {
+      processing: this.processing,
       cachedImages: this.cache.size,
       bytes: [...this.cache.values()].reduce(
         (n, b) => n + b.width * b.height * 4,

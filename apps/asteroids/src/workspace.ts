@@ -8,8 +8,9 @@ import {LocalError, bindText, initLang, t} from './i18n';
 
 const app=document.querySelector<HTMLDivElement>('#app')!;
 const params=new URLSearchParams(location.search);
+const orbitOnly=params.get('orbitOnly')==='1';
 let selected=params.get('target') || '';
-let tab=params.get('tab')==='orbit'||params.get('tab')==='observations'?'orbit':'research';
+let tab=orbitOnly||params.get('tab')==='orbit'||params.get('tab')==='observations'?'orbit':'research';
 let dataBase=new URL('./data/',location.href).href;
 let pendingScene=params.get('data');
 let orbit: Awaited<ReturnType<typeof mountOrbit>>|null=null;
@@ -23,6 +24,7 @@ initLang();
 const researchHost=app.querySelector<HTMLElement>('#research-workspace')!;
 const orbitHost=app.querySelector<HTMLElement>('#orbit-workspace')!;
 if(params.get('embed')==='1')app.classList.add('embedded');
+if(orbitOnly){app.classList.add('orbit-only');app.querySelector<HTMLElement>('.workspace-tabs')!.hidden=true;}
 function announce() {
   const url=new URL(location.href);selected?url.searchParams.set('target',selected):url.searchParams.delete('target');url.searchParams.set('tab',tab);
   history.replaceState(null,'',url);
@@ -91,7 +93,7 @@ async function openOrbit() {
   return loading;
 }
 async function setTab(next: string) {
-  tab=next==='orbit'?'orbit':'research';
+  tab=orbitOnly||next==='orbit'?'orbit':'research';
   researchHost.hidden=tab!=='research';orbitHost.hidden=tab!=='orbit';
   app.querySelectorAll<HTMLButtonElement>('[data-workspace]').forEach(button=>{button.classList.toggle('active',button.dataset.workspace===tab);button.setAttribute('aria-pressed',String(button.dataset.workspace===tab));});
   research.setActive(tab==='research'&&!paused);orbit?.setActive(tab==='orbit'&&!paused);announce();

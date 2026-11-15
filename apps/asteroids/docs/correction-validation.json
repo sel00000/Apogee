@@ -1,0 +1,24 @@
+{
+  "preparedImages": 167,
+  "statuses": {
+    "rejected": 29,
+    "reference": 22,
+    "accepted": 45,
+    "single-frame": 71
+  },
+  "acceptedHoldoutMedianImprovementPercent": 12.666017944649322,
+  "acceptedHoldoutRangePercent": [
+    2.6272491730976233,
+    22.43830027603434
+  ],
+  "pythonTests": 13,
+  "typescriptTests": 17,
+  "browserObjects": 23,
+  "browserReplayFrames": 98,
+  "browserModes": [
+    "original",
+    "corrected",
+    "split"
+  ],
+  "limitations": "Relative correction only. No PSF matching, full covariance, false-positive calibration or independent source classification."
+}

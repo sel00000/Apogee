@@ -2,9 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {parseRoute,routeHash,analysisParams,childURL,trustedFrameMessage} from '../routing.js';
 
-test('legacy moving links open the retained observations and unknown routes stay in shell',()=>{
+test('legacy moving links open orbit 3D and unknown routes stay in shell',()=>{
  const legacy=parseRoute('#moving?target=433');
- assert.equal(legacy.view,'asteroids');assert.equal(legacy.params.get('tab'),'observations');assert.equal(legacy.params.get('target'),'433');
+ assert.equal(legacy.view,'asteroids');assert.equal(legacy.params.get('tab'),'orbit');assert.equal(legacy.params.get('target'),'433');
  assert.equal(parseRoute('#constructor').view,'home');
  assert.equal(parseRoute('#mission').anchor,'mission');
 });
@@ -86,3 +86,14 @@ test('focus after a sky view switch: only switches from the sky sub-navigation o
  assert.equal(skyViewFocus('child-navigate','analysis'),null);
  assert.equal(skyViewFocus('child-navigate','asteroids'),null);
 });
+
+ test('asteroid portal routes have one 3D surface, including old Results and Observations links', () => {
+  for (const hash of ['#asteroids', '#asteroids?tab=research&target=16', '#asteroids?tab=observations&target=433']) {
+    const route=parseRoute(hash);
+    assert.equal(route.params.get('tab'),'orbit');
+    const url=childURL(route.view,route.params,'https://example.test/Apogee/');
+    assert.equal(url.searchParams.get('orbitOnly'),'1');
+    assert.equal(url.searchParams.get('tab'),'orbit');
+    assert.equal(url.searchParams.get('target'),route.params.get('target'));
+  }
+ });

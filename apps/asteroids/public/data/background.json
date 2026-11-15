@@ -1,0 +1,26 @@
+{
+ "source": "NASA/JPL SBDB (Small-Body DataBase) Query API",
+ "query": "https://ssd-api.jpl.nasa.gov/sbdb_query.api?fields=pdes%2Ca%2Ce%2Ci%2Com%2Cw%2Cma%2Cepoch%2Cclass&sb-kind=a&sb-ns=n&limit=40000",
+ "retrieved_utc": "2026-11-15T07:46:35Z",
+ "count": 40000,
+ "skipped": 0,
+ "total_numbered": 895910,
+ "frame": "heliocentric ecliptic J2000, osculating elements at each body's own epoch",
+ "layout": "float32 x7: a AU, e, i deg, node deg, peri deg, mean anomaly deg, epoch JD TDB - 2460000",
+ "classes": [
+  "MBA",
+  "IMB",
+  "OMB",
+  "MCA",
+  "AMO",
+  "APO",
+  "ATE",
+  "IEO",
+  "TJN",
+  "CEN",
+  "TNO",
+  "AST",
+  "HYA",
+  "PAA"
+ ]
+}
