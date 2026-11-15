@@ -1,0 +1,558 @@
+diff --git "a/\355\225\234\352\262\260/\355\206\265\355\225\251V2/app.js" "b/\355\225\234\352\262\260/\355\206\265\355\225\251V2/app.js"
+index 50b2a6c..e2c7ea0 100644
+--- "a/\355\225\234\352\262\260/\355\206\265\355\225\251V2/app.js"
++++ "b/\355\225\234\352\262\260/\355\206\265\355\225\251V2/app.js"
+@@ -2,6 +2,8 @@ import {mountHomeBackground} from './home-background.js';
+ import {mountGlassCards} from './glass.js';
+ import {mountHomeWaveform} from './home-waveform.js';
+ import {mountHomeStory} from './home-story.js';
++import {mountHomeLab} from './home-lab.js';
++import {setLang,lang,onLang,T} from './i18n.js';
+ const $=s=>document.querySelector(s),reduce=matchMedia('(prefers-reduced-motion:reduce)');
+ const homeWave=mountHomeWaveform(document.querySelector('#home-wave'));
+ const disposeGlass=mountGlassCards(document.querySelectorAll('.tool-card'),{reducedMotionMedia:reduce,refraction:false});
+@@ -9,7 +11,7 @@ let route='',generation=0,disposeView=null,home=null,paused=reduce.matches,toast
+ const names={planetarium:['EXPLORE THE SKY','나의 플라네타리움'],analysis:['READ THE OBSERVATIONS','방구석 천문학자'],moving:['FOLLOW THE MOVEMENT','소행성·혜성 추적']};
+ try{home=mountHomeBackground($('#home-lens'),undefined,{onStage:info=>homeWave.update(info)});}catch(e){console.warn('Static home background',e);}
+ function toast(message){clearTimeout(toastTimer);$('#app-toast').textContent=message;$('#app-toast').classList.add('show');toastTimer=setTimeout(()=>$('#app-toast').classList.remove('show'),3500);}
+-function updateMotion(){home?.setActive(route==='home'&&!paused&&!document.querySelector('dialog[open]'));$('#motion-toggle').setAttribute('aria-pressed',String(paused));$('#motion-toggle').setAttribute('aria-label',paused?'배경 움직임 켜기':'배경 움직임 멈추기');$('#motion-toggle').innerHTML=paused?'▷ <span>움직임 켜기</span>':'Ⅱ <span>움직임 멈추기</span>';}
++function updateMotion(){home?.setActive(route==='home'&&!paused&&!document.querySelector('dialog[open]'));$('#motion-toggle').setAttribute('aria-pressed',String(paused));$('#motion-toggle').setAttribute('aria-label',paused?T('배경 움직임 켜기','Resume background motion'):T('배경 움직임 멈추기','Pause background motion'));$('#motion-toggle').innerHTML=paused?T('▷ <span>움직임 켜기</span>','▷ <span>Resume motion</span>'):T('Ⅱ <span>움직임 멈추기</span>','Ⅱ <span>Pause motion</span>');}
+ $('#motion-toggle').onclick=()=>{paused=!paused;updateMotion();};reduce.addEventListener('change',()=>{paused=reduce.matches;updateMotion();});
+ // Liquid Glass: glass.js moves the light, the rim highlight and the tilt; CSS springs the slab back.
+ // 3D model: the bundled Three.js module is fetched only when the mission story is about to start.
+@@ -20,30 +22,36 @@ async function loadModel(stage){
+  const model=mod.mountMissionModel(host,{url:new URL('assets/model/spherex-hero.glb',import.meta.url).href,
+   onReady:()=>stage.classList.add('is-ready'),
+   onError:e=>{console.warn('[home] model',e);status.textContent='3D 모형을 불러오지 못했어요. 사진으로 보여 드릴게요.';},
+-  onUserOrbit:()=>btn('spin').setAttribute('aria-pressed','false')});
++  onUserOrbit:()=>{const pz=stage.querySelector('.model-pause');pz.textContent='▶';pz.setAttribute('aria-pressed','false');}});
++ model.setAutoRotate(!reduce.matches);if(reduce.matches){const pz=stage.querySelector('.model-pause');pz.textContent='▶';pz.setAttribute('aria-pressed','false');}
++ const pause=stage.querySelector('.model-pause');pause.onclick=()=>{const on=!model.autoRotate;model.setAutoRotate(on);pause.setAttribute('aria-pressed',String(on));pause.textContent=on?'Ⅱ':'▶';pause.setAttribute('aria-label',on?T('회전 멈춤','Pause rotation'):T('회전','Rotate'));};
+  stage.addEventListener('model-progress',()=>btn('cutaway').setAttribute('aria-pressed',String(model.cutaway)));
+  host.addEventListener('model-error',e=>{status.textContent=e.detail;stage.classList.remove('is-ready');});
+- const setFree=on=>{stage.classList.toggle('is-free',on);document.body.classList.toggle('model-free',on);btn('free').setAttribute('aria-pressed',String(on));model.setFree(on);if(on)host.querySelector('canvas')?.focus({preventScroll:true});};
+- dock.addEventListener('click',e=>{const b=e.target.closest('[data-model]');if(!b)return;const k=b.dataset.model;
++  dock.addEventListener('click',e=>{const b=e.target.closest('[data-model]');if(!b)return;const k=b.dataset.model;
+   if(k==='cutaway'){const on=!model.cutaway;model.setCutaway(on);b.setAttribute('aria-pressed',String(on));}
+   else if(k==='back')model.view('back');
+-  else if(k==='spin'){const on=!model.autoRotate;model.setAutoRotate(on);b.setAttribute('aria-pressed',String(on));}
++  else if(k==='spin'){const on=!model.autoRotate;model.setAutoRotate(on);b.setAttribute('aria-pressed',String(on));b.textContent=on?'Ⅱ':'▶';b.setAttribute('aria-label',on?T('회전 멈춤','Pause rotation'):T('회전','Rotate'));}
+   else if(k==='reset'){model.reset();btn('cutaway').setAttribute('aria-pressed','false');btn('spin').setAttribute('aria-pressed','false');}
+-  else if(k==='free')setFree(!stage.classList.contains('is-free'));});
+- window.addEventListener('keydown',e=>{if(e.key==='Escape'&&stage.classList.contains('is-free'))setFree(false);});
++});
+  window.__spherexModel=model;return model;
+ }
+ let disposeStory=()=>{};
+ try{disposeStory=mountHomeStory(document.querySelector('#home-view'),{reducedMotion:reduce,loadModel});}catch(e){console.warn('[home] story',e);}
++// language switch (한 / EN), remembered per viewer
++for(const b of document.querySelectorAll('[data-lang]'))b.onclick=()=>setLang(b.dataset.lang);
++onLang(l=>{for(const b of document.querySelectorAll('[data-lang]'))b.setAttribute('aria-pressed',String(b.dataset.lang===l));updateMotion();});
++// pointer light on panels: one layer per panel, moved with transform only
++let lightEv=null,lightRaf=0;document.addEventListener('pointermove',e=>{lightEv=e;if(!lightRaf)lightRaf=requestAnimationFrame(()=>{lightRaf=0;const e=lightEv,p=e.target.closest?.('.panel');if(!p)return;const r=p.getBoundingClientRect();p.style.setProperty('--px',(e.clientX-r.left)+'px');p.style.setProperty('--py',(e.clientY-r.top)+'px');});},{passive:true});
++let disposeLab=()=>{};try{disposeLab=mountHomeLab(document.querySelector('#home-view'),{reducedMotion:reduce});}catch(e){console.warn('[home] lab',e);}
+ let dialogFocus=null;function openDialog(dialog){dialogFocus=document.activeElement;dialog.showModal();updateMotion();}
+ for(const b of document.querySelectorAll('[data-tutorial]'))b.onclick=()=>openDialog($('#tutorial-dialog'));
+-$('#credits-open').onclick=()=>openDialog($('#credits-dialog'));
++
+ for(const d of document.querySelectorAll('dialog')){d.querySelector('.dialog-x').onclick=()=>d.close();d.addEventListener('close',()=>{updateMotion();dialogFocus?.focus();});d.addEventListener('click',e=>{if(e.target===d){const r=d.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)d.close();}});}
+ $('.menu-toggle').onclick=()=>{const on=$('.site-header nav').classList.toggle('open');$('.menu-toggle').setAttribute('aria-expanded',String(on));$('.menu-toggle').setAttribute('aria-label',on?'메뉴 닫기':'메뉴 열기');};
+ $('#back-top').onclick=()=>window.scrollTo({top:0,behavior:reduce.matches?'instant':'smooth'});
+ function parseHash(){const value=location.hash.slice(1)||'home';const [view,query]=value.split('?');return {view,params:new URLSearchParams(query||'')};}
+ export function analyze(target){const p=new URLSearchParams();if(target.target)p.set('target',target.target);else{p.set('ra',target.ra);p.set('dec',target.dec);if(target.label)p.set('label',target.label);}if(target.tab)p.set('tab',target.tab);if(target.moving){p.set('moving','1');for(const key of ['epoch','observationMjd'])if(Number.isFinite(target[key]))p.set(key,String(target[key]));}location.hash=`analysis?${p}`;}
+-const homeAnchors=new Set(['about','mission','light','sky']);
++const homeAnchors=new Set(['mission','light','spectrum','blink','sky']);
+ async function navigate(){const current=parseHash();if(homeAnchors.has(current.view)){const target=document.getElementById(current.view);if(route!=='home'){route='';history.replaceState(null,'','#home');await navigate();}requestAnimationFrame(()=>target.scrollIntoView({behavior:reduce.matches?'instant':'smooth'}));return;}
+  const view=names[current.view]?current.view:'home',key=view+'?'+current.params; if(route===key)return;route=key;const id=++generation;
+  if(disposeView){disposeView();disposeView=null;}$('#workspace-body').replaceChildren();for(const d of document.querySelectorAll('dialog[open]'))d.close();
+@@ -62,5 +70,6 @@ async function navigate(){const current=parseHash();if(homeAnchors.has(current.v
+ $('.skip-link').onclick=e=>{e.preventDefault();$('#main').focus({preventScroll:true});$('#main').scrollIntoView({behavior:reduce.matches?'instant':'smooth'});};
+ // one app, not separate pages: screen changes cross-fade with the View Transitions API when available
+ window.addEventListener('hashchange',()=>{const inPage=homeAnchors.has(parseHash().view)&&route==='home';if(document.startViewTransition&&!reduce.matches&&!inPage)document.startViewTransition(()=>navigate());else navigate();});window.addEventListener('message',e=>{if(e.origin!==location.origin||e.source!==document.querySelector('.analysis-frame')?.contentWindow)return;if(e.data?.type==='spherex-navigate'&&names[e.data.view])location.hash=e.data.view;else if(e.data?.type==='spherex-analysis-url'&&typeof e.data.query==='string'&&e.data.query.length<8192){const query=new URLSearchParams(e.data.query);query.delete('embed');const url=new URL(location.href);url.hash='analysis'+(query.size?'?'+query:'');history.replaceState(null,'',url);route='analysis?'+query;}});
+-window.addEventListener('pagehide',e=>{home?.setActive(false);disposeView?.();if(!e.persisted){disposeGlass();disposeStory();homeWave.dispose();home?.dispose?.();window.__spherexModel?.dispose();}});window.addEventListener('pageshow',e=>{if(e.persisted){route='';navigate();}});
++window.addEventListener('pagehide',e=>{home?.setActive(false);disposeView?.();if(!e.persisted){disposeGlass();disposeStory();disposeLab();homeWave.dispose();home?.dispose?.();window.__spherexModel?.dispose();}});window.addEventListener('pageshow',e=>{if(e.persisted){route='';navigate();}});
++if(lang()==='en')setLang('en');
+ window.__spherexApp={get view(){return route;},get background(){return home?.stats;},get backgroundRenderer(){return home?.renderer;},navigate:analyze};navigate();
+diff --git "a/\355\225\234\352\262\260/\355\206\265\355\225\251V2/home-background.js" "b/\355\225\234\352\262\260/\355\206\265\355\225\251V2/home-background.js"
+index 2bfc7ac..fc82d16 100644
+--- "a/\355\225\234\352\262\260/\355\206\265\355\225\251V2/home-background.js"
++++ "b/\355\225\234\352\262\260/\355\206\265\355\225\251V2/home-background.js"
+@@ -47,7 +47,17 @@ export function mountHomeBackground(canvas,imageURL=ORIGINAL_SKY,callbacks={}) {
+    this._awaitLayout=false;this._kick();
+   }
+   _seed(){if(this._awaitLayout){this._pendingSeed=true;return;}super._seed();}
++  // Adaptive pixel budget: if the page has been running slower than ~48 fps for two seconds, shrink the
++  // lens buffer by 30% (never below 0.9 Mpx) and keep it there. One-way, so quality never pumps up and down.
++  // Only the drawing buffer changes; physics, light speed and mass units are in CSS px and stay the same.
++  _govern(t){
++   const dt=t-(this._govT??t);this._govT=t;this._govStart??=t;if(t-this._govStart<4||!(dt>0&&dt<0.25)||this.drag)return; // ignore page-load frames
++   this._govAcc=(this._govAcc||0)+dt;this._govN=(this._govN||0)+1;
++   if(this._govAcc<2)return;const avg=this._govAcc/this._govN;this._govAcc=this._govN=0;
++   if(avg>1/48&&this.MAX_PIXELS>900000){this.MAX_PIXELS=Math.max(900000,Math.round(this.MAX_PIXELS*0.7));this._resize();}
++  }
+   _draw(t){
++   this._govern(t);
+    // Physics still steps every display frame; the sky is drawn at most 30 times a second
+    // (60 only while a hole is held), keeping the GPU free for pointer, cards and scrolling.
+    if(!this.drag&&this._shownAt!==undefined&&t-this._shownAt<1/30-0.002&&t>=this._shownAt)return;
+diff --git "a/\355\225\234\352\262\260/\355\206\265\355\225\251V2/home-src/mission-model.js" "b/\355\225\234\352\262\260/\355\206\265\355\225\251V2/home-src/mission-model.js"
+index b2981d4..b6a7f92 100644
+--- "a/\355\225\234\352\262\260/\355\206\265\355\225\251V2/home-src/mission-model.js"
++++ "b/\355\225\234\352\262\260/\355\206\265\355\225\251V2/home-src/mission-model.js"
+@@ -80,7 +80,8 @@ export function mountMissionModel(host, { url, onReady = () => {}, onError = ()
+     invalidate();
+   }
+   const resizeObserver = new ResizeObserver(resize); resizeObserver.observe(host);
+-  const io = new IntersectionObserver(([e]) => { state.visible = e.isIntersecting; if (state.visible) invalidate(); }, { rootMargin: '120px' });
++  // coming into view: redraw at the current resolution (resizing the drawing buffer here stalled scrolling ~200 ms)
++  const io = new IntersectionObserver(([e]) => { state.visible = e.isIntersecting; if (state.visible && !state.frame && state.alive) { state.settle = 2; state.frame = requestAnimationFrame(tick); } }, { rootMargin: '120px' });
+   io.observe(host);
+   const onVisibility = () => { if (!document.hidden) invalidate(); };
+   document.addEventListener('visibilitychange', onVisibility);
+@@ -90,7 +91,7 @@ export function mountMissionModel(host, { url, onReady = () => {}, onError = ()
+   // Exactly one render per display frame. While a frame is being drawn state.frame is -1, so the
+   // 'change' events that controls.update() raises only extend the loop instead of starting another.
+   // Moving frames draw at a lighter pixel ratio; once still for a moment, one sharp frame is drawn.
+-  const HI_DPR = Math.min(window.devicePixelRatio || 1, 2), LO_DPR = Math.min(HI_DPR, 1.25);
++  let HI_DPR = Math.min(window.devicePixelRatio || 1, 1.6), LO_DPR = Math.min(HI_DPR, 1);
+   let sharpTimer = 0;
+   function setDpr(v) {
+     if (renderer.getPixelRatio() === v) return;
+@@ -111,6 +112,10 @@ export function mountMissionModel(host, { url, onReady = () => {}, onError = ()
+   function tick(t) {
+     state.frame = -1;
+     if (!state.alive || !state.visible || document.hidden) { state.frame = 0; state.last = 0; return; }
++    const raw = state.last ? (t - state.last) / 1000 : 0;
++    // adaptive: if moving frames keep running slow, lower the sharp-frame resolution for this session
++    if (raw > 0 && raw < 0.25) { state.govAcc = (state.govAcc || 0) + raw; state.govN = (state.govN || 0) + 1;
++      if (state.govAcc > 1.5) { const avg = state.govAcc / state.govN; state.govAcc = state.govN = 0; if (avg > 1 / 48 && HI_DPR > 1) { HI_DPR = Math.max(1, HI_DPR - 0.3); LO_DPR = Math.min(LO_DPR, HI_DPR); } } }
+     const dt = state.last ? Math.min((t - state.last) / 1000, 0.05) : 1 / 60;
+     state.last = t;
+     // critically-damped follow of the scroll pose: weighty, never springy
+@@ -121,13 +126,12 @@ export function mountMissionModel(host, { url, onReady = () => {}, onError = ()
+     pivot.position.y = state.lift;
+     // shields peel outward layer by layer
+     const target = state.userCutaway ?? state.openTarget;
+-    state.open += (target - state.open) * (1 - Math.exp(-dt * 5));
++    state.open += (target - state.open) * (1 - Math.exp(-dt * 2.4));
+     if (Math.abs(target - state.open) < 0.001) state.open = target;
+     for (const layer of state.layers) {
+       const local = Math.min(1, Math.max(0, (state.open - layer.delay) / (1 - layer.delay)));
+       const e = ease(local);
+       layer.node.position.copy(layer.base).addScaledVector(layer.dir, e * layer.reach);
+-      layer.node.visible = local < 0.995;
+     }
+     if (state.tween) {
+       const u = Math.min(1, (t - state.tween.start) / 900), e = 1 - Math.pow(1 - u, 4);
+@@ -151,10 +155,13 @@ export function mountMissionModel(host, { url, onReady = () => {}, onError = ()
+     model.updateMatrixWorld(true);
+     // every cutaway half slides away from the axis; outer layer first, inner last
+     const center = new THREE.Vector3(), box = new THREE.Box3();
++    // measure "outward" from the cone's own axis (model centre), not from the world origin
++    const whole = new THREE.Box3().setFromObject(model), axis = whole.getCenter(new THREE.Vector3());
++    const radius = Math.max(whole.max.x - whole.min.x, whole.max.z - whole.min.z) / 2;
+     model.traverse(node => {
+       if (node.userData?.cutaway !== true) return;
+       box.setFromObject(node).getCenter(center);
+-      const dir = new THREE.Vector3(center.x, 0, center.z);
++      const dir = new THREE.Vector3(center.x - axis.x, 0, center.z - axis.z);
+       if (dir.lengthSq() < 1e-6) dir.set(0, 0, 1);
+       dir.normalize();
+       // convert the world direction into the node's parent space
+@@ -162,12 +169,16 @@ export function mountMissionModel(host, { url, onReady = () => {}, onError = ()
+       const localDir = dir.clone().transformDirection(parentInv);
+       const name = node.name || '';
+       const order = name.includes('Outer') ? 0 : name.includes('Middle') ? 1 : 2;
+-      state.layers.push({ node, base: node.position.clone(), dir: localDir, reach: [2.2, 1.7, 1.25][order], delay: [0, 0.14, 0.28][order] });
++      // reach is in world units along localDir (unit length after transformDirection): far enough to leave the frame
++      const scale = node.parent.getWorldScale(new THREE.Vector3()).x || 1;
++      state.layers.push({ node, base: node.position.clone(), dir: localDir, reach: radius * [1.9, 1.6, 1.35][order] / scale, delay: [0, 0.14, 0.28][order] });
+     });
+     resize();
+-    onReady();
+-    invalidate();
+-    sharpen();
++    // compile every shader in the background now, so the first frame on screen does not stall scrolling
++    const compiled = renderer.compileAsync ? renderer.compileAsync(scene, camera).catch(() => {}) : Promise.resolve();
++    // upload textures to the GPU up front as well (first-frame uploads also stall scrolling)
++    model.traverse(o => { for (const m of [].concat(o.material || [])) for (const k of ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'emissiveMap', 'aoMap']) if (m[k]) renderer.initTexture(m[k]); });
++    compiled.then(() => { if (!state.alive) return; onReady(); invalidate(); sharpen(); });
+   }).catch(error => { if (state.alive) onError(error); });
+ 
+   function free(root) {
+diff --git "a/\355\225\234\352\262\260/\355\206\265\355\225\251V2/home-story.js" "b/\355\225\234\352\262\260/\355\206\265\355\225\251V2/home-story.js"
+index 3b42871..5175820 100644
+--- "a/\355\225\234\352\262\260/\355\206\265\355\225\251V2/home-story.js"
++++ "b/\355\225\234\352\262\260/\355\206\265\355\225\251V2/home-story.js"
+@@ -2,6 +2,7 @@
+  * One passive scroll listener feeds one rAF; each scene only runs while it is near the viewport
+  * and writes a single CSS custom property (or a class) per frame. Nothing runs while idle.
+  */
++import { T, onLang } from './i18n.js';
+ const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+ 
+ // SPHEREx detector bands (µm). Each of the 6 detectors records 17 colours: 6 × 17 = 102.
+@@ -15,9 +16,9 @@ export function spherexChannels() {
+ }
+ 
+ const SKY_CAPTIONS = {
+-  stars: '가시광에서 먼지에 가려 검게 보이던 은하 중심이 적외선 별빛에서는 환하게 드러나요. 위아래의 작은 점들은 대부분 우리은하 밖의 다른 은하예요.',
+-  dust: '빨강은 약 3.4 µm에서 빛나는 먼지(PAH), 파랑은 약 4 µm에서 빛나는 뜨거운 수소 가스예요. 가시광에서 별빛을 가리던 먼지가 여기서는 스스로 빛나요.',
+-  all: '별빛과 먼지·가스를 한 장에 담은, SPHEREx가 2025년 5월부터 12월까지 찍어 만든 첫 전천 지도예요.',
++  stars: () => T('가시광에서 먼지에 가려 검게 보이던 은하 중심이 적외선 별빛에서는 환하게 드러나요. 위아래의 작은 점들은 대부분 우리은하 밖의 다른 은하예요.', 'The galactic centre, hidden behind dust in visible light, shines in infrared starlight. Most small dots above and below are other galaxies beyond the Milky Way.'),
++  dust: () => T('빨강은 약 3.4 µm에서 빛나는 먼지(PAH), 파랑은 약 4 µm에서 빛나는 뜨거운 수소 가스예요. 가시광에서 별빛을 가리던 먼지가 여기서는 스스로 빛나요.', 'Red is dust (PAH) glowing near 3.4 µm, blue is hot hydrogen gas near 4 µm. The dust that blocks starlight in visible light glows on its own here.'),
++  all: () => T('별빛과 먼지·가스를 한 장에 담은, SPHEREx가 2025년 5월부터 12월까지 찍어 만든 첫 전천 지도예요.', 'Starlight, dust and gas in one picture: the first all-sky map SPHEREx made from May to December 2025.'),
+ };
+ 
+ export function mountHomeStory(root, { reducedMotion, loadModel } = {}) {
+@@ -55,80 +56,27 @@ export function mountHomeStory(root, { reducedMotion, loadModel } = {}) {
+     hero._p = p; hero.style.setProperty('--hero-out', motion.matches ? '0' : p.toFixed(4));
+   }, { margin: '0px' });
+ 
+-  // ---- statement: words brighten one by one while it crosses the viewport
+-  const statement = root.querySelector('[data-words]');
+-  if (statement) {
+-    const words = statement.textContent.trim().split(/\s+/);
+-    statement.setAttribute('aria-label', statement.textContent.trim());
+-    statement.textContent = '';
+-    words.forEach((w, i) => {
+-      const span = document.createElement('span'); span.className = 'w'; span.style.setProperty('--i', i); span.textContent = w;
+-      span.setAttribute('aria-hidden', 'true');
+-      statement.append(span, document.createTextNode(i < words.length - 1 ? ' ' : ''));
+-    });
+-    statement.style.setProperty('--n', words.length);
+-    scene(statement, (r, vh) => {
+-      const p = motion.matches ? 1 : clamp((vh * 0.9 - r.top) / (vh * 0.62));
+-      statement.style.setProperty('--p', p.toFixed(4));
+-    });
+-  }
+-
+-  // ---- mission: sticky 3D story in four steps
++  // ---- mission: four steps you open by clicking; the model eases to each step (no scroll-jacking)
+   const track = root.querySelector('#mission-track');
+   if (track) {
+     const stage = track.querySelector('.mission-stage');
+     const steps = [...track.querySelectorAll('.m-step')];
+     const modelStage = track.querySelector('#model-stage');
+-    let model = null, loading = false, step = -1, lastP = -1;
++    let model = null, loading = false, step = 0;
+     const setStep = n => {
+-      if (n === step) return; step = n; stage.dataset.step = String(n);
+-      steps.forEach((el, i) => { el.classList.toggle('on', i === n); el.classList.toggle('past', i < n); el.setAttribute('aria-hidden', String(i !== n)); });
++      step = n; stage.dataset.step = String(n);
++      steps.forEach((el, i) => { el.classList.toggle('on', i === n); el.querySelector('.m-head').setAttribute('aria-expanded', String(i === n)); });
++      model?.setProgress(n / 3, n);
++      modelStage.dispatchEvent(new Event('model-progress'));
+     };
+-    setStep(0);
++    steps.forEach((el, i) => listen(el.querySelector('.m-head'), 'click', () => setStep(i)));
+     const ensureModel = () => {
+       if (model || loading || !loadModel) return;
+       loading = true;
+-      loadModel(modelStage).then(m => { model = m; if (lastP >= 0) model?.setProgress(lastP, step); }).catch(() => {});
++      loadModel(modelStage).then(m => { model = m; model?.setProgress(step / 3, step); }).catch(() => {});
+     };
+-    // start downloading the model one screen before the story begins
+     const pre = new IntersectionObserver(([e]) => { if (e.isIntersecting) { ensureModel(); pre.disconnect(); } }, { rootMargin: '120% 0px' });
+     pre.observe(track); cleanups.push(() => pre.disconnect());
+-    scene(track, r => {
+-      const span = Math.max(1, r.height - innerHeight);
+-      const p = clamp(-r.top / span);
+-      setStep(p < 0.24 ? 0 : p < 0.5 ? 1 : p < 0.74 ? 2 : 3);
+-      if (Math.abs(p - lastP) < 0.0005) return;
+-      lastP = p;
+-      model?.setProgress(motion.matches ? Math.round(p * 3) / 3 : p, step);
+-      modelStage.dispatchEvent(new Event('model-progress'));
+-    }, { margin: '10% 0px' });
+-  }
+-
+-  // ---- light: 102 colours light up from 0.75 µm to 5 µm
+-  const lightTrack = root.querySelector('#light-track');
+-  if (lightTrack) {
+-    const ticks = lightTrack.querySelector('#spec-ticks');
+-    const stageEl = lightTrack.querySelector('.light-stage');
+-    const count = lightTrack.querySelector('#spec-count');
+-    const spectrum = lightTrack.querySelector('#spectrum');
+-    const frag = document.createDocumentFragment();
+-    spherexChannels().forEach((c, i) => {
+-      const t = document.createElement('i');
+-      t.style.cssText = `--w:${c.w.toFixed(4)};--i:${i};--h:${(70 + 10 * Math.sin(i * 0.9) + c.band * 7).toFixed(0)}px`;
+-      frag.append(t);
+-    });
+-    SPHEREX_BANDS.forEach(([a, b]) => { const g = document.createElement('b'); g.style.cssText = `--a:${a};--b:${b}`; frag.append(g); });
+-    ticks.append(frag);
+-    let shown = -1;
+-    scene(lightTrack, r => {
+-      const span = Math.max(1, r.height - innerHeight);
+-      const p = motion.matches ? 1 : clamp((-r.top / span - 0.08) / 0.62);
+-      const lit = p * 108;
+-      stageEl.style.setProperty('--lit', lit.toFixed(2));
+-      const n = Math.min(102, Math.round(p * 102));
+-      if (n !== shown) { shown = n; count.textContent = String(n); }
+-      spectrum.classList.toggle('is-done', p >= 0.98);
+-    }, { margin: '10% 0px' });
+   }
+ 
+   // ---- sky: visible ↔ infrared comparison
+@@ -150,15 +98,17 @@ export function mountHomeStory(root, { reducedMotion, loadModel } = {}) {
+         img.classList.toggle('on', on);
+       }
+       segs.forEach(b => b.setAttribute('aria-checked', String(b.dataset.layer === name)));
+-      caption.textContent = SKY_CAPTIONS[name];
++      if (caption) caption.textContent = SKY_CAPTIONS[name](); current = name;
+     };
++    let current = 'stars';
++    cleanups.push(onLang(() => { if (caption) caption.textContent = SKY_CAPTIONS[current](); }));
+     pick('stars');
+     // warm the other two layers once the section is close, so switching is instant
+     const warm = new IntersectionObserver(([e]) => {
+       if (!e.isIntersecting) return; warm.disconnect();
+       const idle = window.requestIdleCallback || (f => setTimeout(f, 400));
+-      idle(() => layers.forEach(img => { if (img.dataset.src) { const pre = new Image(); pre.srcset = img.dataset.srcset; pre.sizes = img.sizes; pre.src = img.dataset.src; } }));
+-    }, { rootMargin: '60% 0px' });
++      idle(() => layers.forEach(img => { if (img.dataset.src) { const pre = new Image(); pre.srcset = img.dataset.srcset; pre.sizes = img.sizes; pre.src = img.dataset.src; pre.decode().catch(() => {}); } else img.decode?.().catch(() => {}); }));
++    }, { rootMargin: '160% 0px' });
+     warm.observe(compare); cleanups.push(() => warm.disconnect());
+     segs.forEach(b => listen(b, 'click', () => pick(b.dataset.layer)));
+     listen(compare.parentElement.querySelector('.seg'), 'keydown', e => {
+diff --git "a/\355\225\234\352\262\260/\355\206\265\355\225\251V2/index.html" "b/\355\225\234\352\262\260/\355\206\265\355\225\251V2/index.html"
+index 59e292b..d912654 100644
+--- "a/\355\225\234\352\262\260/\355\206\265\355\225\251V2/index.html"
++++ "b/\355\225\234\352\262\260/\355\206\265\355\225\251V2/index.html"
+@@ -1,12 +1,12 @@
+ <!doctype html>
+-<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#06080c"><meta name="description" content="과학자들과 기초 천문학을 배우고, NASA SPHEREx의 실제 관측으로 하늘의 변화를 직접 찾는 시민과학 앱. 모두를 위한 SPHEREx!"><title>모두를 위한 SPHEREx · SPHEREx for Everyone</title><link rel="icon" href="assets/mark.svg" type="image/svg+xml"><link rel="preload" as="image" href="assets/blackhole/sky_spherex_full.webp" fetchpriority="high"><link rel="stylesheet" href="styles.css"></head>
++<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#06080c"><meta name="description" content="과학자들과 기초 천문학을 배우고, NASA SPHEREx의 실제 관측으로 하늘의 변화를 직접 찾는 시민과학 앱. 모두를 위한 SPHEREx!"><title>ApogeeX · SPHEREx for Everyone</title><link rel="icon" href="assets/apogeex-mark.png" type="image/png"><link rel="preload" as="image" href="assets/blackhole/sky_spherex_full.webp" fetchpriority="high"><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="home-v3.css"></head>
+ <body>
+ <a class="skip-link" href="#main">본문으로 건너뛰기</a>
+ <header class="site-header">
+  <div class="bar glass-bar">
+-  <a class="brand" href="#home" aria-label="모두를 위한 SPHEREx 홈"><img src="assets/mark.svg" alt="" width="22" height="22"><span>모두를 위한 <b>SPHEREx</b></span></a>
+-  <nav aria-label="주 메뉴"><a href="#analysis" data-view="analysis">방구석 천문학자</a><a href="#planetarium" data-view="planetarium">플라네타리움</a><a href="#moving" data-view="moving">소행성·혜성</a><button class="nav-tutorial" data-tutorial>튜토리얼 <span>준비 중</span></button></nav>
+-  <a href="#mission" class="header-about">소개</a>
++  <a class="brand" href="#home" aria-label="ApogeeX 홈" data-no-i18n><img class="brand-logo" src="assets/apogeex-logo.png" alt="ApogeeX" width="105" height="25"></a>
++  <nav aria-label="주 메뉴"><a href="#analysis" data-view="analysis">방구석 천문학자</a><a href="#planetarium" data-view="planetarium">플라네타리움</a><a href="#moving" data-view="moving">소행성·혜성</a><button class="nav-tutorial" data-tutorial>튜토리얼</button></nav>
++  <a href="#mission" class="header-about">소개</a><div class="lang-switch" role="group" aria-label="언어" data-no-i18n><button type="button" data-lang="en" aria-pressed="true">EN</button><button type="button" data-lang="ko" aria-pressed="false">한</button></div>
+   <button class="menu-toggle" aria-label="메뉴 열기" aria-expanded="false"><span></span><span></span></button>
+  </div>
+ </header>
+@@ -15,6 +15,7 @@
+  <div class="home-hero" id="home-hero">
+   <div class="sky-backdrop" aria-hidden="true"></div><canvas id="home-lens" aria-hidden="true"></canvas><div class="hero-shade" aria-hidden="true"></div>
+   <div class="hero-content">
++   <img class="hero-logo" src="assets/apogeex-logo.png" alt="ApogeeX" width="268" height="64" draggable="false">
+    <h1 class="hero-title"><span class="ht-name" aria-hidden="true"><span>SP</span><span>HERE</span><span>x</span></span><span class="ht-sub" aria-hidden="true">for Everyone</span><span class="sr-only">모두를 위한 SPHEREx</span></h1>
+   </div>
+   <div class="home-tools" aria-label="탐색 메뉴">
+@@ -23,77 +24,86 @@
+    <a class="tool-card" data-tone="blue" href="#planetarium"><span class="glass-rim" aria-hidden="true"></span><span class="glass-spec" aria-hidden="true"></span><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 64 40"><path class="draw" d="M8 30L20 12L34 20L48 8L57 26" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".6"/><g fill="currentColor"><circle cx="8" cy="30" r="1.8"/><circle cx="20" cy="12" r="2.6"/><circle cx="34" cy="20" r="1.8"/><circle cx="48" cy="8" r="2.6"/><circle cx="57" cy="26" r="1.8"/></g></svg></span><h2>플라네타리움</h2><p>별자리 사이를 돌아다니며 궁금한 천체를 찾고 정보를 확인해요.</p><span class="card-foot"><span>열기</span><i aria-hidden="true">→</i></span></a>
+    <a class="tool-card" data-tone="lilac" href="#moving"><span class="glass-rim" aria-hidden="true"></span><span class="glass-spec" aria-hidden="true"></span><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 64 40"><path class="draw" d="M4 34C22 32 40 22 56 8" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="2 4" opacity=".6"/><circle class="comet" cx="56" cy="8" r="3.2" fill="currentColor"/><circle cx="38" cy="22" r="2" fill="currentColor" opacity=".55"/><circle cx="20" cy="30" r="1.6" fill="currentColor" opacity=".35"/></svg></span><h2>소행성 탐사</h2><p>빠르게 하늘을 가로지르는 작은 천체의 흔적을 따라가요.</p><span class="card-foot"><span>열기</span><i aria-hidden="true">→</i></span></a>
+   </div>
+-  <div class="hero-foot"><a href="#mission" class="scroll-cue">SPHEREx 알아보기 <i aria-hidden="true">↓</i></a><button id="motion-toggle" aria-pressed="false" aria-label="배경 움직임 멈추기">Ⅱ <span>움직임 멈추기</span></button></div>
++  <div class="hero-foot"><a href="#mission" class="scroll-cue">SPHEREx 알아보기 <i aria-hidden="true">↓</i></a><button id="motion-toggle" data-no-i18n aria-pressed="false" aria-label="배경 움직임 멈추기">Ⅱ <span>움직임 멈추기</span></button></div>
+   <div id="home-wave" class="home-wave" aria-hidden="true"><div class="home-wave-head"><b data-stage>INSPIRAL</b><span data-note></span><span data-value></span></div><canvas width="552" height="112" aria-hidden="true"></canvas><div class="home-wave-legend"><span>h₊</span><span>h×</span></div></div>
+  </div>
+ 
+- <section class="mission" id="mission" aria-labelledby="mission-title">
+-  <h2 class="sr-only" id="mission-title">SPHEREx와 미션</h2>
+-  <p class="statement" data-words>SPHEREx는 하늘 전체를 102가지 색으로 찍는 NASA의 적외선 우주망원경입니다. 반년에 한 번, 빠짐없이.</p>
++ <section class="mission sec" id="mission" aria-labelledby="mission-title">
++  <header class="sec-head">
++   <h2 id="mission-title" class="duo">SPHEREx는 하늘 전체를 102가지 색으로 찍는 NASA의 적외선 우주망원경이에요. <span>반년에 한 번, 하늘 전체를 빠짐없이 다시 찍어요.</span></h2>
++   <dl class="fact-strip"><div><dt>2025.3.11</dt><dd>발사</dd></div><div><dt>약 700 km</dt><dd>극궤도 높이</dd></div><div><dt>6개월</dt><dd>하늘 전체 1회</dd></div><div><dt>6.15″</dt><dd>한 화소가 보는 하늘</dd></div></dl>
++  </header>
+   <div class="mission-track" id="mission-track">
+-   <div class="mission-stage">
+-    <div class="mission-copy">
+-     <article class="m-step" data-step="0">
+-      <h3>하늘 전체를 찍는 <br>분광 망원경.</h3>
+-      <p>2025년 3월 11일 발사됐어요. 고도 약 700 km에서 지구의 남북 극 위를 지나며 돌고, 하늘을 띠처럼 훑어 6개월마다 하늘 전체를 한 번씩 찍어요.</p>
+-      <dl class="m-facts"><div><dt>2025.3.11</dt><dd>발사</dd></div><div><dt>약 700 km</dt><dd>궤도 높이</dd></div><div><dt>6개월</dt><dd>하늘 전체 1회</dd></div></dl>
+-     </article>
+-     <article class="m-step" data-step="1">
+-      <h3>세 가지 질문을 <br>품고 갔어요.</h3>
+-      <ol class="m-goals">
+-       <li><b>우주의 첫 순간</b><span>수억 개 은하의 3차원 지도로, 빅뱅 직후 우주가 급팽창한 흔적을 찾아요.</span></li>
+-       <li><b>은하가 걸어온 길</b><span>우주의 모든 은하가 낸 빛을 모아, 시대마다 은하가 얼마나 빛났는지 거슬러 읽어요.</span></li>
+-       <li><b>생명의 재료</b><span>우리은하의 차가운 구름 속에서 물, 이산화탄소, 일산화탄소 얼음을 찾아요.</span></li>
+-      </ol>
+-     </article>
+-     <article class="m-step" data-step="2">
+-      <h3>세 겹 차폐막 안의 <br>차가운 눈.</h3>
+-      <p>원뿔 모양 차폐막 세 겹이 태양과 지구의 열을 막아요. 그 안의 지름 20 cm 망원경은 냉각 장치 없이 영하 210 °C 안팎까지 식어, 아주 희미한 적외선까지 모아요.</p>
+-     </article>
+-     <article class="m-step" data-step="3">
+-      <h3>이제 직접 <br>돌려 보세요.</h3>
+-      <p>끌어서 돌리고, 차폐막을 열어 안을 들여다보세요. <b>크게 보기</b>를 누르면 화면 가득 자유롭게 움직일 수 있어요.</p>
+-      <p class="m-note">공개 자료를 바탕으로 다시 만든 참고 모형이에요. NASA가 제공한 비행용 설계 모델은 아니에요.</p>
+-     </article>
+-    </div>
++   <div class="mission-stage" data-step="0">
++    <ol class="mission-copy" aria-label="SPHEREx 알아보기">
++     <li class="m-step on" data-step="0"><button class="m-head" type="button" aria-expanded="true">하늘 전체를 찍는 분광 망원경</button>
++      <div class="m-body"><div><p>지구의 남북 극 위를 지나며 돌고, 하늘을 띠처럼 훑어요. 6개월이면 하늘 전체를 한 번 다 찍어요.</p></div></div></li>
++     <li class="m-step" data-step="1"><button class="m-head" type="button" aria-expanded="false">세 가지 질문</button>
++      <div class="m-body"><div><ul class="m-goals">
++       <li><b>우주의 첫 순간</b><span>수억 개 은하의 3차원 지도로 빅뱅 직후 급팽창의 흔적을 찾아요.</span></li>
++       <li><b>은하가 걸어온 길</b><span>모든 은하가 낸 빛을 모아 시대마다 얼마나 빛났는지 읽어요.</span></li>
++       <li><b>생명의 재료</b><span>차가운 구름 속 물, 이산화탄소, 일산화탄소 얼음을 찾아요.</span></li></ul></div></div></li>
++     <li class="m-step" data-step="2"><button class="m-head" type="button" aria-expanded="false">세 겹 차폐막 안의 차가운 눈</button>
++      <div class="m-body"><div><p>원뿔 차폐막 세 겹이 태양과 지구의 열을 막아요. 지름 20 cm 망원경은 냉각 장치 없이 영하 210 °C 안팎까지 식어요.</p></div></div></li>
++    </ol>
+     <div class="model-stage" id="model-stage">
+      <img class="model-poster" src="assets/model/spherex-hero-poster.webp" alt="" width="893" height="900" decoding="async" loading="lazy">
+      <div class="model-host" id="model-host"></div>
++     <button type="button" class="model-pause" aria-pressed="true" aria-label="회전 멈춤">Ⅱ</button>
+      <p class="model-status" id="model-status" role="status">3D 모형을 준비하고 있어요</p>
+-     <div class="model-dock glass-pill" role="toolbar" aria-label="3D 모형 조작">
+-      <button type="button" data-model="cutaway" aria-pressed="false">내부 보기</button>
+-      <button type="button" data-model="back">태양전지판</button>
+-      <button type="button" data-model="spin" aria-pressed="false">자동 회전</button>
+-      <button type="button" data-model="reset">처음 시점</button>
+-      <button type="button" data-model="free" class="dock-free" aria-pressed="false"><span class="free-on">크게 보기</span><span class="free-off">닫기</span></button>
+-     </div>
+-     <p class="model-hint"><span class="hint-mouse">끌어서 돌리기 · ⌘ 또는 Ctrl + 스크롤로 확대</span><span class="hint-free">끌어서 돌리기 · 스크롤 확대 · 오른쪽 버튼으로 이동 · Esc 닫기</span></p>
++     <div class="model-dock" role="toolbar" aria-label="3D 모형 조작"><button type="button" data-model="cutaway" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7l8-4 8 4M4 7v10l8 4 8-4V7M12 11v10M4 7l8 4 8-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span>내부 보기</span></button><button type="button" data-model="back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8h18v8H3zM9 8v8M15 8v8M12 16v4M8 20h8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span>태양전지판</span></button></div>
++     
+     </div>
+-    <div class="mission-rail" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+    </div>
+   </div>
+  </section>
+ 
+- <section class="light" id="light" aria-labelledby="light-title">
+-  <div class="light-track" id="light-track">
+-   <div class="light-stage">
+-    <h2 id="light-title" class="duo">눈이 멈추는 곳에서 시작합니다. <span>사람의 눈은 0.38–0.75 µm의 빛만 봐요. SPHEREx는 그 바로 다음부터 5 µm까지를 102개의 색으로 나눠 찍어요.</span></h2>
+-    <figure class="spectrum" id="spectrum" aria-label="파장 0.38 µm부터 5 µm까지의 띠. 왼쪽 끝의 좁은 무지개 구간이 사람 눈에 보이는 빛이고, 0.75 µm부터 5 µm까지 SPHEREx의 102개 관측 색이 이어져요.">
+-     <div class="spec-plot">
+-      <div class="spec-visible" aria-hidden="true"><span>눈에 보이는 빛</span></div>
+-      <div class="spec-ticks" id="spec-ticks" aria-hidden="true"></div>
+-      <div class="spec-marks" aria-hidden="true">
+-       <span class="mk ice" style="--w:3.05" data-row="0"><b>물 얼음</b>3.05 µm</span>
+-       <span class="mk dust" style="--w:3.4" data-row="1"><b>먼지(PAH)</b>약 3.4 µm</span>
+-       <span class="mk gas" style="--w:4.05" data-row="0"><b>뜨거운 수소</b>약 4 µm</span>
+-       <span class="mk ice" style="--w:4.27" data-row="1"><b>이산화탄소 얼음</b>4.27 µm</span>
+-       <span class="mk ice" style="--w:4.67" data-row="0"><b>일산화탄소 얼음</b>4.67 µm</span>
+-      </div>
+-      <div class="spec-axis" aria-hidden="true"><span style="--w:.5">0.5</span><span style="--w:1">1</span><span style="--w:2">2</span><span style="--w:3">3</span><span style="--w:4">4</span><span style="--w:5">5 µm</span></div>
+-     </div>
+-     <figcaption class="spec-count"><strong id="spec-count">0</strong><span>개의 색<br><small>검출기 6개 × 17색</small></span></figcaption>
+-    </figure>
+-    <p class="light-foot">색마다 천체가 얼마나 밝은지 이어 그리면 스펙트럼이 돼요. 스펙트럼의 모양으로 은하까지의 거리와, 얼음이나 먼지 같은 성분을 읽어요.</p>
++ <section class="lab sec" id="light" aria-labelledby="lvf-title">
++  <header class="sec-head">
++   <h2 id="lvf-title" class="duo">한 점을 여러 번 찍어 102가지 색을 모아요. <span>검출기 앞의 선형 분광 필터(LVF)는 자리마다 통과시키는 색이 조금씩 달라요.<br>망원경이 조금씩 옮겨 가며 찍으면, 하늘의 한 점이 필터의 띠를 하나씩 지나며 색마다 한 장씩 찍혀요.</span></h2>
++  </header>
++  <div class="lvf panel" id="lvf">
++   <div class="lvf-stage"><span class="target-tag" data-no-i18n>RW Aurigae</span><canvas class="lvf-sky" aria-label="SPHEREx 바로 뒤에서 망원경의 시선 방향으로 본 그림. SPHEREx가 하늘의 넓은 영역을 한 번에 찍고, 조금씩 옮겨 가며 여러 번 찍어 같은 곳의 색을 쌓은 뒤, 101장을 하나로 합쳐요."></canvas><canvas class="lvf-overlay" aria-hidden="true"></canvas></div>
++   <div class="lvf-side">
++    <div class="lvf-shots"><figure><canvas data-shot="0" width="80" height="80"></canvas><figcaption data-um="0">—</figcaption></figure><figure><canvas data-shot="1" width="80" height="80"></canvas><figcaption data-um="1">—</figcaption></figure></div>
++    <div class="lvf-cube-head"><b><span data-count>0</span> / 102</b></div>
++    <div class="lvf-grid"><div class="lvf-rows" aria-hidden="true"></div><canvas class="lvf-cube-canvas" aria-hidden="true"></canvas></div>
++   </div>
++  </div>
++ </section>
++
++ <section class="lab sec" id="spectrum" aria-labelledby="spec-title">
++  <header class="sec-head">
++   <h2 id="spec-title" class="duo">같은 하늘 한 조각, 102가지 색. <span>젊은 별 RW Aurigae 둘레를 SPHEREx가 2026년 9월 한 달 동안 찍은 실제 사진을 파장 순서로 넘겨 봐요.<br>짧은 파장에서 보이던 별이 긴 파장에서는 희미해지고, 가운데 별은 오히려 밝아져요.</span></h2>
++  </header>
++  <div class="spec-view" id="spec-view">
++   <figure class="spec-frame panel"><span class="target-tag" data-no-i18n>RW Aurigae</span>
++    <canvas class="spec-frame-canvas" width="80" height="80" aria-label="선택한 파장의 실제 SPHEREx 사진"></canvas>
++    
++    <figcaption class="spec-read"><b data-um>—</b></figcaption>
++   </figure>
++   <div class="spec-side">
++    <div class="spec-chart panel">
++     
++     <canvas class="spec-chart-canvas" aria-label="파장별 밝기 그래프. 끌거나 마우스를 올려 파장을 고르세요."></canvas>
++     <input class="spec-range" type="range" min="0" max="100" step="1" value="0" aria-label="파장 고르기">
++     <div class="spec-chart-foot"><span data-flux></span></div>
++    </div>
++   </div>
++  </div>
++ </section>
++
++ <section class="lab sec" id="blink" aria-labelledby="blink-title">
++  <header class="sec-head">
++   <h2 id="blink-title" class="duo">깜빡이면 움직이는 것이 보여요. <span>같은 하늘을 시간 차를 두고 찍은 사진을 번갈아 보면 별은 제자리에 있고, 가까운 천체만 자리를 옮겨요.<br>소행성 4&nbsp;Vesta를 SPHEREx가 26시간 동안 세 번 찍었어요.</span></h2>
++  </header>
++  <div class="blink" id="blink-demo">
++   <figure class="blink-frame panel">
++    <canvas class="blink-canvas" width="384" height="384" aria-label="4 Vesta를 찍은 실제 SPHEREx 사진 3장을 번갈아 보여 주는 화면. 위가 북쪽, 왼쪽이 동쪽."></canvas>
++   </figure>
++   <div class="blink-side">
++    <ol class="blink-frames" aria-label="촬영 시각"></ol>
++    <dl class="blink-facts"><div><dt data-blink-move>—</dt><dd>26시간 동안 움직인 거리</dd></div><div><dt>4.42–5.00 µm</dt><dd>검출기 D6</dd></div></dl>
+    </div>
+   </div>
+  </section>
+@@ -119,35 +129,17 @@
+     <button type="button" role="radio" aria-checked="false" data-layer="dust">먼지와 가스</button>
+     <button type="button" role="radio" aria-checked="false" data-layer="all">함께 보기</button>
+    </div>
+-   <p class="sky-caption" id="sky-caption" aria-live="polite"></p>
+   </div>
+-  <p class="sky-credit">가시광: ESA/Gaia/DPAC, Gaia EDR3 하늘 색 지도(CC BY-SA 3.0 IGO). SPHEREx 지도와 겹치도록 해머-에이토프 투영을 몰바이데 투영으로 바꿨고, 바꾼 이미지도 같은 조건으로 공개해요. 적외선: NASA/JPL-Caltech, SPHEREx 전천 지도(2025). 두 지도 모두 은하 좌표이며 가운데가 우리은하 중심이에요.</p>
++  <p class="sky-credit" data-no-i18n>ESA/Gaia/DPAC (CC BY-SA 3.0 IGO) · NASA/JPL-Caltech SPHEREx</p>
+  </section>
+ 
+- <section class="about" id="about">
+-  <div class="about-lead">
+-   <h2>작은 질문이<br>시민과학이 되는 곳</h2>
+-   <div>
+-    <p>모두를 위한 SPHEREx는 이 자료를 누구나 읽을 수 있게 만든 앱이에요. 먼저 기초를 배우고, 하늘에서 천체를 찾고, 실제 관측에서 달라진 것을 직접 확인해요.</p>
+-    <p>화면의 모든 값에는 측정인지 계산인지, 출처를 붙였어요.</p>
+-   </div>
+-  </div>
+-  <h3 class="guide-title">처음 오셨다면, 이 순서로</h3>
+-  <ol class="guide">
+-   <li><span>1</span><div><h4>튜토리얼 <em>준비 중</em></h4><p>유명 과학자들이 별의 밝기, 거리, 빛의 색을 차근차근 알려 줘요.</p></div></li>
+-   <li><span>2</span><div><h4>플라네타리움</h4><p>별자리 사이에서 천체를 찾고, 거리와 등급 같은 기본 정보를 봐요.</p></div></li>
+-   <li><span>3</span><div><h4>방구석 천문학자</h4><p>같은 천체를 날짜별로 깜빡여 비교하고, 3D와 스펙트럼으로 변화를 확인해요.</p></div></li>
+-   <li><span>4</span><div><h4>발견을 기록하기</h4><p>찾은 변화를 근거와 함께 남겨요. 모든 발견은 확인이 필요한 후보로 다뤄요.</p></div></li>
+-  </ol>
+-  <p class="source-note">관측 자료: NASA/IPAC IRSA SPHEREx DR1·QR3 · 배경: NASA/JPL-Caltech SPHEREx 전천 지도 · <button id="credits-open">자료와 라이선스</button></p>
+-  <div class="back-top-wrap"><button id="back-top" class="back-top" aria-label="맨 위로 올라가 메뉴 선택하기"><i aria-hidden="true">↑</i></button><span>맨 위로</span></div>
+- </section>
+- <footer><span class="brand-small">모두를 위한 <b>SPHEREx</b></span><span>NASA Space Apps Challenge 2026 · Planet X and SPHEREx</span></footer>
++ <div class="back-top-wrap"><button id="back-top" class="back-top" aria-label="맨 위로"><i aria-hidden="true">↑</i></button></div>
++ <footer data-no-i18n><img src="assets/apogeex-logo.png" alt="ApogeeX" width="84" height="20"><span>NASA Space Apps Challenge 2026</span></footer>
+ </section>
+ <section id="workspace-view" class="page-view" hidden><div class="workspace-top" hidden><span id="workspace-kicker"></span><h1 id="workspace-title"></h1><a href="#home" class="workspace-back">홈</a></div><div id="workspace-body" aria-live="polite"></div></section>
+ </main>
+ <dialog id="tutorial-dialog"><button class="dialog-x" aria-label="닫기">×</button><p class="dialog-kicker">튜토리얼 · 준비 중</p><h2>과학자와 함께 배우는 첫걸음</h2><p>기본적인 천문학 지식을 차근차근 배우는<br>튜토리얼을 준비하고 있어요.</p><p class="muted">지금은 플라네타리움에서 별을 찾거나,<br>방구석 천문학자의 추천 대상으로 시작해 보세요.</p><a class="pill pill-light" href="#analysis">방구석 천문학자로 바로 시작하기</a></dialog>
+-<dialog id="credits-dialog"><button class="dialog-x" aria-label="닫기">×</button><h2>자료와 표현에 대하여</h2><p>전천 지도: NASA/JPL-Caltech, SPHEREx Stars and Galaxies (2025). 적외선 합성색 영상이며 현재 시각의 하늘이나 측광 데이터가 아닙니다.</p><p>홈의 블랙홀은 원본 BLACKHOLE_BG의 PN/EOB 운동, 슈바르츠실트 광선 휨, 병합·링다운을 사용합니다. 여러 블랙홀의 그림자 연결은 광학적 근사이며, 실제 천체의 위치를 표시하지 않습니다.</p><p>관측 분석: NASA/IPAC IRSA SPHEREx DR1·QR3. 외부 카탈로그와 계산값은 각각 표시합니다. 탐색용 참고 사진은 해당 망원경과 출처를 별도 표시합니다.</p><p>천구 엔진과 별·행성·별자리 자료는 중선/v1.2.0의 Stellarium Web Engine입니다. 홈의 블랙홀 배경은 BLACKHOLE_BG 원본 그대로, SPHEREx 별빛 지도를 은하 좌표 파노라마로 펼친 하늘을 씁니다.</p><details id="blackhole-model"><summary>블랙홀의 계산 모형과 출처</summary><div>
++<dialog id="credits-dialog"><button class="dialog-x" aria-label="닫기">×</button><h2>자료와 표현에 대하여</h2><p>전천 지도: NASA/JPL-Caltech, SPHEREx Stars and Galaxies (2025). 적외선 합성색 영상이며 현재 시각의 하늘이나 측광 데이터가 아닙니다.</p><p>홈의 블랙홀은 원본 BLACKHOLE_BG의 PN/EOB 운동, 슈바르츠실트 광선 휨, 병합·링다운을 사용합니다. 여러 블랙홀의 그림자 연결은 광학적 근사이며, 실제 천체의 위치를 표시하지 않습니다.</p><p>홈의 4 Vesta: SPHEREx DR1 실제 노출 3장(검출기 D6), 같은 북쪽 위 격자와 밝기 기준. 금색 원은 NASA/IPAC IRSA MOST의 궤도 예측 위치(측정값 아님). 자료: GitHub sel00000/Apogee. 홈의 102색 사진: RW Aurigae 둘레, SPHEREx L2 노출 101장(2026년 9월), 분석 앱과 같은 보정. 띠가 지나가는 그림은 설명용 모식도예요.</p><p>관측 분석: NASA/IPAC IRSA SPHEREx DR1·QR3. 외부 카탈로그와 계산값은 각각 표시합니다. 탐색용 참고 사진은 해당 망원경과 출처를 별도 표시합니다.</p><p>천구 엔진과 별·행성·별자리 자료는 중선/v1.2.0의 Stellarium Web Engine입니다. 홈의 블랙홀 배경은 BLACKHOLE_BG 원본 그대로, SPHEREx 별빛 지도를 은하 좌표 파노라마로 펼친 하늘을 씁니다.</p><details id="blackhole-model"><summary>블랙홀의 계산 모형과 출처</summary><div>
+         <h3>이 배경은 무엇을 계산하나요</h3>
+         <ul>
+           <li><b>움직임</b> 모든 블랙홀의 운동방정식을 매 순간 적분해요(RK4, 프레임과 무관한 물리 시간 간격). 정해진 궤도를 재생하지 않아요.</li>
+diff --git "a/\355\225\234\352\262\260/\355\206\265\355\225\251V2/scripts/build-home-model.mjs" "b/\355\225\234\352\262\260/\355\206\265\355\225\251V2/scripts/build-home-model.mjs"
+index e76b699..6dd98fc 100644
+--- "a/\355\225\234\352\262\260/\355\206\265\355\225\251V2/scripts/build-home-model.mjs"
++++ "b/\355\225\234\352\262\260/\355\206\265\355\225\251V2/scripts/build-home-model.mjs"
+@@ -6,6 +6,8 @@ import path from 'node:path';
+ import fs from 'node:fs';
+ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+ const { build } = await import(path.join(root, 'analysis/node_modules/vite/dist/node/index.js'));
++// drop chunks from earlier builds (the hash changes when Three.js or the entries change)
++for (const f of fs.readdirSync(path.join(root, 'assets/model'))) if (/^three-.*\.js$/.test(f)) fs.rmSync(path.join(root, 'assets/model', f));
+ await build({
+   configFile: false, logLevel: 'warn', root,
+   resolve: { alias: [
+@@ -14,9 +16,10 @@ await build({
+   ] },
+   build: {
+     outDir: path.join(root, 'assets/model'), emptyOutDir: false, minify: true, sourcemap: false, target: 'es2022',
+-    lib: { entry: path.join(root, 'home-src/mission-model.js'), formats: ['es'], fileName: () => 'mission-model.js' },
++    // two entries share one Three.js chunk, so the home page downloads Three.js once
++    lib: { entry: { 'mission-model': path.join(root, 'home-src/mission-model.js'), 'sky-scan': path.join(root, 'home-src/sky-scan.js') }, formats: ['es'], fileName: (_, name) => `${name}.js` },
++    rollupOptions: { output: { chunkFileNames: 'three-[hash].js' } },
+   },
+ });
+ fs.copyFileSync(path.join(root, 'vendor/three/LICENSE'), path.join(root, 'assets/model/THREE-LICENSE.txt'));
+-const size = fs.statSync(path.join(root, 'assets/model/mission-model.js')).size;
+-console.log(`assets/model/mission-model.js ${(size / 1024).toFixed(0)} KiB`);
++for (const f of fs.readdirSync(path.join(root, 'assets/model')).filter(f => f.endsWith('.js'))) console.log(`assets/model/${f} ${(fs.statSync(path.join(root, 'assets/model', f)).size / 1024).toFixed(0)} KiB`);
