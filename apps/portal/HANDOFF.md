@@ -62,6 +62,8 @@
 
 홈의 블랙홀 배경, 글라스 카드, 미션 이야기, 전천 비교와 출처 설명을 보존했습니다. 망원경 모형 소스는 `home-src/mission-model.js`, 배포 번들은 `assets/model/mission-model.js`입니다. 루트 설치 후 이 폴더에서 `node scripts/build-home-model.mjs`로 재생성할 수 있습니다. 스크립트는 이웃 `apps/analysis`의 Vite와 포털의 vendored Three.js를 사용합니다.
 
+상단 바, 파비콘, 홈 푸터는 `apps/portal/assets/brand/`의 팀 로고를 씁니다(파일 설명은 그 폴더의 `README.md`).
+
 3D 모형 자산: `assets/model/`에는 Hero(`spherex-hero.glb`)와 Lite(`spherex-lite.glb`), 키트의 `manifest.json`(revision `panel-clearance-2`)이 키트 원본 그대로 들어 있습니다. 화면 폭 700px 이하(`matchMedia('(max-width:700px)')`)에서는 Lite, 그 밖에는 Hero를 불러오며, `mountMissionModel`의 `quality` 옵션이 픽셀 비율 상한(Hero 1.75, Lite 1.25)을 정합니다. 모형을 바꾸면 `node scripts/build-home-model.mjs`로 번들을 다시 만들고, `tests/model-assets.test.js`가 두 GLB의 sha256을 `manifest.json`과 대조합니다. 포스터 `spherex-hero-poster.webp`는 키트의 `preview/spherex-hero.png`와 같은 형상(태양전지판 위치 동일)이라 그대로 둡니다.
 
 `docs/verification.md`는 통합 전 V1의 역사적 검증 기록입니다. 그곳의 테스트 수·옛 경로·서버 명령을 현재 상태로 인용하지 않습니다. 원본 자료의 라이선스·측정 방법·기여자 표시는 삭제하지 않습니다.

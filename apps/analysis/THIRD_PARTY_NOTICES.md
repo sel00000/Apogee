@@ -27,4 +27,4 @@
 
 - 선 그림: Stellarium Web Engine의 western sky culture (`apps/planetarium/vendor/stellarium-web-engine/apps/test-skydata/skycultures/western/index.json`). 저자 "Stellarium's team". 같은 폴더 `description.md`의 라이선스 항목: "Text and data: CC BY-SA" (삽화는 "Free Art License"이며 쓰지 않았습니다). 엔진 자체는 AGPL-3.0 (`LICENSE-AGPL-3.0.txt`).
 - 별 위치: Hipparcos, the New Reduction (F. van Leeuwen 2007, A&A 474, 653, VizieR I/311/hip2). ICRS, 에포크 J1991.25, `apps/planetarium/catalogs/hipparcos2-astrometry.tsv.gz`. 이용 조건은 provenance 파일의 `licenseUrl`: https://cds.unistra.fr/vizier-org/licences_vizier.html
-- 이름: 라틴어 이름은 위 sky culture, 한국어 이름은 프로젝트 팀이 추가한 표 `scripts/constellation-names-ko.json`.
+- 이름: 라틴어 이름은 위 sky culture, 한국어 이름은 표 `scripts/constellation-names-ko.json`. 이 표는 표준 한국어 별자리 이름을 보고 AI 설계 세션이 입력했으며, 인용한 출처 파일은 없고 팀은 아직 확인하지 않았습니다.
