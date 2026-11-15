@@ -7,7 +7,10 @@
  *    (copied from sel00000/Apogee, see SOURCE.md).
  * Every animation runs only while its section is on screen, and stops for prefers-reduced-motion.
  */
-import { T, onLang } from './i18n.js';
+import { getLang, onLangChange } from './i18n.js';
+// short bilingual strings drawn on canvases; page text uses the portal dictionaries (i18n/en.js, ko.js)
+const T = (ko, en) => (getLang() === 'ko' ? ko : en);
+const onLang = onLangChange;
 const BANDS = [[0.75, 1.09], [1.10, 1.62], [1.63, 2.42], [2.42, 3.82], [3.83, 4.42], [4.42, 5.00]];
 const GOLD = '#f2cf6b', ACCENT = '#e9c48f', INK = '#06080c';
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
