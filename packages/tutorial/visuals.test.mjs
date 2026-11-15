@@ -70,7 +70,8 @@ test('small charts retain an eleven CSS pixel label instead of shrinking it with
 });
 
 // A small DOM fixture exercises the real handlers without a browser or extra dependency.
-function mountedVisual(kind, run) {
+// Korean expectations name the language explicitly: the site default became English (spec-i18n D1).
+function mountedVisual(kind, run, options = { lang: 'ko' }) {
   class Element {
     constructor(tag) {
       this.tag = tag; this.children = []; this.attributes = new Map(); this.events = new Map();
@@ -103,7 +104,7 @@ function mountedVisual(kind, run) {
   };
   let destroy;
   try {
-    destroy = mountVisual(container, kind);
+    destroy = mountVisual(container, kind, options);
     run({ find, observers, destroy, container });
   } finally {
     destroy?.();
@@ -143,4 +144,30 @@ test('spectrum has a readable HTML axis caption and disconnects its responsive o
     assert.equal(observer.disconnected, true);
     assert.equal(container.children.length, 0);
   });
+});
+
+test('English diagrams draw the same readouts in English', () => {
+  mountedVisual('mask', ({ find }) => {
+    const toggle = find(element => element.tag === 'button');
+    const output = find(element => element.tag === 'output');
+    assert.match(output.textContent, /outside the observed area.*no common wavelength.*saturation or poor quality/);
+    toggle.click();
+    assert.match(output.textContent, /Hatching marks values excluded.*Black may be low brightness/);
+  }, { lang: 'en' });
+  mountedVisual('spectrum', ({ find }) => {
+    const caption = find(element => element.className === 'sv-caption');
+    assert.match(caption.textContent, /Horizontal axis: wavelength λ \(µm\).*Vertical axis: Fν \(mJy\)/);
+  }, { lang: 'en' });
+});
+
+test('every English diagram is free of Hangul on both tracks', () => {
+  const hangul = /[\u1100-\u11ff\u3130-\u318f\uac00-\ud7af]/;
+  for (const kind of ['sky', 'region', 'timeline', 'wavelength', 'spectrum', 'mask', 'uncertainty', 'provenance']) {
+    for (const track of ['beginner', 'research']) mountedVisual(kind, ({ container }) => {
+      const texts = [];
+      const walk = element => { texts.push(element.textContent, ...element.attributes.values()); element.children.forEach(walk); };
+      walk(container);
+      assert.doesNotMatch(texts.join(' '), hangul, `${kind} ${track}`);
+    }, { lang: 'en', track });
+  }
 });

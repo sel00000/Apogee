@@ -9,6 +9,7 @@
 .sv-diagram .sv-muted-text { fill: var(--sv-muted); }
 .sv-diagram .sv-gold-text { fill: var(--sv-gold); }
 .sv-diagram .sv-big-text { fill: var(--sv-ink); font-size: calc(16px * var(--sv-label-scale, 1)); font-weight: 650; }
+.sv-diagram .sv-box-text { font-size: calc(9.5px * var(--sv-label-scale, 1)); }
 .sv-diagram .sv-grid { stroke: #304356; stroke-width: 1; }
 .sv-diagram .sv-wave, .sv-diagram .sv-spectrum { fill: none; stroke: var(--sv-cyan); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
 .sv-diagram .sv-wavelength-mark { stroke: var(--sv-gold); stroke-width: 1.6; }
