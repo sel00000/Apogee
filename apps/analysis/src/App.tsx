@@ -6,6 +6,7 @@ import type { PatchJob } from './lib/api'
 import { fmtRadec, parseCoords } from './lib/coords'
 import type { Radec } from './lib/coords'
 import { readView, writeView } from './lib/urlState'
+import { LANG_KEY, appTitle, langMessage, readStoredLang, writeStoredLang } from './lib/lang'
 import { missionFor } from './lib/missions'
 import { useL } from './lib/i18n'
 import { sesame } from './lib/sky'
@@ -16,7 +17,7 @@ import { BlinkViewer } from './components/BlinkViewer'
 import { Timeline } from './components/Timeline'
 import { PatchInfo } from './components/PatchInfo'
 import { Findings, Guides, MissionCard, SkyLocator } from './components/Rail'
-import { embeddedShareURL, movingArchiveContext, notifyAnalysisURL, notifyShell, selectionMessage } from './lib/integration'
+import { embeddedShareURL, movingArchiveContext, notifyAnalysisURL, notifyShell, selectionMessage, stageMessage } from './lib/integration'
 
 const Scene3D = lazy(() => import('./components/Scene3D').then((m) => ({ default: m.Scene3D })))
 const SkyPanel = lazy(() => import('./components/SkyPanel').then((m) => ({ default: m.SkyPanel })))
@@ -187,6 +188,17 @@ export default function App() {
       if (event.origin !== window.location.origin || event.source !== window.parent) return
       if (event.data?.type === 'spherex-analysis-pause') { useTime.getState().setSuspended(event.data.paused !== false); return }
       if (event.data?.type === 'spherex-analysis-resume') { useTime.getState().setSuspended(false); return }
+      // the portal's language toggle (spec D1); target, time, tab and stage stay as they are
+      const nextLang = langMessage(event.data)
+      if (nextLang) { useTime.getState().setLang(nextLang); return }
+      // the portal's menu switches between Find (sky) and the workbench without reloading this app
+      const nextStage = stageMessage(event.data)
+      if (nextStage) {
+        // a changed stage reports its URL through writeView; an unchanged one reports it here
+        if (useTime.getState().stage === nextStage) notifyAnalysisURL()
+        else setStage(nextStage)
+        return
+      }
       const selection = selectionMessage(event.data)
       if (!selection) return
       setMovingContext(null)
@@ -199,8 +211,10 @@ export default function App() {
       if (selection.tab) { setUi('research'); setTab(selection.tab) }
     }
     window.addEventListener('message', onSelection)
+    const onStorage = (e: StorageEvent) => { if (e.key === LANG_KEY) useTime.getState().setLang(readStoredLang()) }
+    window.addEventListener('storage', onStorage)
     notifyShell({ type: 'spherex-analysis-ready' })
-    return () => { window.removeEventListener('message', onSelection); useTime.getState().stop(); useTime.getState().setSuspended(false) }
+    return () => { window.removeEventListener('message', onSelection); window.removeEventListener('storage', onStorage); useTime.getState().stop(); useTime.getState().setSuspended(false) }
   }, [setTarget, setStage, setUi, setTab])
 
   useEffect(() => {
@@ -220,7 +234,9 @@ export default function App() {
     if (initial.tab) setTab(initial.tab)
   }, [initial, setUi, setTab, setLang, setStage])
   useEffect(() => writeView({ ui }), [ui])
-  useEffect(() => { writeView({ lang }); document.documentElement.lang = lang }, [lang])
+  useEffect(() => { writeView({ lang }); document.documentElement.lang = lang; document.title = appTitle(lang) }, [lang])
+  // standalone, the app's own switch writes the shared key too (inside the portal only the portal writes it)
+  const chooseLang = (l: 'ko' | 'en') => { setLang(l); if (!embedded) writeStoredLang(l) }
   useEffect(() => writeView({ stage }), [stage])
 
   useEffect(() => {
@@ -353,10 +369,10 @@ export default function App() {
           </button>
         </div>
         <div className="top-right">
-          <div className="mode-switch lang-switch" role="group" aria-label="Language">
-            <button className={lang === 'ko' ? 'on' : ''} aria-pressed={lang === 'ko'} onClick={() => setLang('ko')} data-testid="lang-ko" lang="ko">한</button>
-            <button className={lang === 'en' ? 'on' : ''} aria-pressed={lang === 'en'} onClick={() => setLang('en')} data-testid="lang-en" lang="en">EN</button>
-          </div>
+          {!embedded && <div className="mode-switch lang-switch" role="group" aria-label="Language">
+            <button className={lang === 'ko' ? 'on' : ''} aria-pressed={lang === 'ko'} onClick={() => chooseLang('ko')} data-testid="lang-ko" lang="ko">한</button>
+            <button className={lang === 'en' ? 'on' : ''} aria-pressed={lang === 'en'} onClick={() => chooseLang('en')} data-testid="lang-en" lang="en">EN</button>
+          </div>}
           <ShareButton />
         </div>
       </header>
@@ -377,7 +393,6 @@ export default function App() {
             </button>
           ))}
         {patch && <span className="tab-patch active" data-testid="tab-patch">◎ {patch.label ?? fmtRadec(patch.c)} · {patch.fov}°</span>}
-        {embedded && <button className="ghost sky-shortcut" onClick={() => notifyShell({ type: 'spherex-navigate', view: 'planetarium' })}>{L('플라네타리움', 'Planetarium')} <span aria-hidden>↗</span></button>}
       </nav>
 
       {movingContext && patch && <aside className="moving-context" data-testid="moving-archive-notice">
@@ -443,6 +458,7 @@ export default function App() {
             {stage === 'sky' && index.state === 'ok' && (
               <Suspense fallback={<p className="dim">{L('천구를 준비하는 중…', 'Preparing the sky…')}</p>}><SkyPanel
                 index={index.value}
+                embedded={embedded}
                 currentId={m && !isPatch ? m.id : null}
                 onOpenTarget={(id) => { openTarget(id); setStage('workbench') }}
                 onPatch={(c, fov, label) => { setMovingContext(null); setPatch({ c, fov, label }); setStage('workbench') }}
@@ -488,7 +504,8 @@ export default function App() {
       <footer className="credit dim small">
         {L('영상: NASA/IPAC IRSA SPHEREx', 'Images: NASA/IPAC IRSA SPHEREx')}{m && <> ({m.provenance.collections.join(', ')})</>}. {L('위치·운동 값: Gaia DR3·SIMBAD·문헌.', 'Positions and motions: Gaia DR3, SIMBAD, literature.')}{' '}
         {L('전천 영상은 IRSA SPHEREx HiPS, Gaia 별은 VizieR에서 실시간으로 받습니다.', 'The all-sky map streams from the IRSA SPHEREx HiPS and Gaia stars from VizieR, live.')}{' '}
-        {L('“같은 파장끼리 비교”, 임무 카드, 차가운 천체 필터, 천구 엔진(SkyGlobe)은 팀원 경보의 TrueBlink에서 가져왔습니다.', 'Like-with-like blinking, mission cards, the cold-object filter and the globe engine (SkyGlobe) come from our teammate 경보\'s TrueBlink.')}
+        {/* English: the teammate's Korean name keeps lang="ko" (spec D3 rule 7) */}
+        {L('“같은 파장끼리 비교”, 임무 카드, 차가운 천체 필터, 천구 엔진(SkyGlobe)은 팀원 경보의 TrueBlink에서 가져왔습니다.', '') || <>Like-with-like blinking, mission cards, the cold-object filter and the globe engine (SkyGlobe) come from our teammate <span lang="ko">경보</span>'s TrueBlink.</>}
       </footer>
     </div>
   )

@@ -77,7 +77,9 @@ test('English switch: the whole workspace, missions and findings, kept in the li
   const errors = watch(page)
   await page.goto('/?target=wise0855')
   await page.getByTestId('lang-en').click()
-  await expect(page).toHaveURL(/lang=en/)
+  // English is the default now: the link carries no lang (a missing lang means English); the choice is kept in the shared key
+  await expect(page).not.toHaveURL(/lang=/)
+  expect(await page.evaluate(() => localStorage.getItem('spherex-lang'))).toBe('en')
   await expect(page.locator('h1')).toHaveText('Armchair Astronomer')
   await expect(page.getByTestId('mission-card')).toContainText('The coldest known brown dwarf')
   await expect(page.getByTestId('step-3')).toContainText('Turn on the cold-object filter')

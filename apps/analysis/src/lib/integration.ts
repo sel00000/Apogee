@@ -78,3 +78,11 @@ export function movingArchiveContext(search: string) {
   }
   return { epoch: instant('epoch'), observation: instant('observationMjd') }
 }
+
+/** The portal switches the analysis app between its Find (sky) and workbench stages without reloading it. */
+export function stageMessage(value: unknown): 'sky' | 'workbench' | null {
+  if (!value || typeof value !== 'object') return null
+  const v = value as Record<string, unknown>
+  if (v.type !== 'spherex-analysis-stage') return null
+  return v.stage === 'sky' || v.stage === 'workbench' ? v.stage : null
+}

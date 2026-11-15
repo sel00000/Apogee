@@ -136,3 +136,69 @@ export function slerpSky(a: { ra: number; dec: number }, b: { ra: number; dec: n
   const wb = Math.sin(t * om) / s;
   return vecToSky([wa * va[0] + wb * vb[0], wa * va[1] + wb * vb[1], wa * va[2] + wb * vb[2]]);
 }
+
+// ---------------------------------------------------------------------------------------------
+// Generalised camera: an arbitrary "up" pole (the zenith for a level-horizon ground view).
+// ---------------------------------------------------------------------------------------------
+
+const cross = (a: Vec3, b: Vec3): Vec3 => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+const norm3 = (a: Vec3): Vec3 => {
+  const n = Math.hypot(a[0], a[1], a[2]) || 1;
+  return [a[0] / n, a[1] / n, a[2] / n];
+};
+
+/** Unit axis least aligned with `u`, used when a pole direction is degenerate. */
+function leastAlignedAxis(u: Vec3): Vec3 {
+  const ax = Math.abs(u[0]), ay = Math.abs(u[1]), az = Math.abs(u[2]);
+  if (ax <= ay && ax <= az) return [1, 0, 0];
+  return ay <= az ? [0, 1, 0] : [0, 0, 1];
+}
+
+/** Camera basis looking along `forward` with screen-up as close as possible to the pole `up`
+ *  (same construction as cameraBasis with the pole generalised: right = forward x up, up' = right x forward).
+ *  Vectors are in the skyToVec frame. If forward is within a hair of +-up the horizontal direction is
+ *  taken from an arbitrary axis, so the result is always finite and orthonormal. */
+export function cameraBasisAbout(forward: Vec3, up: Vec3): CameraBasis {
+  const f = norm3(forward);
+  const u = norm3(up);
+  let r = cross(f, u);
+  if (Math.hypot(r[0], r[1], r[2]) < 1e-9) r = cross(f, leastAlignedAxis(f));
+  const rf = dot(r, f); // re-orthogonalise: r is tiny (ill-conditioned) when f is within a hair of the pole
+  const right = norm3([r[0] - rf * f[0], r[1] - rf * f[1], r[2] - rf * f[2]]);
+  return { forward: f, right, up: cross(right, f) };
+}
+
+/** Rotation (rows e1, up, e3; proper) that turns the pole `up` into +Y. */
+function poleFrame(up: Vec3): { e1: Vec3; e3: Vec3; u: Vec3 } {
+  const u = norm3(up);
+  const e1 = norm3(cross(leastAlignedAxis(u), u));
+  return { e1, e3: cross(e1, u), u };
+}
+
+/** solveGrab for a camera whose "up" is the pole `up` instead of the celestial pole: finds the view
+ *  centre (ra, dec in the skyToVec frame) that keeps `anchor` under the normalised screen position
+ *  (ndcX, ndcY) with the pole kept vertical. Rotates the problem so `up` is +Y, uses solveGrab, rotates back.
+ *  `current` (the present view centre) picks the nearer of the two mathematical solutions. */
+export function solveGrabAbout(
+  up: Vec3,
+  anchor: { ra: number; dec: number },
+  ndcX: number,
+  ndcY: number,
+  fovDeg: number,
+  aspect: number,
+  current: { ra: number; dec: number },
+): { ra: number; dec: number } | null {
+  const { e1, e3, u } = poleFrame(up);
+  const fwd = (v: Vec3): Vec3 => [dot(v, e1), dot(v, u), dot(v, e3)];
+  const a = vecToSky(fwd(skyToVec(anchor.ra, anchor.dec)));
+  const c = vecToSky(fwd(skyToVec(current.ra, current.dec)));
+  const sol = solveGrab(a, ndcX, ndcY, fovDeg, aspect, c.dec);
+  if (!sol) return null;
+  const w = skyToVec(sol.ra, sol.dec);
+  const back: Vec3 = [
+    e1[0] * w[0] + u[0] * w[1] + e3[0] * w[2],
+    e1[1] * w[0] + u[1] * w[1] + e3[1] * w[2],
+    e1[2] * w[0] + u[2] * w[1] + e3[2] * w[2],
+  ];
+  return vecToSky(back);
+}

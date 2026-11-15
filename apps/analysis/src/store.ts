@@ -88,7 +88,7 @@ export const useTime = create<TimeState>((set) => ({
   coldK: RJ_K,
   showImage3d: false,
   tab: null,
-  lang: 'ko',
+  lang: 'en',
   stage: 'workbench',
   gaia: false,
 

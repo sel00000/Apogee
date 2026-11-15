@@ -61,3 +61,13 @@ describe('moving-object archival handoff dates', () => {
     expect(movingArchiveContext('?moving=0&observationMjd=60000')).toBeNull()
   })
 })
+
+describe('portal stage message', () => {
+  it('accepts sky and workbench only', async () => {
+    const { stageMessage } = await import('./integration')
+    expect(stageMessage({ type: 'spherex-analysis-stage', stage: 'sky' })).toBe('sky')
+    expect(stageMessage({ type: 'spherex-analysis-stage', stage: 'workbench' })).toBe('workbench')
+    for (const v of [null, 'sky', {}, { type: 'spherex-analysis-stage' }, { type: 'spherex-analysis-stage', stage: 'planetarium' }, { type: 'spherex-select-target', stage: 'sky' }])
+      expect(stageMessage(v)).toBeNull()
+  })
+})
