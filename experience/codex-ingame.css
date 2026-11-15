@@ -1,0 +1,71 @@
+/* The codex inside the game (codex-ingame.html, framed by app.js over the paused flight). Loads after codex.css: the
+   same console grid and cells, no editor. The masthead is the HUD's own top line: the wordmark where the HUD's sits
+   (40px in, 30px down, 60px Imbue 350) and RETURN where the header buttons sit, in their treatment (style.css
+   #helmet-hud :is(#open-settings,#sound-toggle)). */
+/* The masthead stays put (opaque, so worlds scrolling under it are covered); --mast is its height (codex-ingame.js).
+   Stepping with the keys scrolls a cell clear of it. */
+html{scroll-padding:calc(var(--mast,136px) + 12px) 0 12px}
+.ingame .masthead{position:sticky;top:0;z-index:3;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:nowrap;padding:30px 40px 20px;background:var(--hc-bg)}
+.ingame .mast-brand{display:grid;gap:12px;min-width:0}
+.ingame .kicker{margin:0;font:400 14px/1.5 var(--hc-clock);letter-spacing:0;color:var(--hc-mint);text-shadow:0 0 6px currentColor;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ingame .kicker #mast-count{color:#a2946b;text-shadow:0 0 2px rgba(5,4,10,.95)}
+.ingame .kicker #mast-count b{font-weight:400;color:var(--hc-mint);text-shadow:0 0 6px currentColor}
+.ingame .kicker #mast-count i{font-style:normal;color:var(--hc-green)}.ingame .kicker #mast-count i.poly{color:var(--hc-gold)}
+.hud-button{display:inline-flex;align-items:center;gap:6px;min-height:28px;padding:0;border:0;background:none;color:var(--hc-ink);font:700 12px/1.1 var(--hc-ui);letter-spacing:.025em;white-space:nowrap;text-shadow:0 0 2px rgba(5,4,10,.95),0 0 6px rgba(5,4,10,.75);cursor:pointer}
+.hud-button:hover{color:#ff8a7a}
+.hud-button span{font:inherit}
+.ingame .console{margin:0 40px 40px}
+
+/* Cells by record: ● reached (full), ◇ identified (polygon mode), a dim '+' while uncharted (a sighted contact too). */
+.ingame .cell:disabled{cursor:default}
+.ingame .cell.locked .cell-view::after{content:'+';position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font:400 15px/1 var(--hc-ui);color:var(--hc-line);opacity:.8}
+.ingame .cell.locked :is(.cell-name,.cell-desig,.cell-marks){display:none}
+.ingame .mark-poly{color:var(--hc-gold);text-shadow:var(--hc-glow)}
+.ingame .kicker .seg{white-space:nowrap}
+.ingame .cell:not(:disabled):hover .cell-name{border-color:var(--hc-line)}
+
+/* Inspector: record line, catalogue rows (value right, a dim note under it), the fact, sources. It scrolls on its own. */
+/* Desktop: the inspector holds under the masthead; the view and name stay, the rows scroll. */
+.ingame .inspector{padding:0 16px 16px}
+.ingame .inspector-inner{top:calc(var(--mast,136px) + 8px);height:calc(100dvh - var(--mast,136px) - 24px);padding-top:40px}
+.ingame .inspector-inner .hc-tag{top:8px;left:-8px}.ingame .inspector-inner .inspector-nav{top:6px;right:-8px}
+.ingame .facts-scroll{flex:1;min-height:0;display:flex;flex-direction:column;gap:10px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--hc-line) transparent;margin-right:-8px;padding-right:8px}
+/* More rows below the fold: they fade out at the foot (codex-ingame.js more()). */
+.ingame .facts-scroll.more{-webkit-mask-image:linear-gradient(to bottom,#000 calc(100% - 36px),transparent);mask-image:linear-gradient(to bottom,#000 calc(100% - 36px),transparent)}
+.ingame .world-record{margin:-2px 0 0;font:700 12px/1.3 var(--hc-ui);letter-spacing:.025em;color:var(--hc-green);text-shadow:var(--hc-glow)}
+.ingame .world-record[data-tier=polygon]{color:var(--hc-gold)}
+.ingame .rows div{align-items:flex-start;padding:4px 0}
+.ingame .rows dd{max-width:68%;text-align:right;line-height:1.3}
+.ingame .rows dd small{display:block;margin-top:2px;font-size:10px;letter-spacing:.025em;color:var(--hc-dim)}
+.ingame .world-note{margin:2px 0 0;font:400 13px/1.45 var(--hc-ui);letter-spacing:.015em;color:var(--hc-moon)}
+.ingame .world-note:empty{display:none}
+.ingame .credit a{color:var(--hc-gold);text-decoration:none;border-bottom:1px solid var(--hc-line)}
+.ingame .focus-hint{display:block}
+
+/* Laptop heights: the view gives up height so the rows show. */
+@media(min-width:761px) and (max-height:900px){.ingame .focus-frame{height:clamp(140px,28dvh,245px)}}
+@media(max-width:1000px){.ingame .masthead{padding:24px 24px 16px}.ingame .console{margin:0 8px 16px}.ingame .wordmark{font-size:48px}}
+/* Phones: the wordmark at the HUD's phone size, RETURN at a 44px target; the grid scrolls, a world opens its page. */
+@media(max-width:760px){
+ .ingame .masthead{padding:calc(14px + env(safe-area-inset-top)) 14px 10px;align-items:flex-start}
+ .ingame .wordmark{font-size:36px}
+ .ingame .mast-brand{gap:8px}
+ .ingame .kicker{font-size:11px;white-space:normal}
+ .hud-button{min-height:44px;margin-top:-8px;font-size:12px}
+ .ingame .inspector{padding:0 12px 14px}
+ .ingame .inspector-inner{height:auto;padding-top:44px}
+ .ingame .facts-scroll{overflow:visible;margin:0;padding:0}
+ body.ingame.inspecting .masthead .kicker{display:none}
+ /* The inner box is static here (codex.css), so the tag and the nav measure from the inspector's frame: 8px inside it,
+    as on desktop, not 8px over its edge (Isabel 2026-10-03; the landscape rule below already does this). */
+ .ingame .inspector-inner .hc-tag{left:8px}.ingame .inspector-inner .inspector-nav{right:8px}
+}
+.ingame .inspector-inner>:not(.facts-scroll){flex-shrink:0}
+@media(pointer:coarse){.hud-button{min-height:44px}}
+/* Short screens (landscape phones): a compact masthead, and the inspector flows with the page instead of holding. */
+@media(max-height:500px){
+ .ingame .masthead{padding:10px 24px 8px}.ingame .wordmark{font-size:34px}.ingame .mast-brand{gap:6px}.ingame .kicker{font-size:12px}
+ .ingame .inspector-inner{position:static;height:auto}.ingame .facts-scroll{overflow:visible;margin:0;padding:0}
+ .ingame .focus-frame{height:min(46vh,190px)}
+ .ingame .inspector-inner .hc-tag{left:8px}.ingame .inspector-inner .inspector-nav{right:8px}
+}

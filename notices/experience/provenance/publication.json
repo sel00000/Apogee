@@ -1,0 +1,41 @@
+{
+  "published_at_utc": "2026-11-15T06:07:19.067945+00:00",
+  "source_url": "https://sojourner.artificialisabel.com/",
+  "investigation_date_kst": "2026-11-15",
+  "scope": "Runnable public frontend with requested display cleanup, neutral project names, a local Node.js server, fixed-origin live API/media bridge, and preserved historical research archive.",
+  "canonical_evidence": {
+    "path": "verification/verification-evidence.json.gz",
+    "records": 22,
+    "uncompressed_bytes": 20101095,
+    "uncompressed_sha256": "d65bfb380f1c0073a3d5254fc0846e12f07f3260f4097f18f6f299bd624a4b57",
+    "compressed_bytes": 3948818,
+    "compressed_sha256": "851a93e2dc1662edb4bacd772127186033520315cd078841a4f1553b2246a5aa"
+  },
+  "publication_changes": [
+    "Replaced duplicate evidence exports with the latest unmodified 22-record bundle compressed using gzip with mtime=0.",
+    "Adjusted evidence links in the reports and the input path of scripts/extract_runtime.py.",
+    "Added README, repository attributes, and publication-layout hash manifests.",
+    "Added 385 original runtime assets without rewriting the frontend, and a dependency-free local HTTP/API bridge.",
+    "Added native Windows Chrome comparisons, prepared arrival and decoded MP4 evidence; retained failed investigation attempts.",
+    "Updated README and historical report pointers, and regenerated publication-layout file manifests.",
+    "Renamed current project, analysis-input and evidence files to neutral names; preserved canonical evidence bytes.",
+    "Removed creator text and social profile links/icons from header, home/map views, exported video and media-session metadata.",
+    "Added repeatable display customization, native browser regression checks and Windows launcher fallback to an existing WSL Node installation."
+  ],
+  "historical_environment": "Original browser/acquisition scripts retain investigation-specific absolute paths and require path/dependency setup before reuse.",
+  "archive_first_published_at_utc": "2026-11-15T05:07:46.436579+00:00",
+  "runnable_website": {
+    "document_root": "web",
+    "entry": "npm start",
+    "windows_launcher": "Start-Web.cmd",
+    "default_url": "http://127.0.0.1:4174/",
+    "static_manifest": "runtime-assets.json",
+    "verification": "verification/display/VERIFICATION.ko.md",
+    "internet_required": true,
+    "private_backend_recovered": false,
+    "historical_evidence_manifest": "verification/web-runtime/summary.json",
+    "verification_summary": "verification/display/summary.json",
+    "display_customization_manifest": "display-customizations.json",
+    "project_path": "경보/sojourner"
+  }
+}

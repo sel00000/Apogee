@@ -1,0 +1,23 @@
+{
+  "scope": "User-requested display and naming cleanup only; flight, rendering, API, storage and export logic retained.",
+  "files": [
+    {
+      "path": "web/index.html",
+      "sourceSha256": "b4fe45a74775bb8c35ee5ca5cffe7664f453de9ee5d702cfb35e03bc50353cd9",
+      "deployedSha256": "71b10a13e0ef4353e19dd91183d84ef2ebe99769132689dc179de130e6567a68",
+      "description": "Removed the header creator credit and outbound profile links."
+    },
+    {
+      "path": "web/app.GFXWGZEC.js",
+      "sourceSha256": "d2940cac09a454ec777d840aaff6ce7b24629e3016fef64ccb43cd03095ae173",
+      "deployedSha256": "e91b0f8c7eb089f30d316a9d01fb091b9d05425d05c34db2520a28ad975cae19",
+      "description": "Removed credit markup, social icons from generated home/video views, and the media-session artist label."
+    },
+    {
+      "path": "web/style.css",
+      "sourceSha256": "88719de32232664bc11343ed52e6efabf17aa87310b6cf5ce1e25db9b8c4c1ab",
+      "deployedSha256": "3f14c66ca0c126b4bd2ced64cc0c877c072c6217066db1c380a9cd56c5ee6d24",
+      "description": "Removed an obsolete credit-specific comment; visual styling is unchanged."
+    }
+  ]
+}

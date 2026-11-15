@@ -1,0 +1,25 @@
+{
+  "originalSite": "https://sojourner.artificialisabel.com/",
+  "scope": "Portal lifecycle, Korean experience explanation and original-author attribution. No changes to positional calculations or upstream services.",
+  "patch": "services/experience/scripts/patch-integration.mjs",
+  "schemaVersion": 1,
+  "integration": "SPHEREx Sky Lab 5.0.0",
+  "modifiedFiles": [
+    {
+      "path": "web/app.GFXWGZEC.js",
+      "sha256": "411baaa54797550edc46ac7ce2ec7e969683a3724bd0149398d9eeeb8c817fa7",
+      "bytes": 763523
+    },
+    {
+      "path": "web/integration.js",
+      "sha256": "1b5038bdd86dd0ee140be06de84d7341c5e859b6cfc72a4e1f40760a6a163a80",
+      "bytes": 5815
+    },
+    {
+      "path": "web/integration.css",
+      "sha256": "13cea69325299e7e644842e063ccd257ffb44fcae4fc0f62ab5a4d58ed3b5cc3",
+      "bytes": 1541
+    }
+  ],
+  "incomingRuntimeSha256": "e91b0f8c7eb089f30d316a9d01fb091b9d05425d05c34db2520a28ad975cae19"
+}

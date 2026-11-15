@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+ <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#05040A">
+ <title>SOJOURNER · Records</title>
+ <meta name="description" content="The worlds and vehicles you have identified and reached on this journey.">
+ <link rel="stylesheet" href="/home-type.css?v=sojourner-20261002-mobile8-2"><link rel="stylesheet" href="/codex.css?v=sojourner-20261002-round7-1"><link rel="stylesheet" href="/codex-ingame.css?v=sojourner-20261003-polish9-1">
+ <link rel="modulepreload" href="/codex-ingame.LGTBWEYS.js"><link rel="modulepreload" href="/chunk.M3XMVLK2.js"><link rel="modulepreload" href="/chunk.FTD2J2V2.js"><link rel="modulepreload" href="/chunk.73S35ZUP.js">
+ <script type="module" src="/codex-ingame.LGTBWEYS.js"></script>
+</head>
+<body class="ingame">
+ <canvas id="codex-canvas" aria-hidden="true"></canvas>
+ <header class="masthead" id="masthead">
+  <div class="mast-brand"><b class="wordmark">SOJOURNER</b><p class="kicker"><span>▸ RECORDS</span> <span id="mast-count"></span></p></div>
+  <button class="hud-button" id="codex-return" type="button" aria-label="Return to the flight (Esc)"><span aria-hidden="true">⏎</span> RETURN</button>
+ </header>
+ <main class="console">
+  <section class="library" id="library" aria-label="Your records"></section>
+  <aside class="inspector" id="inspector" aria-label="Selected world">
+   <div class="inspector-inner">
+    <span class="hc-tag" id="inspector-tag">WORLD</span>
+    <div class="inspector-nav"><button id="back-button" aria-label="Back to all records">‹ ALL</button><button id="prev-world" aria-label="Previous entry">‹</button><button id="next-world" aria-label="Next entry">›</button></div>
+    <div class="focus-frame" id="focus-frame" title="Drag to turn the world"><i></i><i></i><i></i><i></i><div id="focus-view"></div><span class="focus-state" aria-hidden="true"></span><span class="focus-hint">DRAG · TURN</span></div>
+    <h1 class="world-name" id="world-name">—</h1>
+    <p class="world-desig" id="world-desig"></p>
+    <p class="world-record" id="world-record"></p>
+    <div class="facts-scroll" id="facts-scroll"><dl class="rows" id="facts"></dl>
+    <p class="world-note" id="world-note"></p>
+    <p class="credit" id="world-credit"></p></div>
+   </div>
+  </aside>
+ </main>
+ <noscript>Your records need JavaScript and WebGPU or WebGL2.</noscript>
+</body>
+</html>

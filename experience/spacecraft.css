@@ -1,0 +1,11 @@
+/* Traces of Earth hold: Astra carries the encounter, so nothing overlays the craft. */
+body[data-spacecraft-view="hold"] :is(#target-guide,.crosshair){visibility:hidden;pointer-events:none}
+/* The approach panel reads the ship's motion, not the view's: it stands down from the glide on (cockpit.trackTarget). */
+body[data-spacecraft-view] #approach-panel{visibility:hidden}
+/* Cassini's Grand Finale (cassini-finale-view.js): the view is a detached observer, so everything drawn through the ship's
+   own projection eases out; the scan stands down (the observation would come from the ship, not this view). */
+body[data-cassini] :is(#target-guide,.crosshair,#approach-panel,#labels,#scan-feedback,#scan-targets,#sky-trace){opacity:0;visibility:hidden;pointer-events:none;transition:opacity .6s ease,visibility 0s linear .6s}
+body[data-cassini] #scan-panel{opacity:.35;pointer-events:none;transition:opacity .6s ease}
+/* The chase and linger hold the words over Saturn's bright cloud tops. A narrow black outline follows each glyph,
+   leaving the planet visible between them. Apply it to the typewriter's spans too, above the shared phosphor cascade. */
+body[data-cassini] #experience #helmet-hud #subtitle :is(#subtitle-text,#subtitle-text *,#subtitle-speaker,#subtitle-speaker *){text-shadow:-1px -1px 0 #000,0 -1px 0 #000,1px -1px 0 #000,-1px 0 0 #000,1px 0 0 #000,-1px 1px 0 #000,0 1px 0 #000,1px 1px 0 #000!important}

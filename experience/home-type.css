@@ -1,0 +1,35 @@
+/* Sentry typefaces for the homecoming console, bundled so every player sees
+   what Sentry shows on Isabel's Mac. TeX Gyre Heros Condensed is the free,
+   metric-compatible Helvetica Condensed clone (GUST Font License); Instrument
+   Serif is SIL OFL. Like Sentry, the serif's bold is browser-synthesised. */
+@font-face{font-family:'TeX Gyre Heros Cn';font-style:normal;font-weight:400;font-display:swap;src:url('/assets/fonts/texgyreheroscn-regular.otf') format('opentype')}
+@font-face{font-family:'TeX Gyre Heros Cn';font-style:normal;font-weight:700;font-display:swap;src:url('/assets/fonts/texgyreheroscn-bold.otf') format('opentype')}
+@font-face{font-family:'Instrument Serif';font-style:normal;font-weight:400;font-display:swap;src:url('/assets/fonts/instrument-serif-400.ttf') format('truetype')}
+@font-face{font-family:'Instrument Serif';font-style:italic;font-weight:400;font-display:swap;src:url('/assets/fonts/instrument-serif-400-italic.ttf') format('truetype')}
+:root{--hc-ui:'TeX Gyre Heros Cn','Saira Condensed','Arial Narrow',sans-serif;--hc-display:'Imbue',serif;--hc-clock:'Share Tech Mono',ui-monospace,monospace}
+/* The console palette (docs/homecoming-console.md §1) is global, so the gameplay
+   HUD speaks the same colour roles as the ending. */
+:root{--hc-bg:#05040A;--hc-ink:#FF4747;--hc-stroke:#F26500;--hc-mint:#47FFA9;--hc-orange:#ff6a1f;--hc-green:#54ff8a;--hc-red:#ff3b2f;--hc-cyan:#39d6c8;--hc-blue:#5f7bff;--hc-moon:#cfd6e6;--hc-gold:#f0b32a;--hc-gold-bright:#ffd76b;--hc-dim:#6b551f;--hc-line:#7a5a14;--hc-glow:0 0 6px currentColor;--hc-ease:cubic-bezier(.4,0,.2,1)}
+/* Sojourner Glyphs (scripts/make-glyph-font.mjs): text outlines for ↖↗↘↙ ▶◀ ❚, plus an empty U+FE0E.
+   No bundled family has these, so browsers fall back to a system font, and on iOS that fallback is
+   Apple Color Emoji's blue tiles. Each twin repeats one face's family, style and weight exactly
+   (above, sentry-fonts.css, style.css, codex.css) with this unicode-range, joining that family as one
+   composite face: no font stack changes, the author's own font always has the glyph, and iOS never
+   reaches the emoji font. ↖↗↘↙ ▶◀ copy what macOS draws (Hiragino ↗, Lucida ▶), so desktop sees them
+   unchanged; ❚ keeps Zapf's advance and height with a narrower bar, so ❚❚ reads as pause, not ■. A twin
+   carries only what its face lacks: Imbue keeps its own serif ↖↗↘↙ (here and on
+   codex.html, whatever the sheet order). block, preloaded in index.html: never a flash of emoji. Every
+   new @font-face needs a twin here (tests/glyph-font.test.mjs). */
+@font-face{font-family:'TeX Gyre Heros Cn';font-style:normal;font-weight:400;font-display:block;src:url('/assets/fonts/sojourner-glyphs-400.ttf') format('truetype');unicode-range:U+2196-2199,U+25B6,U+25C0,U+275A,U+FE0E}
+@font-face{font-family:'TeX Gyre Heros Cn';font-style:normal;font-weight:700;font-display:block;src:url('/assets/fonts/sojourner-glyphs-700.ttf') format('truetype');unicode-range:U+2196-2199,U+25B6,U+25C0,U+275A,U+FE0E}
+@font-face{font-family:'Instrument Serif';font-style:normal;font-weight:400;font-display:block;src:url('/assets/fonts/sojourner-glyphs-400.ttf') format('truetype');unicode-range:U+2196-2199,U+25B6,U+25C0,U+275A,U+FE0E}
+@font-face{font-family:'Instrument Serif';font-style:italic;font-weight:400;font-display:block;src:url('/assets/fonts/sojourner-glyphs-400.ttf') format('truetype');unicode-range:U+2196-2199,U+25B6,U+25C0,U+275A,U+FE0E}
+@font-face{font-family:'Saira Condensed';font-style:normal;font-weight:400;font-display:block;src:url('/assets/fonts/sojourner-glyphs-400.ttf') format('truetype');unicode-range:U+2196-2199,U+25B6,U+25C0,U+275A,U+FE0E}
+@font-face{font-family:'Saira Condensed';font-style:normal;font-weight:500;font-display:block;src:url('/assets/fonts/sojourner-glyphs-400.ttf') format('truetype');unicode-range:U+2196-2199,U+25B6,U+25C0,U+275A,U+FE0E}
+@font-face{font-family:'Saira Condensed';font-style:normal;font-weight:600;font-display:block;src:url('/assets/fonts/sojourner-glyphs-700.ttf') format('truetype');unicode-range:U+2196-2199,U+25B6,U+25C0,U+275A,U+FE0E}
+@font-face{font-family:'Saira Condensed';font-style:normal;font-weight:700;font-display:block;src:url('/assets/fonts/sojourner-glyphs-700.ttf') format('truetype');unicode-range:U+2196-2199,U+25B6,U+25C0,U+275A,U+FE0E}
+@font-face{font-family:'Barlow Condensed';font-style:normal;font-weight:400;font-display:block;src:url('/assets/fonts/sojourner-glyphs-400.ttf') format('truetype');unicode-range:U+2196-2199,U+25B6,U+25C0,U+275A,U+FE0E}
+@font-face{font-family:'Barlow Condensed';font-style:normal;font-weight:500;font-display:block;src:url('/assets/fonts/sojourner-glyphs-400.ttf') format('truetype');unicode-range:U+2196-2199,U+25B6,U+25C0,U+275A,U+FE0E}
+@font-face{font-family:'Barlow Condensed';font-style:normal;font-weight:600;font-display:block;src:url('/assets/fonts/sojourner-glyphs-700.ttf') format('truetype');unicode-range:U+2196-2199,U+25B6,U+25C0,U+275A,U+FE0E}
+@font-face{font-family:'Share Tech Mono';font-style:normal;font-weight:400;font-display:block;src:url('/assets/fonts/sojourner-glyphs-400.ttf') format('truetype');unicode-range:U+2196-2199,U+25B6,U+25C0,U+275A,U+FE0E}
+@font-face{font-family:'Imbue';font-style:normal;font-weight:100 900;font-display:block;src:url('/assets/fonts/sojourner-glyphs-400.ttf') format('truetype');unicode-range:U+25B6,U+25C0,U+275A,U+FE0E}

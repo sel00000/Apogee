@@ -1,0 +1,19 @@
+/* Short descriptions stay with their instruments as Astra brings the HUD online. */
+#experience #helmet-hud .instrument-note{
+ margin:8px 0 0;color:var(--muted);font-family:var(--type-hud-family);
+ font-size:calc(10px * var(--type-scale) * var(--type-micro-size));font-weight:var(--type-micro-weight);
+ line-height:1.35;letter-spacing:.025em;text-wrap:pretty;
+}
+#experience #helmet-hud #radar-panel>.instrument-note{text-align:right}
+#experience #helmet-hud #scan-panel>.instrument-note{margin:0 0 8px;max-width:220px;text-align:center}
+#experience #helmet-hud #scan-button{margin-inline:auto}
+@media(max-width:700px) and (min-height:501px){
+ #experience #helmet-hud #scan-panel>.instrument-note{max-width:150px;margin-inline:auto}
+ /* The two-line scan hint fits below a three-line subtitle, above the scan control. */
+ body:is([data-hud="ready"],[data-story="awaiting-scan"]) #experience #helmet-hud #subtitle{bottom:calc(var(--m-foot) + var(--m-map) + 158px)}
+ body[data-hud="ready"] #experience #helmet-hud .status-toast{bottom:calc(var(--m-foot) + var(--m-map) + 152px)}
+}
+@media(max-height:500px){
+ #experience #helmet-hud .instrument-note{line-height:1.25;margin-top:6px}
+ #experience #helmet-hud #scan-panel>.instrument-note{max-width:140px;margin:0 0 6px}
+}

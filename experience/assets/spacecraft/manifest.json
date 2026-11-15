@@ -1,0 +1,363 @@
+{
+  "generator": "scripts/prepare-spacecraft-assets.mjs",
+  "source_manifest": "../../../assets/spacecraft/manifest.json",
+  "decoder": "draco3dgltf 1.5.7 (build only)",
+  "validator": "Khronos glTF Validator 2.0.0-dev.3.10",
+  "description": "Runtime derivatives; source units and model attitude are not physical spacecraft scale or current attitude.",
+  "models": [
+    {
+      "id": "juno",
+      "file": "juno.glb",
+      "name": "Juno",
+      "bytes": 9731820,
+      "sha256": "5d45cc425f5e24985ba042e147363db5c6432bc264504350b384a562695994f4",
+      "source_sha256": "13f6bd48ff830a1890b21ef6e0182bb1043926feebb77af9733e7374b050367a",
+      "source_page": "https://github.com/nasa/NASA-3D-Resources/blob/11ebb4ee043715aefbba6aeec8a61746fad67fa7/3D%20Models/Juno%20%28A%29/Juno%20%28A%29.glb",
+      "credit": "NASA 3D Resources and its listed contributors",
+      "modification": "Draco geometry decoded offline; compressed payloads removed. Images, materials, transforms and animations retained.",
+      "decoded_primitives": 10,
+      "required_extensions": [],
+      "bounds_in_source_units": {
+        "min": [
+          -6.1133809089660645,
+          -2.3632023897429466,
+          -9.285504642609027
+        ],
+        "max": [
+          11.541259765625,
+          1.8942474689140716,
+          9.257644008558616
+        ],
+        "size": [
+          17.654640674591064,
+          4.257449858657019,
+          18.54314865116764
+        ]
+      },
+      "validator_errors": 0,
+      "validator_warnings": 6
+    },
+    {
+      "id": "dawn",
+      "file": "dawn.glb",
+      "name": "Dawn",
+      "bytes": 1639420,
+      "sha256": "8c70fd67e48d8875264885383de664622f0a37a0f566b44b3dc66649dbc22cc8",
+      "source_sha256": "411249aed791994b6a2014894ad6bd7ca0445dbcf6d5342af9edc5df988f04b7",
+      "source_page": "https://github.com/nasa/NASA-3D-Resources/blob/11ebb4ee043715aefbba6aeec8a61746fad67fa7/3D%20Models/Dawn/Dawn.glb",
+      "credit": "NASA 3D Resources and its listed contributors",
+      "modification": "Draco geometry decoded offline; compressed payloads removed. Images, materials, transforms and animations retained.",
+      "decoded_primitives": 10,
+      "required_extensions": [],
+      "bounds_in_source_units": {
+        "min": [
+          -9.849239607825439,
+          -1.1000883196307143,
+          -1.1076321594501053
+        ],
+        "max": [
+          9.849238876691516,
+          1.1000316567516677,
+          1.1076321594501053
+        ],
+        "size": [
+          19.698478484516954,
+          2.200119976382382,
+          2.2152643189002106
+        ]
+      },
+      "validator_errors": 0,
+      "validator_warnings": 2
+    },
+    {
+      "id": "mars-odyssey",
+      "file": "mars-odyssey.glb",
+      "name": "Mars Odyssey",
+      "bytes": 6047180,
+      "sha256": "e8fb06ec6531eb4f43ffa9b5387ffb081df38e795c8325e577ecae3d8fad2e61",
+      "source_sha256": "ac0faa8dbfb54aabcbe3d06886c3d98dd29d120fd49b1c9fa6abbfbed22b049a",
+      "source_page": "https://github.com/nasa/NASA-3D-Resources/blob/11ebb4ee043715aefbba6aeec8a61746fad67fa7/3D%20Models/Mars%20Odyssey/Mars%20Odyssey.glb",
+      "credit": "NASA 3D Resources and its listed contributors",
+      "modification": "Draco geometry decoded offline; compressed payloads removed. Images, materials, transforms and animations retained.",
+      "decoded_primitives": 11,
+      "required_extensions": [],
+      "bounds_in_source_units": {
+        "min": [
+          -3.3176198980822487,
+          -1.4967066415667336,
+          -2.716763138771057
+        ],
+        "max": [
+          3.597403439313061,
+          4.167566898072144,
+          5.504672169685364
+        ],
+        "size": [
+          6.91502333739531,
+          5.664273539638877,
+          8.221435308456421
+        ]
+      },
+      "validator_errors": 0,
+      "validator_warnings": 3
+    },
+    {
+      "id": "mro",
+      "file": "mro.glb",
+      "name": "Mars Reconnaissance Orbiter",
+      "bytes": 5798208,
+      "sha256": "b4d555468de8fa5caf597478668f1516c08d896e6339a8afe01549ab0f9b3baf",
+      "source_sha256": "b195c566d227dec8e42ca2fafcc2a8cc26a127e04ed577e4b9515199d2002d9e",
+      "source_page": "https://github.com/nasa/NASA-3D-Resources/blob/11ebb4ee043715aefbba6aeec8a61746fad67fa7/3D%20Models/Mars%20Reconnaissance%20Orbiter%20%28MRO%29%20%28A%29/Mars%20Reconnaissance%20Orbiter%20%28MRO%29%20%28A%29.glb",
+      "credit": "NASA 3D Resources and its listed contributors",
+      "modification": "Draco geometry decoded offline; compressed payloads removed. Images, materials, transforms and animations retained.",
+      "decoded_primitives": 23,
+      "required_extensions": [],
+      "bounds_in_source_units": {
+        "min": [
+          -16.382156372070312,
+          -33.52304458618164,
+          -45.55523681640625
+        ],
+        "max": [
+          16.382097244262695,
+          27.48326873779297,
+          44.18519973754883
+        ],
+        "size": [
+          32.76425361633301,
+          61.00631332397461,
+          89.74043655395508
+        ]
+      },
+      "validator_errors": 0,
+      "validator_warnings": 0
+    },
+    {
+      "id": "stereo",
+      "file": "stereo.glb",
+      "name": "STEREO",
+      "bytes": 3239112,
+      "sha256": "1375df53031d565ea7c5cd097341fe573beb5409c8788509b5e7f6c6e3742fb7",
+      "source_sha256": "0215f18b40bebb3652398b60e51cb5d8c6a4100a33a6a31768b9087d6239d9bf",
+      "source_page": "https://github.com/nasa/NASA-3D-Resources/blob/11ebb4ee043715aefbba6aeec8a61746fad67fa7/3D%20Models/Solar%20TErrestrial%20RElations%20Observatory%20%28STEREO%29/Solar%20TErrestrial%20RElations%20Observatory%20%28STEREO%29.glb",
+      "credit": "NASA 3D Resources and its listed contributors",
+      "modification": "Draco geometry decoded offline; compressed payloads removed. Images, materials, transforms and animations retained.",
+      "decoded_primitives": 35,
+      "required_extensions": [],
+      "bounds_in_source_units": {
+        "min": [
+          -1571.0944012505934,
+          -2047.9599292157218,
+          -1108.20628805476
+        ],
+        "max": [
+          1571.0944012505934,
+          377.21596332266927,
+          1326.2741808623541
+        ],
+        "size": [
+          3142.1888025011867,
+          2425.175892538391,
+          2434.480468917114
+        ]
+      },
+      "validator_errors": 0,
+      "validator_warnings": 0
+    },
+    {
+      "id": "voyager",
+      "file": "voyager.glb",
+      "name": "Voyager",
+      "bytes": 2284280,
+      "sha256": "9c52762e84a3883dc1e990a2df0cf42bc8891977214156a369be513a45a547d5",
+      "source_sha256": "bd86ded828dd3f459293aee4ffc3cd0998d8db67439317c8299650a1174c3289",
+      "source_page": "https://github.com/nasa/NASA-3D-Resources/blob/11ebb4ee043715aefbba6aeec8a61746fad67fa7/3D%20Models/Voyager%20Probe%20%28B%29/Voyager%20Probe%20%28B%29.glb",
+      "credit": "NASA 3D Resources and its listed contributors",
+      "modification": "Draco geometry decoded offline; compressed payloads removed. Images, materials, transforms and animations retained.",
+      "decoded_primitives": 4,
+      "required_extensions": [],
+      "bounds_in_source_units": {
+        "min": [
+          -3.879020246778026,
+          -2.033701305996914,
+          -4.208536954904218
+        ],
+        "max": [
+          3.873161441188671,
+          9.003685459026912,
+          12.700528591057036
+        ],
+        "size": [
+          7.752181687966697,
+          11.037386765023825,
+          16.909065545961255
+        ]
+      },
+      "validator_errors": 0,
+      "validator_warnings": 0
+    },
+    {
+      "id": "iss",
+      "file": "iss.glb",
+      "name": "International Space Station",
+      "bytes": 3573688,
+      "sha256": "199f41b6121b344b5d70423b8b1ae1e76a686aefb238eb312c5fd091847cbc27",
+      "source_sha256": "2ba4427413b0dd89a33d2acaf962dea8a96a3b1d8dceda05cc7aad547ffd3d16",
+      "source_page": "https://github.com/nasa/NASA-3D-Resources/blob/11ebb4ee043715aefbba6aeec8a61746fad67fa7/3D%20Models/International%20Space%20Station%20%28ISS%29%20%28B%29/International%20Space%20Station%20%28ISS%29%20%28B%29.glb",
+      "credit": "NASA 3D Resources and its listed contributors",
+      "modification": "Draco geometry decoded offline; compressed payloads removed. Images, materials, transforms and animations retained.",
+      "decoded_primitives": 36,
+      "required_extensions": [],
+      "bounds_in_source_units": {
+        "min": [
+          -11.129735946655273,
+          -4.168513774871826,
+          -22.86463165283203
+        ],
+        "max": [
+          3.28794527053833,
+          41.263973236083984,
+          22.679733276367188
+        ],
+        "size": [
+          14.417681217193604,
+          45.43248701095581,
+          45.54436492919922
+        ]
+      },
+      "validator_errors": 0,
+      "validator_warnings": 0
+    },
+    {
+      "id": "new-horizons",
+      "file": "new-horizons.glb",
+      "name": "New Horizons",
+      "bytes": 3293516,
+      "sha256": "4552322c6551463e85dd64b656343e86ce3202661241aa608d2ee10c893c761e",
+      "source_sha256": "4552322c6551463e85dd64b656343e86ce3202661241aa608d2ee10c893c761e",
+      "source_page": "https://science.nasa.gov/resource/new-horizons-3d-model/",
+      "credit": "NASA Visualization Technology Applications and Development (VTAD)",
+      "modification": "Unchanged staged model.",
+      "decoded_primitives": 0,
+      "required_extensions": [],
+      "bounds_in_source_units": {
+        "min": [
+          -1.2047935789452922,
+          -0.5,
+          -1.0655800104141235
+        ],
+        "max": [
+          1.2793420553207397,
+          1.6217194610518533,
+          1.9103198051452637
+        ],
+        "size": [
+          2.484135634266032,
+          2.1217194610518533,
+          2.975899815559387
+        ]
+      },
+      "validator_errors": 0,
+      "validator_warnings": 1
+    },
+    {
+      "id": "psyche",
+      "file": "psyche.glb",
+      "name": "Psyche",
+      "bytes": 3395504,
+      "sha256": "bb4e2a4ed84a81b4d2dbb68257be24746a3e269e5fea0a524f37d47ef781150f",
+      "source_sha256": "bb4e2a4ed84a81b4d2dbb68257be24746a3e269e5fea0a524f37d47ef781150f",
+      "source_page": "https://eyes.nasa.gov/apps/solar-system/#/sc_psyche",
+      "credit": "NASA/JPL-Caltech Eyes on the Solar System",
+      "modification": "Unchanged staged model.",
+      "decoded_primitives": 0,
+      "required_extensions": [
+        "KHR_texture_transform"
+      ],
+      "bounds_in_source_units": {
+        "min": [
+          -12.351938247680664,
+          -0.05829980969429016,
+          -3.6582552194595337
+        ],
+        "max": [
+          12.384876728057861,
+          4.885654832073357,
+          3.679249309003353
+        ],
+        "size": [
+          24.736814975738525,
+          4.943954641767647,
+          7.337504528462887
+        ]
+      },
+      "validator_errors": 0,
+      "validator_warnings": 7
+    },
+    {
+      "id": "juice",
+      "file": "juice.glb",
+      "name": "Juice",
+      "bytes": 4195448,
+      "sha256": "45e6e35b852c9f7f6453f34abd7fb1aff11e72b181b13ea25debf2bb154c6b5d",
+      "source_sha256": "45e6e35b852c9f7f6453f34abd7fb1aff11e72b181b13ea25debf2bb154c6b5d",
+      "source_page": "https://eyes.nasa.gov/apps/solar-system/#/sc_juice",
+      "credit": "NASA/JPL-Caltech Eyes on the Solar System",
+      "modification": "Unchanged staged model.",
+      "decoded_primitives": 0,
+      "required_extensions": [],
+      "bounds_in_source_units": {
+        "min": [
+          -7.507027447223663,
+          -8.573457717895508,
+          -13.497332371305674
+        ],
+        "max": [
+          7.398835837841034,
+          3.3090176582336426,
+          13.483713113237172
+        ],
+        "size": [
+          14.905863285064697,
+          11.88247537612915,
+          26.981045484542847
+        ]
+      },
+      "validator_errors": 0,
+      "validator_warnings": 1
+    },
+    {
+      "id": "jwst-light",
+      "file": "jwst-light.glb",
+      "name": "James Webb Space Telescope — lighter alternative",
+      "bytes": 10484028,
+      "sha256": "6d226c9d5a3a402f2fcbceed7cf72a6b8ad9bef787c30c708ed0912336e8b566",
+      "source_sha256": "4958e61e5a564f2efcc32cd516b9d36ea0b9bc644f64dbcfe182ce8a422ae526",
+      "source_page": "https://github.com/nasa/NASA-3D-Resources/blob/11ebb4ee043715aefbba6aeec8a61746fad67fa7/3D%20Models/James%20Webb%20Space%20Telescope%20%28B%29/James%20Webb%20Space%20Telescope%20%28B%29.glb",
+      "credit": "NASA 3D Resources and its listed contributors",
+      "modification": "Draco geometry decoded offline; compressed payloads removed. Images, materials, transforms and animations retained.",
+      "decoded_primitives": 36,
+      "required_extensions": [],
+      "bounds_in_source_units": {
+        "min": [
+          -6.435308933258057,
+          -3.1614186763763428,
+          -10.597030639648438
+        ],
+        "max": [
+          6.435615062713623,
+          8.095489501953125,
+          10.399120330810547
+        ],
+        "size": [
+          12.87092399597168,
+          11.256908178329468,
+          20.996150970458984
+        ]
+      },
+      "validator_errors": 0,
+      "validator_warnings": 0
+    }
+  ]
+}

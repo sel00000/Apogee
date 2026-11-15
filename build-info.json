@@ -1,0 +1,13 @@
+{
+  "version": "5.0.0",
+  "builtAt": "2026-11-15T12:35:12.970Z",
+  "modules": [
+    "portal",
+    "planetarium",
+    "analysis",
+    "asteroids",
+    "search",
+    "tutorial",
+    "experience"
+  ]
+}

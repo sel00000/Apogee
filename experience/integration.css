@@ -1,0 +1,20 @@
+#spherex-experience-info {
+  position: fixed; right: max(16px, env(safe-area-inset-right)); bottom: max(18px, env(safe-area-inset-bottom));
+  z-index: 200; color: #e9e7dc; background: #101719e8; border: 1px solid #a9d8cb66;
+  border-radius: 20px; padding: 9px 14px; font: 12px/1.5 system-ui, sans-serif; cursor: pointer;
+}
+#spherex-experience-info:focus-visible { outline: 2px solid #98ecd5; outline-offset: 4px; }
+#spherex-experience-info-dialog {
+  box-sizing: border-box; max-width: min(560px, calc(100vw - 32px)); width: 560px;
+  max-height: calc(100dvh - 48px); overflow: auto; padding: 28px; border: 1px solid #a9d8cb66;
+  border-radius: 16px; color: #ecf4ef; background: #10191b; font: 15px/1.8 system-ui, sans-serif;
+}
+#spherex-experience-info-dialog::backdrop { background: #02070bc9; }
+#spherex-experience-info-dialog h2 { font: 600 22px/1.45 system-ui, sans-serif; color: #d1ffec; }
+#spherex-experience-info-dialog p { margin: 16px 0; }
+#spherex-experience-info-dialog a { color: #a3e4f1; }
+#spherex-experience-info-dialog kbd { padding: 2px 5px; border: 1px solid #58716c; border-radius: 4px; }
+#spherex-experience-info-dialog .experience-credit { font-size: 12px; color: #b4c6c3; }
+#spherex-experience-info-dialog form { margin-top: 24px; }
+#spherex-experience-info-dialog button { color: #082c25; background: #abebd1; border: 0; border-radius: 8px; padding: 10px 14px; cursor: pointer; font: inherit; }
+@media (max-width: 700px) { #spherex-experience-info { bottom: max(95px, env(safe-area-inset-bottom)); font-size: 11px; } }

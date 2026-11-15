@@ -1,0 +1,104 @@
+/* HUD type follows the homecoming console (docs/homecoming-console.md §1) through
+   the live typography controls: 12px labels, lists, headers, tags and buttons;
+   14px values and the clock; 10px hints; 60px wordmark and 34px location. Nothing
+   under 10px. Pre-JS fallbacks only; applyTypography writes these inline. */
+:root{
+ --type-scale:1;--hud-line-weight:1;--hud-line-width:1px;
+ --type-title-family:'Imbue',serif;
+ --type-hud-family:'TeX Gyre Heros Cn','Saira Condensed','Arial Narrow',sans-serif;
+ --type-subtitle-family:'Saira Condensed','Arial Narrow',sans-serif;
+ --type-title-size:1;--type-title-stroke:0px;--type-title-weight:350;--type-title-tracking:.01em;--type-title-leading:.88;
+ --type-heading-size:1;--type-heading-stroke:0px;--type-heading-weight:700;--type-heading-tracking:0em;--type-heading-leading:1.1;
+ --type-readout-size:1;--type-readout-stroke:0px;--type-readout-weight:400;--type-readout-tracking:0em;--type-readout-leading:1.25;
+ --type-subtitle-size:1;--type-subtitle-stroke:0px;--type-subtitle-weight:400;--type-subtitle-tracking:.015em;--type-subtitle-leading:1.5;
+ --type-body-size:1;--type-body-stroke:0px;--type-body-weight:400;--type-body-tracking:.025em;--type-body-leading:1.25;
+ --type-micro-size:1;--type-micro-stroke:0px;--type-micro-weight:400;--type-micro-tracking:.025em;--type-micro-leading:1.25;
+}
+/* Per-element steps (a button's extra tracking, a hint's looser leading) are local
+   and do not inherit, so each group rule and its sliders stay in charge. */
+@property --type-tracking-add{syntax:'<length>';inherits:false;initial-value:0px}
+@property --type-leading-scale{syntax:'<number>';inherits:false;initial-value:1}
+/* Title: the wordmark and the location are the console's display serif. */
+#helmet-hud .brand{
+ font-family:var(--type-title-family);font-size:calc(var(--type-base-size,60px) * var(--type-scale) * var(--type-title-size));
+ font-weight:var(--type-title-weight);-webkit-text-stroke:var(--type-title-stroke) currentColor;paint-order:stroke fill;letter-spacing:var(--type-title-tracking);line-height:var(--type-title-leading);
+}
+#helmet-hud .brand{--type-base-size:60px}
+/* Location: a small Share Tech Mono readout on the header's centre line (Isabel's mock). */
+#helmet-hud #location{font-family:var(--hc-clock);font-size:calc(15px * var(--type-scale) * var(--type-readout-size));font-weight:400;letter-spacing:.02em;line-height:28px;-webkit-text-stroke:var(--type-readout-stroke) currentColor;paint-order:stroke fill}
+#helmet-hud .brand .wordmark{font:inherit;letter-spacing:inherit}
+/* Heading: tags and buttons, the console's 700 chips. */
+#helmet-hud :is(.instrument-title,#scan-button,#open-settings,#sound-toggle,#unlocked-map,#mobile-brake),#scan-targets .scan-object-name{
+ font-family:var(--type-hud-family);font-size:calc(var(--type-base-size,12px) * var(--type-scale) * var(--type-heading-size));
+ font-weight:var(--type-heading-weight);-webkit-text-stroke:var(--type-heading-stroke) currentColor;paint-order:stroke fill;letter-spacing:calc(var(--type-heading-tracking) + var(--type-tracking-add,0em));line-height:var(--type-heading-leading);
+}
+#helmet-hud :is(#scan-button,#open-settings,#sound-toggle,#unlocked-map,#mobile-brake){--type-tracking-add:.025em}
+#scan-targets .scan-object-name{--type-base-size:16px}
+/* Readout: primary values. The clock keeps Share Tech Mono, as in the console. */
+#helmet-hud :is(.speed-number,.bearing-values,#drift-bearing){
+ font-family:var(--type-hud-family);font-size:calc(var(--type-base-size,14px) * var(--type-scale) * var(--type-readout-size));
+ font-weight:var(--type-readout-weight);-webkit-text-stroke:var(--type-readout-stroke) currentColor;paint-order:stroke fill;letter-spacing:var(--type-readout-tracking);line-height:var(--type-readout-leading);
+}
+#helmet-hud .brand-lockup .epoch{
+ font-family:var(--hc-clock);font-size:calc(14px * var(--type-scale) * var(--type-readout-size));
+ font-weight:400;-webkit-text-stroke:var(--type-readout-stroke) currentColor;paint-order:stroke fill;letter-spacing:0;line-height:1.5;font-variant-numeric:tabular-nums;
+}
+#helmet-hud .brand-lockup .epoch span{font:inherit;letter-spacing:inherit}
+/* Explicit text IDs keep these settings above shared speaker-specific rules. */
+#helmet-hud #subtitle #subtitle-text,#homecoming #home-dialogue #home-subtitle{
+ --type-base-size:16.065px;
+ font-family:var(--type-subtitle-family);font-size:calc(var(--type-base-size) * var(--type-scale) * var(--type-subtitle-size));
+ font-weight:var(--type-subtitle-weight);-webkit-text-stroke:var(--type-subtitle-stroke) currentColor;paint-order:stroke fill;letter-spacing:var(--type-subtitle-tracking);line-height:var(--type-subtitle-leading);font-style:normal;
+}
+/* Dialogue chrome (speaker, continue, skip) stays in the shared subtitle voice. */
+#helmet-hud :is(#subtitle-speaker,#subtitle-next,#skip-opening),#helmet-hud #subtitle :is(#subtitle-speaker,#subtitle-next),#homecoming #home-dialogue :is(#home-speaker,#home-next){
+ font-family:var(--type-subtitle-family);font-size:calc(10px * var(--type-scale) * var(--type-micro-size));
+ font-weight:var(--type-micro-weight);-webkit-text-stroke:var(--type-micro-stroke) currentColor;paint-order:stroke fill;letter-spacing:.1em;line-height:1.5;
+}
+/* Body: lists and readout text. */
+#helmet-hud #contact-list button,#helmet-hud :is(.contacts-heading,.contacts-empty,#approach-phase,#approach-time,#target-name),#scan-targets .scan-target-label{
+ font-family:var(--type-hud-family);font-size:calc(var(--type-base-size,12px) * var(--type-scale) * var(--type-body-size));
+ font-weight:var(--type-body-weight);-webkit-text-stroke:var(--type-body-stroke) currentColor;paint-order:stroke fill;letter-spacing:var(--type-body-tracking);line-height:var(--type-body-leading);
+}
+/* Micro: 12px labels; hints and small print at 10px. */
+#helmet-hud :is(.discovery-totals,.meter-label,.bearing-label,.frame-caption,#radial-motion,#time-compression,.nav-help,#star-key,#scan-button small,.speed-number small,#contact-list button small,.scope-dot span,#toast),#scan-targets :is(.scan-object-kicker,.scan-object-status,.scan-object-distance){
+ font-family:var(--type-hud-family);font-size:calc(var(--type-base-size,12px) * var(--type-scale) * var(--type-micro-size));
+ font-weight:var(--type-micro-weight);-webkit-text-stroke:var(--type-micro-stroke) currentColor;paint-order:stroke fill;letter-spacing:calc(var(--type-micro-tracking) + var(--type-tracking-add,0em));line-height:calc(var(--type-micro-leading) * var(--type-leading-scale,1));
+}
+#helmet-hud :is(.frame-caption,.nav-help,#scan-button small,.scope-dot span),#scan-targets :is(.scan-object-kicker,.scan-object-status){--type-base-size:10px}
+#helmet-hud :is(.frame-caption,#scan-button small){--type-leading-scale:1.2}
+#helmet-hud #toast,#scan-targets .scan-object-kicker{--type-tracking-add:.075em}
+#helmet-hud #open-settings span{font:inherit;letter-spacing:inherit}
+#helmet-hud :is(.discovery-totals,#star-key) :is(b,small,span){font:inherit;letter-spacing:inherit}
+#scan-targets .scan-object-distance{font-variant-numeric:tabular-nums}
+/* Line weight: one control, two kinds of 1px line (stroke and hairline). */
+#helmet-hud :is(.instrument-title,#scan-button,#contact-list button,.scope-dot i,#mobile-nav button,#unlocked-map){border-width:var(--hud-line-width)}
+#helmet-hud :is(#bearing-contacts,#approach-panel){border-top-width:var(--hud-line-width)}
+#helmet-hud .crosshair i{border-width:var(--hud-line-width)}
+#helmet-hud .crosshair i:nth-child(1){border-right:0;border-bottom:0}
+#helmet-hud .crosshair i:nth-child(2){border-left:0;border-bottom:0}
+#helmet-hud .crosshair i:nth-child(3){border-right:0;border-top:0}
+#helmet-hud .crosshair i:nth-child(4){border-left:0;border-top:0}
+#scan-targets .scan-target-label{border-width:var(--hud-line-width)}
+#scan-targets :is(.scan-target-label[data-kind="star"],.scan-target-label[data-kind="constellation"]){border-width:0}
+#scan-targets .scan-object-kicker{border-bottom-width:var(--hud-line-width)}
+#scan-feedback,#scan-targets,#sky-trace{mix-blend-mode:screen}
+#helmet-hud #settings .control output,#helmet-hud #jump-lab .control output,
+#helmet-hud .pulse-editor output,#helmet-hud .lab-phase output{font-size:inherit;line-height:inherit}
+/* Display sizes step down on narrow screens; labels, values and hints keep theirs. */
+@media(min-width:701px) and (max-width:1000px){
+ #helmet-hud .brand{--type-base-size:48px}
+ #helmet-hud #location{font-size:calc(14px * var(--type-scale) * var(--type-readout-size))}
+}
+@media(max-width:700px){
+ #helmet-hud .brand{--type-base-size:44px}
+ #helmet-hud #location{font-size:calc(14px * var(--type-scale) * var(--type-readout-size))}
+ #helmet-hud :is(.discovery-totals,#star-key){--type-base-size:10px}
+ #helmet-hud #subtitle #subtitle-text,#homecoming #home-dialogue #home-subtitle{--type-base-size:14.28px}
+ #scan-targets .scan-object-name{--type-base-size:14px}
+}
+@media(min-width:701px) and (max-height:500px){
+ #helmet-hud .brand{--type-base-size:36px}
+ #helmet-hud .discovery-totals{--type-base-size:10px}
+ #helmet-hud #subtitle #subtitle-text,#homecoming #home-dialogue #home-subtitle{--type-base-size:14.28px}
+}

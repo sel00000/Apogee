@@ -1,0 +1,472 @@
+{
+  "updated": "2026-09-25",
+  "scope": "Mission mosaics and explicitly artistic, reference-guided moon reconstructions. These are visual surface maps, not measured elevation or a 2080 appearance prediction.",
+  "treatment": "Lazy loaded at the close-detail threshold; source luminance rendered through Odyssey two-colour contour/stipple shader. Real ephemeris, sizes, measured axes and available spin orientations are retained. Texture does not alter collision geometry.",
+  "license": "NASA/JPL/USGS source imagery: credit retained, no endorsement implied. See https://www.jpl.nasa.gov/jpl-image-use-policy/ and https://www.nasa.gov/nasa-brand-center/images-and-media/.",
+  "assets": [
+    {
+      "name": "Ariel",
+      "mode": "reconstruction",
+      "file": "assets/moons/ariel.jpg",
+      "sources": [
+        {
+          "page": "https://space.jpl.nasa.gov/tmaps/uranus.html",
+          "download": "https://space.jpl.nasa.gov/tmaps/pix/ura1vuu2.jpg"
+        }
+      ],
+      "credit": "Reference: NASA/JPL Voyager. Artistic reconstruction: OpenAI image generation.",
+      "projection": "2:1 equirectangular; north up. Feature placement approximate; no measured registration claimed.",
+      "notes": "Whole texture reconstructed from incomplete official reference. Observed geology guides plausible unobserved terrain. Not a measured map or elevation model.",
+      "generator": "built-in image_gen, one call; no retries or edits after generation",
+      "prompt": "Use case: scientific-educational. Asset type: a seamless full-sphere 2:1 equirectangular grayscale surface texture for a game, ideally 2048x1024. This is an ARTISTIC reconstruction based on NASA imagery, not measured new data. Input image 1 is the official NASA/JPL equirectangular map, used as the edit target and geographic reference. Maintain the source map's known southern terrain shapes, feature positions, proportions and orientation closely. Reconstruct ALL black/unobserved portions, including the entire northern hemisphere, with plausible continuous SAME-BODY terrain matching the existing geology. Do not interpret black unknown areas as space or as blank background. Fill the entire rectangular canvas with terrain, edge to edge. Preserve the equirectangular projection: north pole at top, equator centered, south pole at bottom. Natural horizontally elongated features near poles compress correctly onto a sphere. Left and right edges seamlessly wrap. Correct source mosaic brightness mismatches while retaining albedo features. Neutral grayscale albedo with clear medium/fine surface detail. Minimal local relief shading only, no global lighting gradient, no terminator. No text, labels, graticule, border, sphere render, 3D globe, space, stars, Earth terrain, retro effects, stippling, contour lines, pixel art or color palette; the game handles its art treatment.\nSubject: ARIEL. Pale icy densely cratered plains cut by branching and intersecting fault valleys and broad smooth-floored chasmata. Preserve the distinctive branching valleys visible in the source; continue related tectonic terrain into unobserved areas without simply mirroring or repeating it.",
+      "processing": "1774x887 PNG resized to 1536x768 JPEG, quality 82.",
+      "bytes": 447098,
+      "sha256": "26dc9a1f9beb85abff2ed46e017db7046bf84ccefcf30f812941a22ec289bd37",
+      "size": [
+        1536,
+        768
+      ]
+    },
+    {
+      "name": "Callisto",
+      "mode": "mosaic",
+      "file": "assets/moons/callisto.jpg",
+      "sources": [
+        {
+          "page": "https://science.nasa.gov/3d-resources/jupiter-callisto/",
+          "download": "https://assets.science.nasa.gov/content/dam/science/cds/3d/resources/image/jupiter---callisto/Jupiter%20-%20Callisto.jpg"
+        }
+      ],
+      "credit": "NASA/JPL/USGS",
+      "projection": "Equirectangular, north up; east -180 to +180 used. Simplified source catalog does not supply formal registration metadata.",
+      "notes": "Voyager / USGS; impact craters and multiring basins, mixed resolution and source smoothing.",
+      "bytes": 452114,
+      "sha256": "05bf0525b0258d10942ea24b1d61ce78c0f27a736346c24ffb49e8f57b976658",
+      "size": [
+        1440,
+        720
+      ]
+    },
+    {
+      "name": "Charon",
+      "mode": "reconstruction",
+      "file": "assets/moons/charon.jpg",
+      "sources": [
+        {
+          "page": "https://www.nasa.gov/solar-system/plutos-big-moon-charon-reveals-a-colorful-and-violent-history/",
+          "download": "https://www.nasa.gov/wp-content/uploads/2023/03/nh-charon-neutral-bright-release.jpg"
+        }
+      ],
+      "credit": "Reference: NASA/JHUAPL/SwRI. Artistic reconstruction: OpenAI image generation.",
+      "projection": "2:1 equirectangular; north up. Feature placement approximate; no measured registration claimed.",
+      "notes": "Whole texture reconstructed from incomplete official reference. Observed geology guides plausible unobserved terrain. Not a measured map or elevation model.",
+      "generator": "built-in image_gen, one call; no retries or edits after generation",
+      "prompt": "Use case: scientific-educational. Asset type: a seamless full-sphere 2:1 equirectangular grayscale surface texture for a game, ideally 2048x1024. This is an ARTISTIC reconstruction based on NASA imagery, not measured new data. Fill the entire rectangular canvas edge to edge with detailed terrain. North pole at top, equator centered, south pole at bottom. Natural horizontally elongated features near poles compress correctly onto a sphere. Left and right edges must wrap seamlessly. Neutral grayscale albedo and readable medium/fine surface detail. Minimal local relief shading only: remove any global directional lighting gradient, limb shading, shadows from a terminator, or vignette from the reference. No text, labels, graticule, frame, 3D globe or sphere rendering, space, stars, Earth terrain, retro effects, stippling, contour lines, pixel art or decorative color palette. The game handles its art treatment.\nInput image 1 is the official NASA/JHUAPL/SwRI New Horizons portrait of CHARON, used only as a geological reference, not the target composition. Unwrap and reconstruct Charon as a FLAT complete global equirectangular texture. Retain the reference's large-scale geology: cratered gray northern highlands, diffuse dark north polar Mordor Macula (convert its reddish color to dark gray albedo), an immense belt of canyons and faults just north of the equator, comparatively smooth southern Vulcan Planum with sparse craters and delicate ridges. The known hemisphere is centered horizontally in the flat map; the far side is plausible artistic continuation. Keep the observed canyon topology and varied crater scales recognizably tied to this source. Do not copy the disk shape or black background, do not render a globe, no global lighting gradient. Dark polar albedo is a real marking, not a lighting gradient.",
+      "processing": "1774x887 PNG resized to 1536x768 JPEG, quality 82.",
+      "bytes": 492439,
+      "sha256": "5445b140e3d5cc8f886bec6fc0077e82e14b50ddf9478a91f03e60b252ef56c4",
+      "size": [
+        1536,
+        768
+      ]
+    },
+    {
+      "name": "Deimos",
+      "mode": "mosaic",
+      "file": "assets/moons/deimos.jpg",
+      "sources": [
+        {
+          "page": "https://science.nasa.gov/3d-resources/mars-deimos/",
+          "download": "https://assets.science.nasa.gov/content/dam/science/cds/3d/resources/image/mars---deimos/Mars%20-%20Deimos.jpg"
+        }
+      ],
+      "credit": "NASA/JPL/USGS",
+      "projection": "Equirectangular, north up; east -180 to +180 used. Simplified source catalog does not supply formal registration metadata.",
+      "notes": "Viking / USGS; subdued regolith, small craters and source interpolated areas.",
+      "bytes": 182520,
+      "sha256": "11672dd05e92d33ef9f1d5392cc63a84253366518a5cad88797518ad2f8bbddb",
+      "size": [
+        1440,
+        720
+      ]
+    },
+    {
+      "name": "Dione",
+      "mode": "mosaic",
+      "file": "assets/moons/dione.jpg",
+      "sources": [
+        {
+          "page": "https://science.nasa.gov/photojournal/map-of-dione-february-2010/",
+          "download": "https://assets.science.nasa.gov/content/dam/science/psd/photojournal/pia/pia12/pia12577/PIA12577.jpg"
+        }
+      ],
+      "credit": "NASA/JPL/Space Science Institute",
+      "projection": "North at top (+90 to -90 latitude). L-to-R labels in matching annotated figure: 180W,150W,120W,90W,60W,30W,0W,330W,300W,270W,240W,210W,180W. East-positive equivalent edges/center: -180E / 0E / +180E. No horizontal flip or half-turn texture offset needed for this UV convention.",
+      "notes": "Cassini/Voyager global grayscale mosaic. North-polar fill and mixed resolution are inherited from source; bright fracture wisps remain on trailing hemisphere.",
+      "processing": "JPEG quality 82. Source resampled to 2048x1024, no crop or flip.",
+      "bytes": 996937,
+      "sha256": "524013decfd81a33120e8d56b5b30e66b9851aef751d8034b8422a0a071eaddf",
+      "size": [
+        2048,
+        1024
+      ]
+    },
+    {
+      "name": "Enceladus",
+      "mode": "mosaic",
+      "file": "assets/moons/enceladus.jpg",
+      "sources": [
+        {
+          "page": "https://science.nasa.gov/photojournal/map-of-enceladus-february-2010/",
+          "download": "https://assets.science.nasa.gov/content/dam/science/psd/photojournal/pia/pia12/pia12564/PIA12564.jpg"
+        }
+      ],
+      "credit": "NASA/JPL/Space Science Institute",
+      "projection": "North at top (+90 to -90 latitude). L-to-R labels in matching annotated figure: 180W,150W,120W,90W,60W,30W,0W,330W,300W,270W,240W,210W,180W. East-positive equivalent edges/center: -180E / 0E / +180E. No horizontal flip or half-turn texture offset needed for this UV convention.",
+      "notes": "Cassini mosaic includes October and November 2009 imagery. Source already incorporates 3.5 degrees west shift to IAU longitude definition; do not repeat that shift. Chosen clean JPEG instead of labeled December 2011 preview. Older north-polar imagery has visibly lower detail.",
+      "processing": "JPEG quality 82. Source resampled to 2048x1024, no crop or flip.",
+      "bytes": 962333,
+      "sha256": "b47fde0d2d25e00c9ccd83ffe0edc3b25772cc65563234fec7b3c6f934d60dae",
+      "size": [
+        2048,
+        1024
+      ]
+    },
+    {
+      "name": "Europa",
+      "mode": "mosaic",
+      "file": "assets/moons/europa.jpg",
+      "sources": [
+        {
+          "page": "https://science.nasa.gov/3d-resources/jupiter-europa/",
+          "download": "https://assets.science.nasa.gov/content/dam/science/cds/3d/resources/image/jupiter---europa/Jupiter%20-%20Europa.jpg"
+        }
+      ],
+      "credit": "NASA/JPL/USGS",
+      "projection": "Equirectangular, north up; east -180 to +180 used. Simplified source catalog does not supply formal registration metadata.",
+      "notes": "Voyager / USGS; intersecting fractures, source polar smoothing.",
+      "bytes": 299637,
+      "sha256": "e14017d817754d0384d9a9f7002bcf64b1ad0a6716f3c42b11bf3df966998a75",
+      "size": [
+        1440,
+        720
+      ]
+    },
+    {
+      "name": "Ganymede",
+      "mode": "mosaic",
+      "file": "assets/moons/ganymede.jpg",
+      "sources": [
+        {
+          "page": "https://science.nasa.gov/3d-resources/jupiter-ganymede/",
+          "download": "https://assets.science.nasa.gov/content/dam/science/cds/3d/resources/image/jupiter---ganymede/Jupiter%20-%20Ganymede.jpg"
+        }
+      ],
+      "credit": "NASA/JPL/USGS",
+      "projection": "Equirectangular, north up; east -180 to +180 used. Simplified source catalog does not supply formal registration metadata.",
+      "notes": "Voyager / USGS; dark cratered ground and bright grooved terrain, mixed resolution.",
+      "bytes": 385438,
+      "sha256": "bd39ffa5673681ae7213d50b14d3d802257fac9b78a28a72934d43da3cb74045",
+      "size": [
+        1440,
+        720
+      ]
+    },
+    {
+      "name": "Hyperion",
+      "mode": "reconstruction",
+      "file": "assets/moons/hyperion.jpg",
+      "sources": [
+        {
+          "page": "https://www.jpl.nasa.gov/images/pia14580-spongy-hyperion/",
+          "download": "https://d2pn8kiwq2w21t.cloudfront.net/original_images/jpegPIA14580.jpg"
+        }
+      ],
+      "credit": "Reference: NASA/JPL-Caltech/Space Science Institute. Artistic reconstruction: OpenAI image generation.",
+      "projection": "2:1 equirectangular; north up. Feature placement approximate; no measured registration claimed.",
+      "notes": "Whole texture reconstructed from incomplete official reference. Observed geology guides plausible unobserved terrain. Not a measured map or elevation model.",
+      "generator": "built-in image_gen, one call; no retries or edits after generation",
+      "prompt": "Use case: scientific-educational. Asset type: a seamless full-sphere 2:1 equirectangular grayscale surface texture for a game, ideally 2048x1024. This is an ARTISTIC reconstruction based on NASA imagery, not measured new data. Fill the entire rectangular canvas edge to edge with detailed terrain. North pole at top, equator centered, south pole at bottom. Natural horizontally elongated features near poles compress correctly onto a sphere. Left and right edges must wrap seamlessly. Neutral grayscale albedo and readable medium/fine surface detail. Minimal local relief shading only: remove any global directional lighting gradient, limb shading, shadows from a terminator, or vignette from the reference. No text, labels, graticule, frame, 3D globe or sphere rendering, space, stars, Earth terrain, retro effects, stippling, contour lines, pixel art or decorative color palette. The game handles its art treatment.\nInput image 1 is the official NASA/JPL-Caltech/Space Science Institute Cassini portrait of HYPERION, used only as a geology/material reference, not the target composition. Reconstruct a FLAT full-body equirectangular texture for application to a separate measured irregular ellipsoid mesh. Hyperion's unique porous sponge-like surface is covered in tightly packed deep sharp-edged pits and impact cavities of diverse sizes: dark floors and pale steep walls, nested small pits, rugged narrow ridges between pits, irregular basin outlines. Preserve that distinctive non-lunar look. Fill the entire rectangular image with plausible Hyperion terrain without recurring stamped holes. Because this is a texture, DO NOT render the irregular moon silhouette, a sphere, an ellipsoid, a lump, or any black outer-space background. Only the flattened continuous surface, no margins. Terrain pits should be naturally varied and asymmetric, not a regular grid or uniform foam.",
+      "processing": "1774x887 PNG resized to 1536x768 JPEG, quality 82.",
+      "bytes": 591031,
+      "sha256": "c035b3bd42e68a38fa6d3bd75d48c4e9cf90ac8d19d3644fa7353a8213b11fca",
+      "size": [
+        1536,
+        768
+      ]
+    },
+    {
+      "name": "Iapetus",
+      "mode": "mosaic",
+      "file": "assets/moons/iapetus.jpg",
+      "sources": [
+        {
+          "page": "https://astrogeology.usgs.gov/search/map/iapetus_cassini_voyager_global_mosaic_803m",
+          "download": "https://planetarymaps.usgs.gov/mosaic/Iapetus_Cassini_Voyager_mosaic_global_783m.tif"
+        }
+      ],
+      "credit": "NASA/JPL/Space Science Institute; USGS Astrogeology distribution",
+      "projection": "North at top (+90 to -90 latitude). L-to-R labels in matching annotated figure: 180W,150W,120W,90W,60W,30W,0W,330W,300W,270W,240W,210W,180W. East-positive equivalent edges/center: -180E / 0E / +180E. No horizontal flip or half-turn texture offset needed for this UV convention.",
+      "notes": "Clean USGS 5760x2880 TIFF used because NASA JPEG includes border labels. Metadata says 803 m/pixel although TIFF filename says 783m. Cassini with Voyager polar fill; some Cassini imagery uses Saturnshine. Source already incorporates 4.5 degrees west registration shift; do not repeat. Inherited illumination and normalization compress the real dark/bright albedo difference.",
+      "processing": "JPEG quality 82. Source resampled to 2048x1024, no crop or flip.",
+      "bytes": 780988,
+      "sha256": "10d86c409e81cdb8b294d0afcc937288d352ba8f2f66db5387b092161eb82475",
+      "size": [
+        2048,
+        1024
+      ]
+    },
+    {
+      "name": "Io",
+      "mode": "mosaic",
+      "file": "assets/moons/io.jpg",
+      "sources": [
+        {
+          "page": "https://space.jpl.nasa.gov/tmaps/jupiter.html",
+          "download": "https://space.jpl.nasa.gov/tmaps/pix/jup1vss2.jpg"
+        }
+      ],
+      "credit": "NASA/JPL/Caltech/USGS",
+      "projection": "Equirectangular, north up, east -180 to +180; Pele landmark agrees with USGS coordinates.",
+      "notes": "Voyager/USGS morphology with Galileo-derived color. Source-side pole fill; no blank polar slivers. Colors are recoloured by the game shader.",
+      "bytes": 174202,
+      "sha256": "e6a4860fed8eb666b4c8876fcc365c04b531ca2e13ad4732021ce5847487fa8b",
+      "size": [
+        1440,
+        720
+      ]
+    },
+    {
+      "name": "Mimas",
+      "mode": "mosaic",
+      "file": "assets/moons/mimas.jpg",
+      "sources": [
+        {
+          "page": "https://science.nasa.gov/resource/mimas-global-map-june-2017/",
+          "download": "https://assets.science.nasa.gov/content/dam/science/psd/solar/2023/09/p/i/a/1/PIA17214_unlabeled.png"
+        }
+      ],
+      "credit": "NASA/JPL-Caltech/Space Science Institute",
+      "projection": "North at top (+90 to -90 latitude). L-to-R labels in matching annotated figure: 180W,150W,120W,90W,60W,30W,0W,330W,300W,270W,240W,210W,180W. East-positive equivalent edges/center: -180E / 0E / +180E. No horizontal flip or half-turn texture offset needed for this UV convention.",
+      "notes": "Cassini global mosaic. Mixed illumination and resolution inherited from source.",
+      "processing": "JPEG quality 82. Source resampled to 2048x1024, no crop or flip.",
+      "bytes": 677138,
+      "sha256": "5acc81c20800d7dbef4896d0c416f76178aebba9f1d808b5dd1099723a1a8a45",
+      "size": [
+        2048,
+        1024
+      ]
+    },
+    {
+      "name": "Miranda",
+      "mode": "reconstruction",
+      "file": "assets/moons/miranda.jpg",
+      "sources": [
+        {
+          "page": "https://space.jpl.nasa.gov/tmaps/uranus.html",
+          "download": "https://space.jpl.nasa.gov/tmaps/pix/ura5vuu2.jpg"
+        }
+      ],
+      "credit": "Reference: NASA/JPL Voyager. Artistic reconstruction: OpenAI image generation.",
+      "projection": "2:1 equirectangular; north up. Feature placement approximate; no measured registration claimed.",
+      "notes": "Whole texture reconstructed from incomplete official reference. Observed geology guides plausible unobserved terrain. Not a measured map or elevation model.",
+      "generator": "built-in image_gen, one call; no retries or edits after generation",
+      "prompt": "Use case: scientific-educational. Asset type: a seamless full-sphere 2:1 equirectangular grayscale surface texture for a game, ideally 2048x1024. This is an ARTISTIC reconstruction based on NASA imagery, not measured new data. Fill the entire rectangular canvas edge to edge with detailed terrain. North pole at top, equator centered, south pole at bottom. Natural horizontally elongated features near poles compress correctly onto a sphere. Left and right edges must wrap seamlessly. Neutral grayscale albedo and readable medium/fine surface detail. Minimal local relief shading only: remove any global directional lighting gradient, limb shading, shadows from a terminator, or vignette from the reference. No text, labels, graticule, frame, 3D globe or sphere rendering, space, stars, Earth terrain, retro effects, stippling, contour lines, pixel art or decorative color palette. The game handles its art treatment.\nInput image 1 is the official NASA/JPL equirectangular map of MIRANDA, an edit target and geographic reference. Preserve its existing southern mapped features and placement very closely, especially the distinctive sharp corona shapes, parallel ridges, angular grooves, long scarps and spectacular cliffs. Complete ALL black unobserved areas with a plausible same-body continuation: heterogeneous patches of old cratered terrain beside tectonic terrain, never generic uniform noise. Keep the source's iconic three main coronae as main landmarks without multiplying them across the unknown hemisphere. Do not interpret black unknown areas as background. Reconstruct the entire missing northern hemisphere. No mirrored repetition.",
+      "processing": "1774x887 PNG resized to 1536x768 JPEG, quality 82.",
+      "bytes": 467373,
+      "sha256": "86fd21b61b52c03a586f4dd8a29ed560237e36a93f8138e70b26faffdeeb8464",
+      "size": [
+        1536,
+        768
+      ]
+    },
+    {
+      "name": "Oberon",
+      "mode": "reconstruction",
+      "file": "assets/moons/oberon.jpg",
+      "sources": [
+        {
+          "page": "https://space.jpl.nasa.gov/tmaps/uranus.html",
+          "download": "https://space.jpl.nasa.gov/tmaps/pix/ura4vuu2.jpg"
+        }
+      ],
+      "credit": "Reference: NASA/JPL Voyager. Artistic reconstruction: OpenAI image generation.",
+      "projection": "2:1 equirectangular; north up. Feature placement approximate; no measured registration claimed.",
+      "notes": "Whole texture reconstructed from incomplete official reference. Observed geology guides plausible unobserved terrain. Not a measured map or elevation model.",
+      "generator": "built-in image_gen, one call; no retries or edits after generation",
+      "prompt": "Use case: scientific-educational. Asset type: a seamless full-sphere 2:1 equirectangular grayscale surface texture for a game, ideally 2048x1024. This is an ARTISTIC reconstruction based on NASA imagery, not measured new data. Input image 1 is the official NASA/JPL equirectangular map, used as the edit target and geographic reference. Maintain the source map's known southern terrain shapes, feature positions, proportions and orientation closely. Reconstruct ALL black/unobserved portions, including the entire northern hemisphere, with plausible continuous SAME-BODY terrain matching the existing geology. Do not interpret black unknown areas as space or as blank background. Fill the entire rectangular canvas with terrain, edge to edge. Preserve the equirectangular projection: north pole at top, equator centered, south pole at bottom. Natural horizontally elongated features near poles compress correctly onto a sphere. Left and right edges seamlessly wrap. Correct source mosaic brightness mismatches while retaining albedo features. Neutral grayscale albedo with clear medium/fine surface detail. Minimal local relief shading only, no global lighting gradient, no terminator. No text, labels, graticule, border, sphere render, 3D globe, space, stars, Earth terrain, retro effects, stippling, contour lines, pixel art or color palette; the game handles its art treatment.\nSubject: OBERON. Old dark gray heavily cratered icy terrain, overlapping impact craters with some pale ejecta and dark floors. Preserve the source's identifiable large craters and tonal patches. Terrain should feel ancient and crater saturated with no elaborate global fracture network.",
+      "processing": "1774x887 PNG resized to 1536x768 JPEG, quality 82.",
+      "bytes": 476594,
+      "sha256": "242bd9dd784d4d56236a7d2ca6dda4e10d5c59d72c2f578eb4cae9aa0447ae84",
+      "size": [
+        1536,
+        768
+      ]
+    },
+    {
+      "name": "Phobos",
+      "mode": "mosaic",
+      "file": "assets/moons/phobos.jpg",
+      "sources": [
+        {
+          "page": "https://science.nasa.gov/3d-resources/mars-phobos/",
+          "download": "https://assets.science.nasa.gov/content/dam/science/cds/3d/resources/image/mars---phobos/Mars%20-%20Phobos.jpg"
+        }
+      ],
+      "credit": "NASA/JPL/USGS",
+      "projection": "Equirectangular, north up; east -180 to +180 used. Simplified source catalog does not supply formal registration metadata.",
+      "notes": "Viking / USGS; Stickney and grooves, source mosaic seams.",
+      "bytes": 291272,
+      "sha256": "a7c19dcb00c0e3803ac000817a2ef1f3e917c9e3396c7d65f95da7a353894284",
+      "size": [
+        1440,
+        720
+      ]
+    },
+    {
+      "name": "Rhea",
+      "mode": "mosaic",
+      "file": "assets/moons/rhea.jpg",
+      "sources": [
+        {
+          "page": "https://science.nasa.gov/photojournal/map-of-rhea-march-2012/",
+          "download": "https://assets.science.nasa.gov/content/dam/science/psd/photojournal/pia/pia14/pia14928/PIA14928.jpg"
+        }
+      ],
+      "credit": "NASA/JPL-Caltech/Space Science Institute",
+      "projection": "North at top (+90 to -90 latitude). L-to-R labels in matching annotated figure: 180W,150W,120W,90W,60W,30W,0W,330W,300W,270W,240W,210W,180W. East-positive equivalent edges/center: -180E / 0E / +180E. No horizontal flip or half-turn texture offset needed for this UV convention.",
+      "notes": "Primarily Cassini images including March 10 2012 flyby. Six Voyager images fill north-polar coverage gaps.",
+      "processing": "JPEG quality 82. Source resampled to 2048x1024, no crop or flip.",
+      "bytes": 779384,
+      "sha256": "909b592ca86ddb64888926261128dbb444cc719390160d2ad401c6db9cbd6950",
+      "size": [
+        2048,
+        1024
+      ]
+    },
+    {
+      "name": "Tethys",
+      "mode": "mosaic",
+      "file": "assets/moons/tethys.jpg",
+      "sources": [
+        {
+          "page": "https://science.nasa.gov/photojournal/map-of-tethys-june-2012/",
+          "download": "https://assets.science.nasa.gov/content/dam/science/psd/photojournal/pia/pia14/pia14931/PIA14931.jpg"
+        }
+      ],
+      "credit": "NASA/JPL-Caltech/Space Science Institute",
+      "projection": "North at top (+90 to -90 latitude). L-to-R labels in matching annotated figure: 180W,150W,120W,90W,60W,30W,0W,330W,300W,270W,240W,210W,180W. East-positive equivalent edges/center: -180E / 0E / +180E. No horizontal flip or half-turn texture offset needed for this UV convention.",
+      "notes": "Cassini global grayscale mosaic, with mixed resolution and baked illumination.",
+      "processing": "JPEG quality 82. Source resampled to 2048x1024, no crop or flip.",
+      "bytes": 962037,
+      "sha256": "4b52c49885650e2eebab4f70aad911580f23bfd0ca761a300032aa90bc939962",
+      "size": [
+        2048,
+        1024
+      ]
+    },
+    {
+      "name": "Titan",
+      "mode": "reconstruction",
+      "file": "assets/moons/titan.jpg",
+      "sources": [
+        {
+          "page": "https://science.nasa.gov/photojournal/titan-global-map-june-2015",
+          "title": "PIA19658 Titan global map, June 2015: Cassini ISS 938 nm (NASA/JPL-Caltech/Space Science Institute)"
+        },
+        {
+          "page": "https://astrogeology.usgs.gov/search/map/titan_cassini_iss_global_mosaic_4005m",
+          "title": "USGS Titan Cassini ISS Global Mosaic 4005m"
+        },
+        {
+          "page": "https://science.nasa.gov/photojournal/peering-through-titans-haze",
+          "title": "PIA20016 Peering through Titan's haze: Cassini VIMS infrared views"
+        },
+        {
+          "page": "https://planetarynames.wr.usgs.gov/Page/TITAN/target",
+          "title": "IAU Gazetteer of Planetary Nomenclature: Titan"
+        }
+      ],
+      "credit": "Reference: NASA/JPL-Caltech/Space Science Institute, University of Arizona (Cassini ISS, VIMS, RADAR); IAU/USGS nomenclature. Procedural reconstruction of the near-infrared ground, with a haze limb added in the game",
+      "projection": "2:1 equirectangular; north up, east-positive, 0° E at the centre (IAU_TITAN). Named features at their IAU centres; region outlines traced by eye, so edges are approximate.",
+      "notes": "Titan's ground as Cassini saw it through the haze in the near infrared, not its visible-light (haze) appearance: dark equatorial dune seas (Shangri-La, Belet, Senkyo, Fensal, Aztlan) around bright Xanadu, Adiri, Dilmun, Quivira and Tsegihi; the seas Kraken, Ligeia and Punga and a lake district in the north, Ontario Lacus in the south; craters Menrva, Sinlap, Selk, Afekan, Soi, Forseti, Hano, Ksa and Guabonito. Dune streaks are drawn coarser than the real ~3 km spacing. The game adds a haze limb in its shader (MOON_SURFACES.Titan.haze). Replaces the earlier unregistered NASA 3D Resources concept texture.",
+      "generator": "node scripts/procedural-worlds.mjs Titan (deterministic, seed 6060)",
+      "processing": "2048x1024 greyscale PNG, JPEG quality 82 via sips.",
+      "bytes": 226031,
+      "sha256": "8d7515108449f63df6186cf83a3a3e16317fc211bcc1ad88dfa8fc2490fe5036",
+      "size": [
+        2048,
+        1024
+      ]
+    },
+    {
+      "name": "Titania",
+      "mode": "reconstruction",
+      "file": "assets/moons/titania.jpg",
+      "sources": [
+        {
+          "page": "https://space.jpl.nasa.gov/tmaps/uranus.html",
+          "download": "https://space.jpl.nasa.gov/tmaps/pix/ura3vuu2.jpg"
+        }
+      ],
+      "credit": "Reference: NASA/JPL Voyager. Artistic reconstruction: OpenAI image generation.",
+      "projection": "2:1 equirectangular; north up. Feature placement approximate; no measured registration claimed.",
+      "notes": "Whole texture reconstructed from incomplete official reference. Observed geology guides plausible unobserved terrain. Not a measured map or elevation model.",
+      "generator": "built-in image_gen, one call; no retries or edits after generation",
+      "prompt": "Use case: scientific-educational. Asset type: a seamless full-sphere 2:1 equirectangular grayscale surface texture for a game, ideally 2048x1024. This is an ARTISTIC reconstruction based on NASA imagery, not measured new data. Input image 1 is the official NASA/JPL equirectangular map, used as the edit target and geographic reference. Maintain the source map's known southern terrain shapes, feature positions, proportions and orientation closely. Reconstruct ALL black/unobserved portions, including the entire northern hemisphere, with plausible continuous SAME-BODY terrain matching the existing geology. Do not interpret black unknown areas as space or as blank background. Fill the entire rectangular canvas with terrain, edge to edge. Preserve the equirectangular projection: north pole at top, equator centered, south pole at bottom. Natural horizontally elongated features near poles compress correctly onto a sphere. Left and right edges seamlessly wrap. Correct source mosaic brightness mismatches while retaining albedo features. Neutral grayscale albedo with clear medium/fine surface detail. Minimal local relief shading only, no global lighting gradient, no terminator. No text, labels, graticule, border, sphere render, 3D globe, space, stars, Earth terrain, retro effects, stippling, contour lines, pixel art or color palette; the game handles its art treatment.\nSubject: TITANIA. Gray icy cratered plains intersected by enormous narrow fault valleys/chasmata and long escarpments. Preserve the source's craters and large fault valleys, particularly the central diagonal scarp, and continue similar geology plausibly into missing areas.",
+      "processing": "1774x887 PNG resized to 1536x768 JPEG, quality 82.",
+      "bytes": 463972,
+      "sha256": "7981ebf0ec09e58d52d549941a490c461ffd045bd49e761f50900e497d3f6b7f",
+      "size": [
+        1536,
+        768
+      ]
+    },
+    {
+      "name": "Triton",
+      "mode": "reconstruction",
+      "file": "assets/moons/triton.jpg",
+      "sources": [
+        {
+          "page": "https://space.jpl.nasa.gov/tmaps/neptune.html",
+          "download": "https://space.jpl.nasa.gov/tmaps/pix/nep1vuu2.jpg"
+        }
+      ],
+      "credit": "Reference: NASA/JPL Voyager. Artistic reconstruction: OpenAI image generation.",
+      "projection": "2:1 equirectangular; north up. Feature placement approximate; no measured registration claimed.",
+      "notes": "Whole texture reconstructed from incomplete official reference. Observed geology guides plausible unobserved terrain. Not a measured map or elevation model.",
+      "generator": "built-in image_gen, one call; no retries or edits after generation",
+      "prompt": "Use case: scientific-educational. Asset type: a seamless full-sphere 2:1 equirectangular grayscale surface texture for a game, ideally 2048x1024. This is an ARTISTIC reconstruction based on NASA imagery, not measured new data. Fill the entire rectangular canvas edge to edge with detailed terrain. North pole at top, equator centered, south pole at bottom. Natural horizontally elongated features near poles compress correctly onto a sphere. Left and right edges must wrap seamlessly. Neutral grayscale albedo and readable medium/fine surface detail. Minimal local relief shading only: remove any global directional lighting gradient, limb shading, shadows from a terminator, or vignette from the reference. No text, labels, graticule, frame, 3D globe or sphere rendering, space, stars, Earth terrain, retro effects, stippling, contour lines, pixel art or decorative color palette. The game handles its art treatment.\nInput image 1 is the official NASA/JPL partial map of TRITON, a geological reference. Produce a complete reconstructed north-up global equirectangular map from this reference. Preserve the recognizable distribution, texture and contrasts of mapped terrain as closely as the full-sphere reconstruction permits. Pale nitrogen-frost southern polar cap occupies southern latitudes at the BOTTOM of the map, with narrow dark wind-blown plume streaks. Above the cap and into lower northern latitudes, the distinctive rounded dimpled cantaloupe terrain, smooth plains and delicate long ridges of Triton. Very few impact craters; this is not a crater-saturated lunar body. Fill all missing coverage with plausible continuation of the same icy terrains, correcting black voids and mosaic boundaries. Do not reproduce the black frame, curved edge, original partial coverage footprint, or large empty bottom half. The dark streaks are small localized surface markings, never atmospheric jets above the surface.",
+      "processing": "1774x887 PNG resized to 1536x768 JPEG, quality 82.",
+      "bytes": 446547,
+      "sha256": "78e1c8433a36c720ec8e5ff950da424caec127d9bcc7335f2377a8eede09506c",
+      "size": [
+        1536,
+        768
+      ]
+    },
+    {
+      "name": "Umbriel",
+      "mode": "reconstruction",
+      "file": "assets/moons/umbriel.jpg",
+      "sources": [
+        {
+          "page": "https://space.jpl.nasa.gov/tmaps/uranus.html",
+          "download": "https://space.jpl.nasa.gov/tmaps/pix/ura2vuu2.jpg"
+        }
+      ],
+      "credit": "Reference: NASA/JPL Voyager. Artistic reconstruction: OpenAI image generation.",
+      "projection": "2:1 equirectangular; north up. Feature placement approximate; no measured registration claimed.",
+      "notes": "Whole texture reconstructed from incomplete official reference. Observed geology guides plausible unobserved terrain. Not a measured map or elevation model.",
+      "generator": "built-in image_gen, one call; no retries or edits after generation",
+      "prompt": "Use case: scientific-educational. Asset type: a seamless full-sphere 2:1 equirectangular grayscale surface texture for a game, ideally 2048x1024. This is an ARTISTIC reconstruction based on NASA imagery, not measured new data. Input image 1 is the official NASA/JPL equirectangular map, used as the edit target and geographic reference. Maintain the source map's known southern terrain shapes, feature positions, proportions and orientation closely. Reconstruct ALL black/unobserved portions, including the entire northern hemisphere, with plausible continuous SAME-BODY terrain matching the existing geology. Do not interpret black unknown areas as space or as blank background. Fill the entire rectangular canvas with terrain, edge to edge. Preserve the equirectangular projection: north pole at top, equator centered, south pole at bottom. Natural horizontally elongated features near poles compress correctly onto a sphere. Left and right edges seamlessly wrap. Correct source mosaic brightness mismatches while retaining albedo features. Neutral grayscale albedo with clear medium/fine surface detail. Minimal local relief shading only, no global lighting gradient, no terminator. No text, labels, graticule, border, sphere render, 3D globe, space, stars, Earth terrain, retro effects, stippling, contour lines, pixel art or color palette; the game handles its art treatment.\nSubject: UMBRIEL. A dark gray ancient icy moon, subdued densely cratered surface. Preserve the distinctive single bright crater ring Wunda near the equator, visible near x=26%, y=52% of this source. There must be only ONE conspicuous bright ring in the whole map; do not multiply or mirror this landmark. Other craters remain subdued and dark, without bright rays.",
+      "processing": "1774x887 PNG resized to 1536x768 JPEG, quality 82.",
+      "bytes": 422457,
+      "sha256": "5a1ec944853a5826fa2aa0ce3d00bd473723f985df1e8e7f86216f0acde03431",
+      "size": [
+        1536,
+        768
+      ]
+    }
+  ]
+}

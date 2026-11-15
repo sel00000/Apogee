@@ -1,0 +1,9 @@
+#sound-toggle{white-space:nowrap;font-size:9.45px;letter-spacing:.08em;min-height:36px}
+#sound-toggle[aria-pressed="true"]{color:var(--mint)}
+#audio-controls .panel-note{line-height:1.6;margin:12px 0 0}
+@media(max-width:700px){.header-actions{flex-wrap:wrap;justify-content:flex-end;max-width:100%}#sound-toggle{font-size:8.505px;padding:6px 8px;min-height:36px}}
+@media(max-width:700px),(max-height:500px) and (pointer:coarse){
+ .header-actions{flex-wrap:nowrap}
+ #sound-toggle{font-size:11.55px;letter-spacing:.04em;min-height:44px;padding:8px 4px}
+}
+@media(max-width:700px),(max-height:500px) and (pointer:coarse){#sound-toggle{font-size:13.65px}}

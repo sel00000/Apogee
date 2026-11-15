@@ -1,0 +1,8 @@
+/* The codex over the game (codex-overlay.js): a full-screen modal dialog holding the codex page's frame. Console black
+   until the codex has drawn its first frame, then the frame fades in; the HUD below takes no input while it is open. */
+#codex{position:fixed;inset:0;width:100vw;height:100vh;height:100dvh;max-width:none;max-height:none;margin:0;padding:0;border:0;background:#05040A;color:#47FFA9;overflow:hidden}
+#codex::backdrop{background:#05040A}
+#codex iframe{display:block;width:100%;height:100%;border:0;background:#05040A;opacity:0;transition:opacity .22s cubic-bezier(.4,0,.2,1)}
+#codex[data-state=open] iframe{opacity:1}
+#codex[data-state=loading]::after{content:'▸ OPENING YOUR RECORDS';position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font:400 14px/1.5 'Share Tech Mono',ui-monospace,monospace;letter-spacing:.06em;color:#47FFA9;text-shadow:0 0 6px currentColor;pointer-events:none}
+@media(prefers-reduced-motion:reduce){#codex iframe{transition:none}}

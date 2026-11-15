@@ -1,0 +1,23 @@
+/* One control cue, from first flight at the centre to the lower-right HUD reference. */
+#play-instructions{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:7;width:max-content;max-width:calc(100vw - 44px);text-align:center;pointer-events:none;color:var(--muted);font-family:var(--type-hud-family,var(--mono));font-weight:400}
+#play-instructions[hidden],#helmet-hud .nav-help[hidden]{display:none!important}
+#play-instructions p{margin:0}
+#play-instructions .play-instructions-heading{margin-bottom:20px;color:var(--gold);font-size:11px;letter-spacing:.16em}
+#play-instructions .play-instructions-keys{display:flex;justify-content:center;align-items:flex-start;flex-wrap:wrap;gap:16px}
+#play-instructions .play-instructions-control{display:flex;flex-direction:column;align-items:center;gap:8px;min-width:58px;font-size:12px;line-height:1.2}
+#play-instructions kbd{display:flex;align-items:center;justify-content:center;min-width:42px;height:42px;margin:0;padding:0 8px;border:1px solid color-mix(in srgb,var(--gold) 58%,transparent);border-radius:4px;background:color-mix(in srgb,var(--bg) 64%,transparent);color:var(--gold);font:400 19px/1 var(--type-hud-family,var(--mono));letter-spacing:.025em;box-shadow:0 0 12px color-mix(in srgb,var(--gold) 12%,transparent),inset 0 0 8px color-mix(in srgb,var(--gold) 5%,transparent)}
+#play-instructions kbd[data-key="shift"],#play-instructions kbd[data-key=" "]{font-size:14px}
+#play-instructions kbd[data-pressed="false"]{animation:play-key-glow 2.4s ease-in-out infinite}
+#play-instructions kbd[data-pressed="true"]{border-color:color-mix(in srgb,var(--mint) 60%,transparent);color:var(--mint);background:color-mix(in srgb,var(--mint) 7%,transparent)}
+#experience #helmet-hud #play-instructions kbd{text-shadow:var(--hud-glow),var(--hud-halo)!important}
+#play-instructions .play-instructions-hint{margin-top:18px;font-size:11px;letter-spacing:.025em}
+#play-instructions[data-docked="true"]{position:static;left:auto;top:auto;max-width:none;transform:none;width:auto;z-index:auto;text-align:right}
+#play-instructions[data-docked="true"] .play-instructions-heading{display:none}
+#play-instructions[data-docked="true"] .play-instructions-keys{justify-content:flex-end;gap:11px}
+#play-instructions[data-docked="true"] .play-instructions-control{flex-direction:row;align-items:center;gap:4px;min-width:0;font-size:10px;white-space:nowrap}
+#play-instructions[data-docked="true"] kbd,#play-instructions[data-docked="true"] kbd[data-key="shift"],#play-instructions[data-docked="true"] kbd[data-key=" "]{display:inline;min-width:0;height:auto;padding:0;border:0;border-radius:0;background:none;box-shadow:none;font-size:10px;animation:none}
+#play-instructions[data-docked="true"] .play-instructions-hint{margin-top:6px;font-size:10px}
+#play-instructions[data-mode="mobile"]{max-width:calc(100vw - 44px - var(--safe-left,0px) - var(--safe-right,0px));width:280px;color:var(--mint);font-size:17px;line-height:1.5;text-wrap:balance}
+@keyframes play-key-glow{50%{box-shadow:0 0 18px color-mix(in srgb,var(--gold) 24%,transparent),inset 0 0 10px color-mix(in srgb,var(--gold) 8%,transparent);border-color:color-mix(in srgb,var(--gold) 85%,transparent)}}
+@media(max-width:1100px){#play-instructions[data-docked="false"][data-mode="desktop"]{width:360px}#play-instructions[data-docked="false"] .play-instructions-keys{gap:16px 20px}#play-instructions[data-docked="true"] .play-instructions-keys{gap:7px}}
+@media(prefers-reduced-motion:reduce){#play-instructions kbd[data-pressed="false"]{animation:none}}
