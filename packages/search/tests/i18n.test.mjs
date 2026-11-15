@@ -23,7 +23,7 @@ test('text table: both languages have the same keys and the same {placeholders}'
 test('text table: the English text has no Hangul and the Korean text is Korean', () => {
   for (const [key, value] of Object.entries(TEXT.en)) assert.doesNotMatch(value, hangul, key);
   for (const key of ['label', 'submit', 'searching', 'noneFound']) assert.match(TEXT.ko[key], hangul, key);
-  assert.equal(t('en', 'chooseCount', {n: 3}), 'Choose an object from the results (3).');
+  assert.equal(t('en', 'chooseCount', {n: 3}), 'Choose an object. Results: 3.');
   assert.equal(t('ko', 'chooseCount', {n: 3}), '3개 결과에서 대상을 선택하세요.');
 });
 
@@ -47,7 +47,7 @@ test('name order: English name first on the English screen, Korean name first on
   assert.equal(choiceFromItem({...item, nameKo: null}, 'ko').label, 'Andromeda Galaxy');
   const eros = bodyChoices('에로스', bodies.objects, true);
   assert.equal(eros[0].texts.en.label, '433 Eros');
-  assert.match(eros[0].texts.ko.label, /^에로스 \(433 Eros\)$/);
+  assert.equal(eros[0].texts.ko.label, '433 Eros'); // existing Korean form kept; the Korean name still finds it
   const mars = bodyChoices('화성', bodies.objects, true, 'en')[0];
   assert.equal(mars.label, 'Mars'); assert.equal(mars.texts.ko.label, '화성');
 });

@@ -1,6 +1,6 @@
 import { contentFor } from './content.js';
 import { readLang, setCurrentLang, publishLang, watchLang, normalizeLang, ui } from './i18n.js';
-import { mountVisual } from './visuals.js';
+import { mountVisual, captureControls, restoreControls } from './visuals.js';
 import { PAGES, courseFor, validSelection, nextStep, shouldAutoOpen, storageKey } from './state.js';
 import { currentPage, featureDocument, navigatePractice, installHighlightStyle, NOT_READY } from './adapter.js';
 import { publishVisibility, createScrollLock } from './lifecycle.js';
@@ -162,8 +162,9 @@ export function mountTutorial({ page='home', autoOpen=true, embedded=window.self
     lang=setCurrentLang(next);C=contentFor(lang);T=ui(lang);S=SHELL_TEXT[lang];
     dialog.lang=lang;dock.lang=lang;dock.setAttribute('aria-label',T.dockLabel);
     steps=courseFor(C.MODULES,selection.track,selection.moduleId);
+    const keptControls=phase==='lesson'?captureControls(dialog):[];
     if(phase==='chooser')renderChooser();
-    else if(phase==='lesson')renderLesson();
+    else if(phase==='lesson'){renderLesson();restoreControls(dialog,keptControls);}
     else if(phase==='complete')renderComplete();
     else if(phase==='practice'){renderDock({relabel:true});}
     live.textContent=T.langLive;

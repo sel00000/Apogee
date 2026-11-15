@@ -23,7 +23,7 @@ export const PRACTICE_TEXT = {
     loading: 'Preparing the screen. The tool will appear when it is ready. You can keep reading the guide.',
     analysisOpen: 'The analysis window is open. Look at the selected position, then choose ‘Continue guide’ to carry on learning.',
     panelLabel: 'Open exploration tools',
-    panel: 'Open the folded exploration panel first. Your observing settings will not change.',
+    panel: 'Open the collapsed exploration panel first. Your observing settings will not change.',
     researchLabel: 'Open the Analyse view',
     research: 'This tool is in the Analyse view. Switch to that view first.',
     observeLabel: 'Open the Observe view',

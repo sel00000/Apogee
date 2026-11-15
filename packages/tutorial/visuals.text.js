@@ -138,7 +138,7 @@ export const TEXT = {
       names: ['Original images', 'Coordinates and λ', 'Measurement and error', 'Result and source'],
       boxes: ['Original\nimages', 'Coordinates\nand λ', 'Measurement\nand error', 'Result\nand source'],
       simple: ['Note the date it was taken, the observation ID and the link to the original.', 'Check where you looked and at which wavelength.', 'Record the uncertainty and reasons for exclusion along with the brightness.', 'Save the result and its evidence as JSON or CSV to check again.'],
-      research: ['Keep the exposure IDs, release, processing tag and the list of exposures actually used.', 'Check ICRS/WCS, wavelength, channel and bandwidth, and the calibration file identifiers.', 'Check the original VARIANCE, ePSF, photometry settings, quality and systematic error terms.', 'Export results and held verdicts with calibration sources and SHA256 to make the work reproducible.'],
+      research: ['Keep the exposure IDs, release, processing tag and the list of exposures actually used.', 'Check ICRS/WCS, wavelength, channel and bandwidth, and the calibration file identifiers.', 'Check the original VARIANCE, ePSF, photometry settings, quality and systematic error terms.', 'Export results and undecided verdicts with calibration sources and SHA256 to make the work reproducible.'],
       footer: 'Keep the evidence with the numbers',
       note: 'When you finish this guide, look at the real record in the analysis tool’s Provenance tab.',
     },

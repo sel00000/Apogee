@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { frequencyTHz, syntheticFlux, uncertaintyExample, normalizeRA, diagramLabelScale, fitViewBoxPoint, clientToDiagramPoint, mountVisual } from './visuals.js';
+import { frequencyTHz, syntheticFlux, uncertaintyExample, normalizeRA, diagramLabelScale, fitViewBoxPoint, clientToDiagramPoint, mountVisual, captureControls, restoreControls } from './visuals.js';
 
 test('wavelength ruler follows the vacuum inverse wavelength-frequency relation', () => {
   assert.equal(frequencyTHz(1), 299.792458);
@@ -170,4 +170,27 @@ test('every English diagram is free of Hangul on both tracks', () => {
       assert.doesNotMatch(texts.join(' '), hangul, `${kind} ${track}`);
     }, { lang: 'en', track });
   }
+});
+
+test('a language re-render keeps slider values and pressed buttons of the diagram', () => {
+  const make = (value, pressed) => {
+    const events = []; let clicks = 0;
+    const attrs = new Map(pressed.map((p, i) => [i, p]));
+    const range = { type: 'range', value, dispatchEvent: e => events.push(e.type) };
+    const buttons = pressed.map((p, i) => ({ type: 'button', getAttribute: () => attrs.get(i),
+      click() { clicks++; pressed.forEach((_, j) => attrs.set(j, String(j === i))); } }));
+    return { events, clicks: () => clicks, range, root: { querySelectorAll: () => [range, ...buttons] } };
+  };
+  const before = make('200', ['false', 'true', 'false']);
+  const saved = captureControls(before.root);
+  assert.deepEqual(saved, [{ value: '200' }, { pressed: 'false' }, { pressed: 'true' }, { pressed: 'false' }]);
+  const after = make('120', ['true', 'false', 'false']);
+  restoreControls(after.root, saved);
+  assert.equal(after.range.value, '200');
+  assert.deepEqual(after.events, ['input']);
+  assert.equal(after.clicks(), 1);
+  // A different control layout is left alone.
+  const other = make('120', ['true']);
+  restoreControls(other.root, saved);
+  assert.equal(other.range.value, '120');
 });

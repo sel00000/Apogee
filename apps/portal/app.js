@@ -272,11 +272,13 @@ function syncLangToggle(lang){
 syncLangToggle(getLang());
 document.querySelector('.lang-toggle')?.addEventListener('click',event=>{
  const b=event.target.closest('[data-lang]');if(!b)return;
- if(setLang(b.dataset.lang))$('#lang-live').textContent=t('lang.live');
+ setLang(b.dataset.lang);
 });
 onLangChange(lang=>{
  // In place: no reload, no navigation; the route, scroll position and open panels stay as they are.
  applyI18n(document,lang);syncLangToggle(lang);syncTitles();updateMotion();
+ // Every switch (header, the tutorial's copy through spherex-lang-change, another tab through storage) is announced.
+ $('#lang-live').textContent=t('lang.live');
  const menu=$('.menu-toggle');menu.setAttribute('aria-label',t(menu.getAttribute('aria-expanded')==='true'?'menu.close':'menu.open'));
  const meta=document.querySelector('meta[name="description"]');if(meta)meta.content=t('meta.description');
  if(toastKey&&$('#app-toast').classList.contains('show'))$('#app-toast').textContent=t(toastKey);

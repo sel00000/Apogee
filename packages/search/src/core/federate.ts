@@ -61,7 +61,7 @@ export interface FedResult {
 }
 
 const SAME_SPOT_DEG = 0.01;
-const MODEL_SUMMARY = { ko: 'AI가 요청을 해석해 찾은 후보예요. 맞는지 확인하고 고르세요.', en: 'Candidates from an AI reading of your request. Check before opening.' };
+const MODEL_SUMMARY = { ko: 'AI가 요청을 해석해 찾은 후보예요. 맞는지 확인하고 고르세요.', en: 'Candidates from an AI reading of your request. Check that they fit, then choose one.' };
 
 function aborted(opts?: FederateOpts): boolean {
   return !!opts?.signal?.aborted;

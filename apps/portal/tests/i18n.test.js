@@ -89,3 +89,25 @@ test('sky hand-over accepts getState().center and keeps the older fallback', () 
   assert.equal(skyReturnHash({ center: { ra: 1, dec: 95, fov: 60 }, query: 'ra=5&dec=6&fov=7' }), '#analysis?view=sky&sky=5,6,7');
   assert.equal(skyReturnHash({ center: { ra: 'x' } }), '#analysis?view=sky');
 });
+
+test('the polite live line is announced from the language listener, so every switch source reaches it', () => {
+  const app = fs.readFileSync(new URL('../app.js', import.meta.url), 'utf8');
+  const listener = app.slice(app.indexOf('onLangChange(lang=>{'), app.indexOf('});', app.indexOf('onLangChange(lang=>{')));
+  assert.match(listener, /\$\('#lang-live'\)\.textContent=t\('lang\.live'\)/);
+  assert.equal(app.match(/#lang-live/g).length, 1, 'only the listener writes the live line');
+  assert.match(html, /class="header-search"[^>]*data-i18n-attr="aria-label:header\.searchLabel"/);
+  assert.equal(en['header.searchLabel'], 'Search'); assert.equal(ko['header.searchLabel'], '검색');
+});
+
+test('ApogeeX logo: derived brand files exist, the page uses them, and the brand link names ApogeeX', () => {
+  for (const n of ['apogeex-logo.png', 'apogeex-mark.png', 'apogeex-favicon.png', 'apogeex-favicon-32.png']) {
+    assert.ok(fs.statSync(new URL('../assets/brand/' + n, import.meta.url)).size > 0, n);
+  }
+  assert.match(html, /<link rel="icon" href="assets\/brand\/apogeex-favicon-32\.png" sizes="32x32"/);
+  assert.match(html, /<link rel="icon" href="assets\/brand\/apogeex-favicon\.png" sizes="192x192"/);
+  assert.doesNotMatch(html, /rel="icon" href="assets\/mark\.svg"/);
+  assert.match(html, /<a class="brand"[^>]*><span class="brand-logo" aria-hidden="true">/);
+  assert.match(html, /<footer><span class="brand-small"><span class="brand-logo brand-logo-small" aria-hidden="true">/);
+  assert.match(en['brand.home'], /ApogeeX/); assert.match(ko['brand.home'], /ApogeeX/);
+  assert.equal(ko['brand.name'], '모두를 위한 SPHEREx');
+});

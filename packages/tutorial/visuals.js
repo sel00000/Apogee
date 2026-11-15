@@ -420,3 +420,28 @@ export function mountVisual(container, kind, options = {}) {
   if (!render) { container.replaceChildren(); return () => {}; }
   return render(container, { track: options.track === 'research' ? 'research' : 'beginner', step: options.step, lang: normalizeLang(options.lang ?? getLang()) });
 }
+
+const CONTROL_SELECTOR = '.sv-controls input[type="range"], .sv-controls [aria-pressed]';
+/** Remember each diagram control (slider value, pressed state) so a language re-render can put them back. */
+export function captureControls(root) {
+  if (!root || typeof root.querySelectorAll !== 'function') return [];
+  return [...root.querySelectorAll(CONTROL_SELECTOR)].map(el => el.type === 'range'
+    ? { value: String(el.value) } : { pressed: el.getAttribute('aria-pressed') });
+}
+/** Re-apply captured control values to a freshly mounted diagram of the same step; a changed layout is ignored. */
+export function restoreControls(root, saved) {
+  if (!root || !Array.isArray(saved) || !saved.length || typeof root.querySelectorAll !== 'function') return;
+  const els = [...root.querySelectorAll(CONTROL_SELECTOR)];
+  if (els.length !== saved.length) return;
+  els.forEach((el, i) => {
+    if ('value' in saved[i]) {
+      if (String(el.value) !== saved[i].value) { el.value = saved[i].value; el.dispatchEvent(new Event('input')); }
+    }
+  });
+  // Pressed first, then the rest, re-checking each: a button group ends on the remembered button.
+  for (const wantPressed of [true, false]) els.forEach((el, i) => {
+    const want = saved[i].pressed;
+    if (want == null || (want === 'true') !== wantPressed) return;
+    if (el.getAttribute('aria-pressed') !== want) el.click();
+  });
+}

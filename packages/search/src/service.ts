@@ -130,11 +130,10 @@ export function bodyChoices(query: string, bodies: Body[], exact = false, lang: 
       : [b.name, PLANET_NAMES[b.name] ?? b.name];
     return candidates.some(c => exact ? key(c) === q : key(c).startsWith(q));
   }).slice(0, 8).map(b => {
-    const ko = b.kind === 'asteroid' ? BODY_KOREAN[b.id]?.[0] : b.name;
     const en = b.kind === 'asteroid' ? b.name : (PLANET_NAMES[b.name] ?? b.name);
     const texts = {} as Record<Lang, ChoiceText>;
     for (const l of BOTH) texts[l] = {
-      label: l === 'ko' ? (b.kind === 'asteroid' && ko ? `${ko} (${b.name})` : b.name) : en,
+      label: l === 'ko' ? b.name : en,
       detail: t(l, b.kind === 'asteroid' ? 'asteroidDetail' : 'bodyDetail'),
     };
     return {...texts[lang], texts,

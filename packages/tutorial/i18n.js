@@ -81,7 +81,7 @@ export const UI = {
     fullAlt: 'Sphere, the character who guides you through space', portraitAlt: (name) => `${name} guide drawing`,
     greeting: 'Hello, I’m Sphere.', greetingLine: 'Let’s find stars, read their light and look at the evidence behind each discovery.',
     crew: 'With Feynman · Doppler · Einstein\nKepler · Carl Sagan',
-    chooserEyebrow: 'An observing guide that fits you', welcomeTitle: 'Your first journey in reading starlight', againTitle: 'Which guide would you like to see again?',
+    chooserEyebrow: 'An observing guide that fits you', welcomeTitle: 'Your first journey into reading starlight', againTitle: 'Which guide would you like to see again?',
     chooserLead: 'Choose your level, then start from the beginning or pick only the topics you need. You can skip at any time.',
     trackGroup: 'Choose who the tutorial is for', topicHeading: 'Topics to revisit',
     startTopic: (title) => `Start the ${title} tutorial`, minutes: (n) => `${n} min ↗`,

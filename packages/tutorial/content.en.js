@@ -36,7 +36,7 @@ export const HINTS_EN = {
     'Follow the controls guide inside the journey. The journey runs separately, and the tutorial does not operate anything inside it.',
 };
 /** Suffix for research practices: Korean '· 준비 예제로 열기'. */
-export const PREPARED_SUFFIX_EN = ' · open as a prepared example';
+export const PREPARED_SUFFIX_EN = ' (opens a prepared example)';
 
 export const MODULES_EN = {
   sky: { title: 'Exploring the sky', description: 'Search, star information, coordinates and time, and choosing a square region' },
@@ -235,7 +235,7 @@ export const STEPS_EN = {
   'research-quality-3': {
     title: 'Record the processing version and the basis for interpretation',
     body: ['Keep the original URI, release and processing version, target and period, quality exclusions, units and model settings. Re-running and comparing with other tools need these conditions.',
-      'Data existing, processing complete, detection candidate, classification and physical interpretation are separate stages. Present results that lack data or are sensitive to the model with the reason they are on hold.'],
+      'Data existing, processing complete, detection candidate, classification and physical interpretation are separate stages. If a result lacks data or depends heavily on the model, present it as undecided and give the reason.'],
     practice: 'Check sources, processing conditions and exports',
   },
   'beginner-asteroids-1': {
@@ -253,8 +253,8 @@ export const STEPS_EN = {
   'beginner-asteroids-3': {
     title: 'Read diameter and classification with their evidence',
     body: ['Diameters come in different kinds: thermal model estimates, statistical estimates, catalogue values and more. Do not read them as one number; check the name and source.',
-      'Even after processing finishes, confidence may be low or a verdict may be on hold. For mass and density, also check which external data and assumptions they come from.'],
-    practice: 'Read result types, confidence and reasons for holding',
+      'Even after processing finishes, confidence may be low or the verdict may be left undecided. For mass and density, also check which external data and assumptions they come from.'],
+    practice: 'Read result types, confidence and why a verdict is undecided',
   },
   'research-asteroids-1': {
     title: 'Match identifier, time and observer',
@@ -271,7 +271,7 @@ export const STEPS_EN = {
   'research-asteroids-3': {
     title: 'A finished job is not scientific validation',
     body: ['Keep the target identifier and the analysis run ID apart, so that results with different periods and settings are stored separately. Also check the versions of the analysis originals, the web results and the 3D data.',
-      'Complete is a processing status and does not guarantee high classification confidence. Tell failed external queries, too few observations and held results apart, and review the evidence in the report.'],
+      'Complete is a processing status and does not guarantee high classification confidence. Tell failed external queries, too few observations and undecided results apart, and review the evidence in the report.'],
     practice: 'Check job status, period and the run ID of results',
   },
   'beginner-experience-1': {

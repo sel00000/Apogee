@@ -406,3 +406,36 @@ html.lang-pending body { visibility: hidden; }
 @media (max-width: 1060px) and (min-width: 761px), (max-width: 480px) {
  .brand .brand-sub { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 }
+/* phone bars (review lang1): the menu button never shrinks; Search goes icon-only (aria-label keeps its name);
+   the brand keeps its emblem and loses its words on phones (see the ApogeeX logo block below) */
+.menu-toggle { flex: none; }
+.header-search > .hs-label { font-size: inherit; line-height: inherit; }
+@media (max-width: 400px) {
+ .bar { padding-left: 12px; }
+ .header-search { min-width: 40px; height: 40px; padding-inline: 8px; }
+ .header-search .hs-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+}
+/* ---------------------------------------------------------------- ApogeeX logo (assets/brand): a mask in the text colour; the old mark is the fallback */
+.brand-logo { display: inline-flex; align-items: center; flex: none; }
+.brand-name { display: inline-flex; align-items: center; gap: .28em; }
+.brand-logo + .brand-name { padding-left: 10px; border-left: 1px solid var(--line-2); line-height: 22px; }
+.brand-small { display: inline-flex; align-items: center; gap: 8px; }
+@supports ((mask-image: url("x.png")) or (-webkit-mask-image: url("x.png"))) {
+ .brand-logo { height: 24px; aspect-ratio: 1200 / 281; background: currentColor;
+  -webkit-mask: url("assets/brand/apogeex-logo.png") left center / contain no-repeat; mask: url("assets/brand/apogeex-logo.png") left center / contain no-repeat; }
+ .brand-logo img { display: none; }
+ .brand-logo-small { height: 18px; color: var(--dim); }
+}
+/* tight bars: the site-name words leave the eye first (the link keeps its aria-label) */
+@media (min-width: 761px) and (max-width: 1060px) {
+ .brand .brand-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; padding: 0; }
+}
+/* phones: the emblem alone */
+@media (max-width: 760px) {
+ @supports ((mask-image: url("x.png")) or (-webkit-mask-image: url("x.png"))) {
+  .brand .brand-logo { height: 28px; aspect-ratio: 1; -webkit-mask-image: url("assets/brand/apogeex-mark.png"); mask-image: url("assets/brand/apogeex-mark.png"); -webkit-mask-position: center; mask-position: center; }
+ }
+}
+@media (max-width: 480px) {
+ .brand .brand-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; padding: 0; }
+}
