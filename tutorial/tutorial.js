@@ -10,9 +10,9 @@ const ROOT = new URL('../', import.meta.url);
 const memory = new Map();
 const SINGLETON = Symbol.for('sky-lab.tutorial');
 const NOTE = '과학자 캐릭터의 설명은 학습용으로 구성했으며, 실제 인용문이 아닙니다.';
-const PAGE_LABELS = { home:'입장 화면', planetarium:'플라네타리움', analysis:'SPHEREx 분석', asteroids:'소행성 분석', experience:'우주 탐험' };
+const PAGE_LABELS = { home:'입장 화면', planetarium:'플라네타리움', analysis:'SPHEREx 분석', asteroids:'소행성 분석' };
 const NOTE_EN = 'The scientist characters’ explanations were written for learning. They are not real quotations.';
-const PAGE_LABELS_EN = { home:'Home', planetarium:'Planetarium', analysis:'SPHEREx Analysis', asteroids:'Asteroid Analysis', experience:'Space Journey' };
+const PAGE_LABELS_EN = { home:'Home', planetarium:'Planetarium', analysis:'SPHEREx Analysis', asteroids:'Asteroid Analysis' };
 /** Shell texts kept beside the Korean originals; both languages have the same keys (tested). */
 export const SHELL_TEXT = { ko:{ note:NOTE, pages:PAGE_LABELS }, en:{ note:NOTE_EN, pages:PAGE_LABELS_EN } };
 

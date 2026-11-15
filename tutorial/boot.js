@@ -5,7 +5,7 @@
   const script = document.currentScript;
   if (!script) return;
   const page = script.dataset.tutorialPage;
-  if (!['home', 'planetarium', 'analysis', 'asteroids', 'experience'].includes(page)) return;
+  if (!['home', 'planetarium', 'analysis', 'asteroids'].includes(page)) return;
   const uiUrl = new URL('./tutorial.js', script.src).href;
   const hostUrl = new URL('./host.js', script.src).href;
   let controller = null;

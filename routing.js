@@ -5,11 +5,10 @@ export const VIEWS = Object.freeze({
   planetarium: ['EXPLORE THE SKY', 'Planetarium'],
   analysis: ['READ THE OBSERVATIONS', 'SPHEREx Analysis'],
   asteroids: ['FOLLOW THE MOVEMENT', 'Asteroid Analysis'],
-  experience: ['A JOURNEY THROUGH SPACE', 'Space Journey'],
 });
 export const VIEW_TITLES = Object.freeze({
-  en: Object.freeze({ home: 'SPHEREx for Everyone', planetarium: 'Planetarium', analysis: 'SPHEREx Analysis', asteroids: 'Asteroid Analysis', experience: 'Space Journey', suffix: 'SPHEREx for Everyone', homeTitle: 'SPHEREx for Everyone' }),
-  ko: Object.freeze({ home: '모두를 위한 SPHEREx', planetarium: '플라네타리움', analysis: 'SPHEREx 분석', asteroids: '소행성 분석', experience: '우주 탐험', suffix: '모두를 위한 SPHEREx', homeTitle: '모두를 위한 SPHEREx · SPHEREx for Everyone' }),
+  en: Object.freeze({ home: 'SPHEREx for Everyone', planetarium: 'Planetarium', analysis: 'SPHEREx Analysis', asteroids: 'Asteroid Analysis', suffix: 'SPHEREx for Everyone', homeTitle: 'SPHEREx for Everyone' }),
+  ko: Object.freeze({ home: '모두를 위한 SPHEREx', planetarium: '플라네타리움', analysis: 'SPHEREx 분석', asteroids: '소행성 분석', suffix: '모두를 위한 SPHEREx', homeTitle: '모두를 위한 SPHEREx · SPHEREx for Everyone' }),
 });
 export function viewTitle(view, lang = 'en') {
   const table = VIEW_TITLES[lang === 'ko' ? 'ko' : 'en'];
@@ -101,7 +100,7 @@ export function analysisParams(target) {
     }
     // Apparent solar-system coordinates must not masquerade as an ICRS field.
     if (target.frame && !['ICRS', 'ASTROM'].includes(target.frame)) {
-      throw keyedError('err.apparent', 'The apparent position of a moving object cannot be used directly for a fixed-coordinate analysis. Select an area in the sky with SPHEREx data analysis.');
+      throw keyedError('err.apparent', 'The apparent position of a moving object cannot be used directly for a fixed-coordinate analysis. Select an area on the sky with the ‘SPHEREx data analysis’ button.');
     }
     params.set('ra', String(ra >= 0 && ra < 360 ? ra : ((ra % 360) + 360) % 360));
     params.set('dec', String(dec));
@@ -133,4 +132,13 @@ export function childURL(view, params, base) {
 export function trustedFrameMessage(event, frame, expectedOrigin) {
   return !!frame?.contentWindow && event.source === frame.contentWindow && event.origin === expectedOrigin &&
     !!event.data && typeof event.data === 'object';
+}
+
+// Focus after a switch between the two sky views (review X2 item 2).
+// source: 'sky-nav' (a press in #sky-navigation) or 'child-navigate' (spherex-navigate from a child frame);
+// ordinary navigation (header menu, links) passes nothing and keeps today's focus behaviour.
+export function skyViewFocus(source, view) {
+ if (view === 'planetarium' && (source === 'child-navigate' || source === 'sky-nav')) return 'sky-navigation';
+ if (view === 'analysis' && source === 'sky-nav') return 'analysis-sky-mode';
+ return null;
 }

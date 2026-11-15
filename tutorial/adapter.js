@@ -12,10 +12,10 @@ export function currentPage(win, fallback = 'home') {
 }
 
 export function featureDocument(win, shellDocument, page) {
-  if (page === 'home' || page === 'experience') return shellDocument;
+  if (page === 'home') return shellDocument;
   try {
     const doc = win.__spherexApp?.getFeatureDocument?.();
-    // A separately hosted experience is intentionally opaque to this guide.
+    // A feature document on another origin is intentionally opaque to this guide.
     if (doc && doc.defaultView?.location.origin === win.location.origin) return doc;
   } catch { /* Cross-origin content must not be inspected. */ }
   return null;
