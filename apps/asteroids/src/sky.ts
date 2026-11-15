@@ -103,3 +103,37 @@ export function markSkyUnavailable(
   box.disabled = true;
   label?.setAttribute("data-i18n-title", "o.skyFail");
 }
+
+/** Drawn radius (AU) of a body that must show at least minPx CSS pixels in radius, never below its own
+ * radius and never above maxRadius. pxPerAu is the screen scale at the body's distance from the camera. */
+export function drawRadius(base: number, minPx: number, pxPerAu: number, maxRadius: number) {
+  if (!(pxPerAu > 0) || !Number.isFinite(pxPerAu)) return base;
+  return Math.max(base, Math.min(minPx / pxPerAu, maxRadius));
+}
+/** Illustrative planet size: at least minPx on screen, capped at PLANET_SIZE_CAP x the distance from the
+ * Sun so planets never cover the Sun or each other; the true radius in SPHEREx (observer) view. */
+export const PLANET_SIZE_CAP = 0.22;
+export function planetDrawRadius(
+  base: number,
+  minPx: number,
+  pxPerAu: number,
+  sunDistance: number,
+  observer = false,
+) {
+  return observer ? base : drawRadius(base, minPx, pxPerAu, PLANET_SIZE_CAP * sunDistance);
+}
+/** CSS pixels per AU at distance d from a perspective camera with vertical field of view fovDeg. */
+export function pixelsPerAu(d: number, fovDeg: number, viewHeight: number) {
+  return viewHeight / 2 / (Math.max(d, 1e-9) * Math.tan((fovDeg * Math.PI) / 360));
+}
+/** Illustrative weight of a planet drawn s times its true size: 0 at true size, 1 from 2.5 x up. */
+export function illustrativeWeight(s: number) {
+  if (!(s > 1)) return 0;
+  const t = Math.min(1, (s - 1) / 1.5);
+  return t * t * (3 - 2 * t);
+}
+/** Lighting of an illustrative planet: the true day/night light at k = 0, an even light
+ * (never below 0.58, 1 on the day side) at k = 1. Mirrored in PLANET_FRAGMENT in scene.ts. */
+export function illustrativeLight(light: number, k: number) {
+  return light + (0.58 + 0.42 * light - light) * k;
+}
