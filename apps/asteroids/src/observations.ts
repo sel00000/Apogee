@@ -1,3 +1,4 @@
+import { LocalError, bindText, t } from "./i18n";
 import type { Observation } from "./types";
 import { drawTrail, visibleTrail } from "./trails";
 export async function fetchImage(
@@ -8,14 +9,14 @@ export async function fetchImage(
     signal.throwIfAborted();
     try {
       const r = await fetch(url, { signal });
-      if (!r.ok) throw new Error("영상 응답 " + r.status);
+      if (!r.ok) throw new LocalError("v.httpStatus", { s: r.status });
       return await r.blob();
     } catch (error) {
       if (signal.aborted || attempt === 2) throw error;
       await new Promise((r) => setTimeout(r, 120 * (attempt + 1)));
     }
   }
-  throw new Error("영상 응답 없음");
+  throw new LocalError("v.noResponse");
 }
 /** One bitmap atlas per frame; bounded cache; stale responses never replace the selection. */
 export class ObservationViewer {
@@ -59,7 +60,7 @@ export class ObservationViewer {
       return false;
     }
     const key = obs.image.path;
-    this.status.textContent = "실제 관측 영상을 여는 중…";
+    bindText(this.status, () => t("v.opening"));
     try {
       let bitmap = this.cache.get(key);
       if (bitmap) {
@@ -84,9 +85,8 @@ export class ObservationViewer {
       if (generation !== this.generation) return false;
       this.current = obs;
       this.bitmap = bitmap;
-      this.status.textContent = obs.image.atlas
-        ? "실제 SPHEREx · 별 좌표 고정 · 민트색은 ePSF 예측 모형"
-        : "실제 SPHEREx · 개별 촬영 (공통 하늘 연속 영상 미준비)";
+      const atlas = obs.image.atlas;
+      bindText(this.status, () => t(atlas ? "v.atlas" : "v.single"));
       this.draw();
       return true;
     } catch (e) {
@@ -94,17 +94,15 @@ export class ObservationViewer {
       this.current = null;
       this.bitmap = null;
       this.draw();
-      this.status.textContent =
-        "영상을 열지 못했습니다. 다른 관측을 선택하거나 다시 시도하세요.";
+      bindText(this.status, () => t("v.failed"));
       return false;
     }
   }
   cancelPending() {
     ++this.generation;
     this.controller?.abort();
-    this.status.textContent = this.current
-      ? "실제 SPHEREx · 관측 재생 멈춤"
-      : "관측 재생 멈춤";
+    const real = Boolean(this.current);
+    bindText(this.status, () => t(real ? "v.pausedReal" : "v.paused"));
   }
   clear() {
     ++this.generation;
@@ -112,7 +110,7 @@ export class ObservationViewer {
     this.current = null;
     this.bitmap = null;
     this.draw();
-    this.status.textContent = "준비된 관측 영상이 없습니다.";
+    bindText(this.status, () => t("v.none"));
   }
   dispose() {
     this.controller?.abort();++this.generation;

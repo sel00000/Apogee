@@ -1,5 +1,6 @@
 import { it, expect } from "vitest";
 import { visibleTrail, trailDescription } from "../src/trails";
+import { setLang } from "../src/i18n";
 import trails from "../public/data/trails.json";
 import observations from "../public/data/observations.json";
 import comparisons from "../public/data/comparisons.json";
@@ -22,7 +23,11 @@ it("keeps off-image positions out and explains single-exposure limitations", () 
   for (const t of all)
     for (const p of visibleTrail(t)) expect(p.inside).toBe(true);
   const single = {...all[0], points: [all[0].points[0]]};
+  // Default language is now English (user instruction 2026-11-15); the Korean text is checked under 'ko'.
+  setLang("ko");
   expect(trailDescription(single)).toContain(
     "이동 비교 자료 없음",
   );
+  setLang("en");
+  expect(trailDescription(single)).toContain("no motion comparison data");
 });

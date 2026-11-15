@@ -1,3 +1,4 @@
+import { t as tr } from "./i18n";
 /** MJD UTC -> TDB, 2025–2026: TT offset + periodic TDB term (< 2ms).
  * Image overlay uses exact precomputed observation epochs, not this approximation. */
 export function utcToTdb(mjd: number) {
@@ -19,7 +20,7 @@ export function interpolate(
     t < s[0][0] ||
     t > s[s.length - 1][0]
   )
-    throw new RangeError("천체력 범위를 벗어났습니다");
+    throw new RangeError(tr("math.range"));
   let lo = 0,
     hi = s.length - 1;
   while (hi - lo > 1) {
