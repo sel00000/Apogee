@@ -69,7 +69,7 @@ test('t() fills variables and falls back to English, then to the key', () => {
 });
 
 test('view titles match the dictionaries and document titles follow the language', () => {
-  for (const v of ['home', 'planetarium', 'analysis', 'asteroids', 'experience']) {
+  for (const v of ['home', 'planetarium', 'analysis', 'asteroids']) {
     assert.equal(viewTitle(v, 'en'), en['view.' + v]); assert.equal(viewTitle(v, 'ko'), ko['view.' + v]);
   }
   assert.equal(VIEW_TITLES.ko.suffix, ko['doc.suffix']); assert.equal(VIEW_TITLES.en.suffix, en['doc.suffix']);

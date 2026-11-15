@@ -1,5 +1,5 @@
 export const GUIDE_VERSION = '5.0';
-export const PAGES = ['home', 'planetarium', 'analysis', 'asteroids', 'experience'];
+export const PAGES = ['home', 'planetarium', 'analysis', 'asteroids'];
 
 export function courseFor(modules, track = 'beginner', moduleId = 'all') {
   const safeTrack = track === 'research' ? 'research' : 'beginner';

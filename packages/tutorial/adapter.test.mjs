@@ -7,7 +7,8 @@ test('shell route URLs preserve the deployment base and reject other origins',()
   const base='https://example.org/S/';
   assert.equal(pageForUrl(base,base+'#analysis?target=eps_indi_b'),'analysis');
   assert.equal(pageForUrl(base,base+'#asteroids?target=433'),'asteroids');
-  assert.equal(pageForUrl(base,base+'#experience'),'experience');
+  // The Space Journey route left the site's menus; the tutorial no longer recognises or navigates to it.
+  assert.equal(pageForUrl(base,base+'#experience'),null);
   assert.equal(pageForUrl(base,'https://other.example/S/#analysis'),null);
   assert.equal(pageForUrl(base,'https://example.org/other/#analysis'),null);
 });
@@ -25,10 +26,10 @@ test('closing during a pending route cancels the practice continuation',async()=
   controller.abort();resolve();
   assert.equal(await pending,false);
 });
-test('feature adapter never reads cross-origin experience internals',()=>{
+test('feature adapter never reads cross-origin feature internals',()=>{
   const shell={name:'shell'};
   const win={location:{origin:'https://portal.example'},__spherexApp:{getFeatureDocument(){throw Error('cross origin');}}};
-  assert.equal(featureDocument(win,shell,'experience'),shell);
+  assert.equal(featureDocument(win,shell,'home'),shell);
   assert.equal(featureDocument(win,shell,'analysis'),null);
   const child={defaultView:{location:{origin:'https://portal.example'}}};
   win.__spherexApp.getFeatureDocument=()=>child;

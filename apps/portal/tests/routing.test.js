@@ -51,7 +51,8 @@ test('header highlight: 천구 관찰 covers the planetarium and the analysis sk
  assert.equal(headerCurrent('analysis',new URLSearchParams('view=workbench')),'analysis');
  assert.equal(headerCurrent('analysis',new URLSearchParams()),'analysis');
  assert.equal(headerCurrent('asteroids',new URLSearchParams('view=sky')),'asteroids');
- assert.equal(headerCurrent('experience',new URLSearchParams()),'experience');
+ assert.equal(headerCurrent('experience',new URLSearchParams()),null,'Space Journey is no longer a view');
+ assert.equal(parseRoute('#experience').view,'home','the removed route falls back to home');
  assert.equal(headerCurrent('home',new URLSearchParams()),'home');
  assert.equal(headerCurrent('nope',new URLSearchParams()),null);
  assert.equal(headerCurrent('analysis',parseRoute('#analysis?view=sky').params),'planetarium');
@@ -61,7 +62,6 @@ test('header stage messages exist only for the two analysis-backed items',()=>{
  assert.equal(headerStage('planetarium'),'sky');
  assert.equal(headerStage('analysis'),'workbench');
  assert.equal(headerStage('asteroids'),null);
- assert.equal(headerStage('experience'),null);
 });
 
 test('SPHEREx 천구 address carries the sky centre only when the planetarium state has it',()=>{
@@ -74,4 +74,15 @@ test('SPHEREx 천구 address carries the sky centre only when the planetarium st
  assert.equal(skyReturnHash({}),'#analysis?view=sky');
  assert.equal(skyReturnHash(null),'#analysis?view=sky');
  assert.equal(parseRoute(skyReturnHash({query:'ra=1&dec=2&fov=3'})).params.get('sky'),'1,2,3');
+});
+
+import {skyViewFocus} from '../routing.js';
+test('focus after a sky view switch: only switches from the sky sub-navigation or the child view switch move focus',()=>{
+ assert.equal(skyViewFocus('child-navigate','planetarium'),'sky-navigation');
+ assert.equal(skyViewFocus('sky-nav','planetarium'),'sky-navigation');
+ assert.equal(skyViewFocus('sky-nav','analysis'),'analysis-sky-mode');
+ assert.equal(skyViewFocus(undefined,'planetarium'),null);
+ assert.equal(skyViewFocus(undefined,'analysis'),null);
+ assert.equal(skyViewFocus('child-navigate','analysis'),null);
+ assert.equal(skyViewFocus('child-navigate','asteroids'),null);
 });

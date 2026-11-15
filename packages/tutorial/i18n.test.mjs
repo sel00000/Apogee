@@ -86,7 +86,7 @@ test('English course is a word-for-word parallel of the Korean course structure'
   for (const s of strings({ ...en, MODULES: en.MODULES.map(({ steps, ...m }) => ({ ...m, steps })) })) assert.doesNotMatch(s, HANGUL, s);
   // Hedges survive translation.
   const copy = JSON.stringify(en.MODULES);
-  assert.match(copy, /illustrative model/); assert.match(copy, /scientific detection/); assert.match(copy, /candidate/);
+  assert.match(copy, /illustrative model/); assert.match(copy, /scientific validation/); assert.match(copy, /candidate/);
   assert.match(en.TUTORIAL_NOTE, /not quotations/); assert.match(en.TUTORIAL_NOTE, /made-up data/);
 });
 

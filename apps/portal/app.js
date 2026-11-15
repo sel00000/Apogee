@@ -2,7 +2,7 @@ import {mountHomeBackground} from './home-background.js';
 import {mountGlassCards} from './glass.js';
 import {mountHomeWaveform} from './home-waveform.js';
 import {mountHomeStory} from './home-story.js';
-import {VIEWS, HOME_ANCHORS, parseRoute, routeHash, analysisParams, childURL, trustedFrameMessage, headerCurrent, headerStage, skyReturnHash, viewTitle, documentTitle} from './routing.js';
+import {VIEWS, HOME_ANCHORS, parseRoute, routeHash, analysisParams, childURL, trustedFrameMessage, headerCurrent, headerStage, skyReturnHash, skyViewFocus, viewTitle, documentTitle} from './routing.js';
 import {startI18n, t, getLang, setLang, applyI18n, onLangChange} from './i18n.js';
 startI18n();
 const $=s=>document.querySelector(s),reduce=matchMedia('(prefers-reduced-motion:reduce)');
@@ -139,8 +139,20 @@ function openHash(hash){if(location.hash!==hash)history.pushState(null,'',hash);
 $('#sky-navigation').addEventListener('click',event=>{
  const a=event.target.closest('[data-sky-nav]');if(!a||!plainClick(event))return;
  event.preventDefault();
- if(a.dataset.skyNav==='spherex'){let state;try{state=feature?.getState?.();}catch{state=null;}openHash(skyReturnHash(state));}
+ if(a.dataset.skyNav==='spherex'){let state;try{state=feature?.getState?.();}catch{state=null;}focusAfterSkySwitch('sky-nav',openHash(skyReturnHash(state)));}
 });
+// Review X2 item 2: after a switch between the two sky views, focus lands on the view switch, not on <body>.
+function focusAfterSkySwitch(source,ready){
+ Promise.resolve(ready).then(ok=>{
+  if(!ok)return;
+  const target=skyViewFocus(source,currentView);
+  if(target==='sky-navigation')$('#sky-navigation [aria-current]')?.focus({preventScroll:true});
+  else if(target==='analysis-sky-mode'&&feature?.frame&&feature.isLoaded?.()){
+   feature.frame.focus();
+   feature.frame.contentWindow?.postMessage({type:'spherex-analysis-focus',target:'sky-mode'},location.origin);
+  }
+ }).catch(()=>{});
+}
 // Header: with the analysis app already mounted, 천구 관찰 / SPHEREx 분석 switch its stage in place (no reload);
 // the child answers with spherex-analysis-url and syncChildRoute re-applies the highlight.
 $('.site-header nav').addEventListener('click',event=>{
@@ -217,9 +229,6 @@ function navigate(){
      }else if(currentView==='asteroids'){
       const mod=await import('./moving/index.js');if(id!==generation){resolve(false);return;}
       body.replaceChildren();mounted=adaptController(await mod.mountMoving(body,{onAnalyze:analyze,toast}));
-     }else if(currentView==='experience'){
-      const mod=await import('./experience.js');if(id!==generation){resolve(false);return;}
-      body.replaceChildren();mounted=await mod.mountExperience(body,{toast,toastKeyed});
      }
      if(id!==generation){mounted?.dispose?.();resolve(false);return;}
      feature=mounted;updateMotion();await mounted?.ready;
@@ -254,7 +263,7 @@ window.addEventListener('message',event=>{
  const frame=feature?.frame;
  if(!trustedFrameMessage(event,frame,location.origin))return;
  const data=event.data;
- if(data.type==='spherex-navigate'&&Object.hasOwn(VIEWS,data.view))go(data.view,data.params||{});
+ if(data.type==='spherex-navigate'&&Object.hasOwn(VIEWS,data.view)){const ready=go(data.view,data.params||{});if(data.view==='planetarium')focusAfterSkySwitch('child-navigate',ready);}
  else if(currentView==='analysis'&&data.type==='spherex-analysis-url'&&typeof data.query==='string'&&data.query.length<=8192)syncChildRoute('analysis',data.query);
  else if(currentView==='asteroids'&&data.type==='spherex-asteroid-state'){
   const q=new URLSearchParams();if(typeof data.target==='string'&&data.target.length<=160)q.set('target',data.target);

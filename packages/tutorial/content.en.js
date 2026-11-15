@@ -32,8 +32,6 @@ export const HINTS_EN = {
     'If a tool is not available, check the loading status on the screen. You can also continue the guide without practising.',
   '이 실습은 품질이 확인된 준비 예제를 엽니다. 임의 좌표 영역에서는 연구 탭이 지원되지 않을 수 있어요.':
     'This practice opens a prepared example whose quality has been checked. Research tabs may not be available for regions at arbitrary positions.',
-  '탐험 내부의 조작 안내를 따르세요. 튜토리얼은 별도로 실행되는 탐험 내부를 자동 조작하지 않습니다.':
-    'Follow the controls guide inside the journey. The journey runs separately, and the tutorial does not operate anything inside it.',
 };
 /** Suffix for research practices: Korean '· 준비 예제로 열기'. */
 export const PREPARED_SUFFIX_EN = ' (opens a prepared example)';
@@ -44,7 +42,6 @@ export const MODULES_EN = {
   wavelength: { title: 'Reading wavelengths and graphs', description: 'µm, 102 channels, spectra and light curves' },
   quality: { title: 'Before you trust a result', description: 'Quality flags, uncertainty, data sources and saving' },
   asteroids: { title: 'Asteroid Analysis', description: '3D orbits, saved results and new Python analyses' },
-  experience: { title: 'The Space Journey experience', description: 'Enjoy flying, discovering and logging, and tell it apart from analysis' },
 };
 
 const q = (question, choices, explanation) => ({ question, choices, explanation });
@@ -53,7 +50,7 @@ const q = (question, choices, explanation) => ({ question, choices, explanation 
 export const STEPS_EN = {
   'beginner-sky-1': {
     title: 'Set off for the sky from one menu',
-    body: ['Use the top menu to move between Sky View, SPHEREx Analysis, Asteroid Analysis and Space Journey. On Home you can explore the story of the SPHEREx mission and the infrared sky.',
+    body: ['Use the top menu to move between SPHEREx Analysis, Sky View and Asteroid Analysis, or open this Tutorial again. On Home you can explore the story of the SPHEREx mission and the infrared sky.',
       'Find a star or another object with Search at the top. If there are several candidates, check which one you mean before opening it. You can skip the tutorial at any time and come back to just the topics you need.'],
     practice: 'Find an object with Search at the top',
   },
@@ -211,7 +208,7 @@ export const STEPS_EN = {
     body: ['Even repeated measurements can come out slightly different. Error bars help you read the uncertainty alongside the value.',
       'Do not confirm a change from a small difference in brightness alone. Check the wavelength, quality and repeat observations. “Processing complete” and “high confidence” mean different things.'],
     check: q('Once processing is complete, is the result certain?', ['No. Quality and uncertainty need checking separately', 'Yes. Complete means high confidence'],
-      'Complete is a processing status. Data quality and model confidence are checked separately.'),
+      '“Complete” is a processing status. Data quality and model confidence are checked separately.'),
   },
   'beginner-quality-3': {
     title: 'Keep sources in your discovery notes',
@@ -271,31 +268,7 @@ export const STEPS_EN = {
   'research-asteroids-3': {
     title: 'A finished job is not scientific validation',
     body: ['Keep the target identifier and the analysis run ID apart, so that results with different periods and settings are stored separately. Also check the versions of the analysis originals, the web results and the 3D data.',
-      'Complete is a processing status and does not guarantee high classification confidence. Tell failed external queries, too few observations and undecided results apart, and review the evidence in the report.'],
+      '“Complete” is a processing status and does not guarantee high classification confidence. Tell failed external queries, too few observations and undecided results apart, and review the evidence in the report.'],
     practice: 'Check job status, period and the run ID of results',
-  },
-  'beginner-experience-1': {
-    title: 'Step into a journey through space',
-    body: ['Space Journey is an experience where you visit planets and spacecraft. Read the controls guide inside, then enjoy flying, scanning and logging discoveries.',
-      'It needs a network connection and graphics hardware, and preparing the data the first time can take a while. Come back through the top menu to use the other features.'],
-    practice: 'Open Space Journey and find the top menu to return',
-  },
-  'beginner-experience-2': {
-    title: 'A successful scan is not a scientific detection',
-    body: ['The scan and discovery stages of the journey are how the experience moves along. They are not SPHEREx detecting a new object or analysing what an asteroid is made of.',
-      'For real data analysis, use the SPHEREx Analysis or Asteroid Analysis menu. The journey’s images and story combine observational data with staging.'],
-    check: q('What does a discovery stage in the journey mean?', ['Progress through discoveries in the experience', 'A confirmed SPHEREx science detection'],
-      'Read results from the experience and from science analysis separately.'),
-  },
-  'research-experience-1': {
-    title: 'Tell position data from staging',
-    body: ['The journey builds the trip from position data, interpolation and visual staging. It is not live footage from a probe’s camera or a SPHEREx spectroscopy tool.',
-      'Scan ranges, discovery stages and story elements are rules of the experience. Do not quote them as if they meant the same as research measurements.'],
-    practice: 'Tell the roles of the experience and analysis menus apart',
-  },
-  'research-experience-2': {
-    title: 'Keep journey records and analysis records apart',
-    body: ['Journey progress depends on the browser’s saved state for that address. It is not a record that replaces analysis reports or data provenance.',
-      'If you are making something such as a return video, check the completed or stopped notice before moving away. Do not read a failure to load data as meaning that the object does not exist.'],
   },
 };
