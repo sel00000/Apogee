@@ -102,3 +102,26 @@ export function getSteps(track='beginner', moduleId='all') {
   const safe=track==='research'?'research':'beginner';
   return MODULES.filter(m=>moduleId==='all'||m.id===moduleId).flatMap(m=>m.steps[safe].map(item=>({...item,moduleId:m.id,moduleTitle:m.title})));
 }
+
+import { TUTORIAL_NOTE_EN, CHARACTERS_EN, TRACKS_EN, REFERENCES_EN, HINTS_EN, PREPARED_SUFFIX_EN, MODULES_EN, STEPS_EN } from './content.en.js';
+
+function englishStep(item) {
+  const text = STEPS_EN[item.id];
+  if (!text) throw new Error(`Missing English tutorial step ${item.id}`);
+  const out = { ...item, title: text.title, body: [...text.body] };
+  if (item.practice) out.practice = { ...item.practice, label: text.practice + (item.practice.requires.includes('prepared') ? PREPARED_SUFFIX_EN : ''), hint: HINTS_EN[item.practice.hint] ?? item.practice.hint };
+  if (item.check) out.check = { ...item.check, question: text.check.question, choices: [...text.check.choices], explanation: text.check.explanation };
+  return out;
+}
+const ENGLISH = {
+  TUTORIAL_NOTE: TUTORIAL_NOTE_EN,
+  CHARACTERS: Object.fromEntries(Object.entries(CHARACTERS).map(([id, item]) => [id, { ...item, ...CHARACTERS_EN[id] }])),
+  TRACKS: Object.fromEntries(Object.entries(TRACKS).map(([id, item]) => [id, { ...item, ...TRACKS_EN[id] }])),
+  REFERENCES: Object.fromEntries(Object.entries(REFERENCES).map(([id, item]) => [id, { ...item, title: REFERENCES_EN[id] }])),
+  MODULES: MODULES.map((module) => ({ ...module, ...MODULES_EN[module.id],
+    steps: Object.fromEntries(Object.entries(module.steps).map(([track, list]) => [track, list.map(englishStep)])) })),
+};
+const KOREAN = { TUTORIAL_NOTE, CHARACTERS, TRACKS, REFERENCES, MODULES };
+
+/** Course content for one language: English unless 'ko'. The Korean exports above are the Korean course. */
+export function contentFor(lang) { return lang === 'ko' ? KOREAN : ENGLISH; }

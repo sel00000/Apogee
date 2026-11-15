@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 import { bindSkyClickAnalysis, targetAtSkyPoint } from './sky-click.js';
 import { fieldRegionAroundTarget } from './analysis-region.js';
+import { t } from './i18n.js';
 
 // The preview is the same north-up tangent-plane field passed to the analysis API,
 // projected onto the current sky view. It is not a fixed-size decorative box.
@@ -19,7 +20,6 @@ export function createAnalysisPicker({ engine, canvas, onTarget, onSelection, ca
   let point;
   let animation;
   let lastDraw = 0;
-  const normalHint = '일반 클릭은 별·별자리 정보를 표시합니다. 분석하려면 버튼을 누른 뒤 네모 영역을 선택하세요.';
   const fieldSize = () => Number(size.value);
   const fieldLabel = () => `${fieldSize() / 60}′ × ${fieldSize() / 60}′`;
   // SVGElement does not reflect `.hidden` like HTMLElement does.
@@ -28,7 +28,7 @@ export function createAnalysisPicker({ engine, canvas, onTarget, onSelection, ca
   function regionAt(position) {
     const target = targetAtSkyPoint(engine, position, canvas);
     if (!target) return null;
-    const region = fieldRegionAroundTarget(engine, { ...target, label: '선택한 네모 영역' }, canvas, fieldSize());
+    const region = fieldRegionAroundTarget(engine, { ...target, label: t('picker.regionLabel') }, canvas, fieldSize());
     const rect = canvas.getBoundingClientRect();
     return region?.points.every(p => p.x >= 0 && p.y >= 0 && p.x <= rect.width && p.y <= rect.height) ? region : null;
   }
@@ -46,7 +46,7 @@ export function createAnalysisPicker({ engine, canvas, onTarget, onSelection, ca
     crosshair.setAttribute('d', `M${x - 6},${y}h12 M${x},${y - 6}v12`);
     label.setAttribute('x', String(Math.max(12, Math.min(rect.width - 180, x + 16))));
     label.setAttribute('y', String(Math.max(24, Math.min(rect.height - 20, y - 16))));
-    label.textContent = `${fieldLabel()} · 클릭하여 분석`;
+    label.textContent = t('picker.clickToAnalyse', { field: fieldLabel() });
     hideOverlay(false);
   }
 
@@ -62,7 +62,7 @@ export function createAnalysisPicker({ engine, canvas, onTarget, onSelection, ca
     const previewFov = fieldSize() / 3600 * 20 * Math.PI / 180;
     if (engine.core.fov > previewFov) {
       engine.zoomTo(previewFov, 0.3);
-      notify(`분석 범위 ${fieldLabel()}가 보이도록 확대했습니다. 드래그로 이동한 뒤 네모 영역을 클릭하세요.`);
+      notify(t('picker.zoomed', { field: fieldLabel() }));
     }
   }
 
@@ -71,11 +71,8 @@ export function createAnalysisPicker({ engine, canvas, onTarget, onSelection, ca
     active = value;
     button.setAttribute('aria-pressed', String(active));
     doc.body.classList.toggle('analysis-picking', active);
-    skyHint.textContent = active ? '네모 영역 클릭하여 분석 · Esc로 취소 · 드래그로 이동'
-      : '클릭하여 천체 정보 · 드래그로 하늘 이동 · 스크롤로 확대 / 축소';
-    hint.textContent = active
-      ? `분석 범위 ${fieldLabel()} · 네모를 원하는 곳에 놓고 클릭하세요. Esc 또는 버튼을 다시 누르면 취소됩니다.`
-      : normalHint;
+    skyHint.textContent = t(active ? 'skyHint.picking' : 'skyHint.sky');
+    hint.textContent = active ? t('picker.activeHint', { field: fieldLabel() }) : t('picker.normalHint');
     cancelAnimationFrame(animation);
     hideOverlay(true);
     if (active) {
@@ -93,7 +90,7 @@ export function createAnalysisPicker({ engine, canvas, onTarget, onSelection, ca
     if (!active || !canInteract()) return;
     const region = regionAt(position);
     if (!region) {
-      notify('네모 전체가 하늘 안에 들어오도록 위치를 옮겨 주세요.');
+      notify(t('picker.outside'));
       return;
     }
     setActive(false);
@@ -102,11 +99,11 @@ export function createAnalysisPicker({ engine, canvas, onTarget, onSelection, ca
 
   button.disabled = false;
   size.disabled = false;
-  hint.textContent = normalHint;
+  hint.textContent = t('picker.normalHint');
   button.addEventListener('click', () => setActive(!active));
   size.addEventListener('change', () => {
     if (!active) return;
-    hint.textContent = `분석 범위 ${fieldLabel()} · 클릭하여 분석 / Esc로 취소`;
+    hint.textContent = t('picker.sizeHint', { field: fieldLabel() });
     makeFieldVisible();
     draw();
   });
@@ -139,5 +136,10 @@ export function createAnalysisPicker({ engine, canvas, onTarget, onSelection, ca
   doc.addEventListener('visibilitychange', () => { if (doc.hidden && active) setActive(false); });
   bindSkyClickAnalysis({ engine, canvas, canAnalyze: canInteract, isAnalysisMode: () => active,
     onSelection, onTarget: (_target, position) => analyzeAt(position) });
-  return { cancel: () => setActive(false), get active() { return active; } };
+  // Language change: rewrite the hint and the on-sky label without changing the picker state.
+  function relabel() {
+    hint.textContent = active ? t('picker.activeHint', { field: fieldLabel() }) : t('picker.normalHint');
+    if (active) { skyHint.textContent = t('skyHint.picking'); draw(); }
+  }
+  return { cancel: () => setActive(false), relabel, get active() { return active; } };
 }

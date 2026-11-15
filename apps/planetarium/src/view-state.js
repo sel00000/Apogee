@@ -30,3 +30,16 @@ export function portalShareUrl(query, planetariumUrl) {
   url.hash = `planetarium?${sanitizeViewState(query)}`;
   return url.href;
 }
+
+// Screen centre for the portal: a Cartesian direction in the astrometric ICRS frame
+// (the frame used for the read-out and analysis) plus the field of view in radians,
+// returned as right ascension, declination and field of view in degrees.
+export function viewCenter(direction, fovRadians) {
+  if (!direction || direction.length < 3) return null;
+  const [x, y, z] = direction;
+  const length = Math.hypot(x, y, z);
+  if (![x, y, z].every(Number.isFinite) || length === 0 || !Number.isFinite(fovRadians)) return null;
+  const ra = ((Math.atan2(y, x) * 180 / Math.PI) % 360 + 360) % 360;
+  const dec = Math.asin(Math.max(-1, Math.min(1, z / length))) * 180 / Math.PI;
+  return { ra, dec, fov: fovRadians * 180 / Math.PI };
+}

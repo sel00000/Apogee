@@ -11,6 +11,12 @@
   let controller = null;
   let loading = null;
   let requested = false;
+  // Language contract D1: only a stored 'ko' means Korean; anything else, or a storage error, means English.
+  const lang = () => { try { return localStorage.getItem('spherex-lang') === 'ko' ? 'ko' : 'en'; } catch { return 'en'; } };
+  const TEXT = {
+    ko: { failed: '튜토리얼을 불러오지 못했습니다. 프로그램은 계속 사용할 수 있습니다.', retry: '다시 불러오기', close: '닫기' },
+    en: { failed: 'The tutorial could not be loaded. You can keep using the site.', retry: 'Try again', close: 'Close' },
+  };
 
   function failed() {
     if (document.getElementById('sky-tutorial-load-error')) return;
@@ -19,12 +25,14 @@
     box.setAttribute('role', 'status');
     box.style.cssText = 'position:fixed;z-index:99999;top:78px;right:16px;max-width:min(380px,calc(100vw - 32px));padding:16px;border:1px solid #7895a8;border-radius:12px;background:#101c2d;color:#f3f0e8;font:14px/1.6 system-ui;box-shadow:0 8px 32px #0008';
     const text = document.createElement('p');
-    text.textContent = '튜토리얼을 불러오지 못했습니다. 프로그램은 계속 사용할 수 있습니다.';
+    const words = TEXT[lang()];
+    box.lang = lang();
+    text.textContent = words.failed;
     const retry = document.createElement('button');
-    retry.type = 'button'; retry.textContent = '다시 불러오기';
+    retry.type = 'button'; retry.textContent = words.retry;
     retry.addEventListener('click', () => { box.remove(); requested = true; void load(); });
     const close = document.createElement('button');
-    close.type = 'button'; close.textContent = '닫기';
+    close.type = 'button'; close.textContent = words.close;
     close.addEventListener('click', () => box.remove());
     box.append(text, retry, close);
     document.body.append(box);

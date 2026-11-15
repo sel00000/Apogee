@@ -47,16 +47,17 @@ const logTicks = (lo: number, hi: number) => {
 /** Right-hand science panel. Variables: variable lab · spectrum lab · 3D. Others: 3D · spectrum lab.
  *  Labs stay mounted once opened (settings survive tab switches); WebGL mounts only on its tab. */
 export function VariableExplorer({ meta }: { meta: Meta }) {
+  const L = useL()
   const variable = ['rw_aur', 'r_dra'].includes(meta.id)
   const tabs: [Tab, string][] = variable
-    ? [['lab', '✦ 변광 분석실'], ['spec', '◐ 분광 실험실'], ['space', '3D 위치 (보조)']]
-    : [['space', '◇ 3D 시공간'], ['spec', '◐ 분광 실험실']]
+    ? [['lab', L('✦ 변광 분석실', '✦ Variability lab')], ['spec', L('◐ 분광 실험실', '◐ Spectrum lab')], ['space', L('3D 위치 (보조)', '3D position (aid)')]]
+    : [['space', L('◇ 3D 시공간', '◇ 3D space-time')], ['spec', L('◐ 분광 실험실', '◐ Spectrum lab')]]
   const [section, setSection] = useState<Tab>(tabs[0][0])
   const [opened, setOpened] = useState<Set<Tab>>(new Set([tabs[0][0]]))
   const open = (t: Tab) => { setSection(t); setOpened((o) => new Set(o).add(t)) }
   return (
     <div className="variable-shell">
-      <div className="science-tabs" role="tablist" aria-label="오른쪽 탐구 도구">
+      <div className="science-tabs" role="tablist" aria-label={L('오른쪽 탐구 도구', 'Investigation tools')}>
         {tabs.map(([t, label]) => (
           <button key={t} role="tab" aria-selected={section === t} className={section === t ? 'active' : ''} onClick={() => open(t)}>{label}</button>
         ))}
@@ -263,13 +264,13 @@ export function VariableLab({ meta }: { meta: Meta }) {
       </header>
 
       <div className="toolbar">
-        <label>{L('측정값', 'Quantity')} <select aria-label="변광 측정값" value={q} onChange={(e) => set({ q: e.target.value as Quantity, band: null, compareVisit: null })}>
+        <label>{L('측정값', 'Quantity')} <select aria-label={L('변광 측정값', 'Variability quantity')} value={q} onChange={(e) => set({ q: e.target.value as Quantity, band: null, compareVisit: null })}>
           <option value="flux">{L('구경 측광 (mJy)', 'aperture photometry (mJy)')}</option><option value="ring">{L('고리 밝기 (상대 MJy/sr)', 'ring brightness (relative MJy/sr)')}</option></select></label>
         <span className="seg" role="group" aria-label={L('점 표시 방식', 'Point mode')}>
           <button className={mode === 'raw' ? 'active' : ''} onClick={() => set({ mode: 'raw' })}>{L('원본 노출점', 'Raw exposures')}</button>
           <button className={mode === 'median' ? 'active' : ''} onClick={() => set({ mode: 'median' })}>{L('관측별 중앙값', 'Median per visit')}</button>
         </span>
-        <label>{L('품질', 'Quality')} <select aria-label="품질 필터" value={quality} onChange={(e) => set({ quality: e.target.value as Quality })}>
+        <label>{L('품질', 'Quality')} <select aria-label={L('품질 필터', 'Quality filter')} value={quality} onChange={(e) => set({ quality: e.target.value as Quality })}>
           {(['all', 'severe', 'clean'] as Quality[]).map((x) => <option key={x} value={x}>{QL(x)}</option>)}</select></label>
       </div>
 
@@ -298,7 +299,7 @@ export function VariableLab({ meta }: { meta: Meta }) {
 
       <h4 className="lab-step">{L(`② 관측 ${k + 1}의 스펙트럼`, `② Spectrum of visit ${k + 1}`)} <span className="dim small">{v ? fmtDate(v.mjd) : ''}</span> <Badge kind="spherex" /></h4>
       <div className="toolbar">
-        <label>{L('비교 관측', 'Compare with')} <select aria-label="스펙트럼 비교 관측" value={compareVisit ?? ''} onChange={(e) => set({ compareVisit: e.target.value === '' ? null : +e.target.value })}>
+        <label>{L('비교 관측', 'Compare with')} <select aria-label={L('스펙트럼 비교 관측', 'Spectrum comparison visit')} value={compareVisit ?? ''} onChange={(e) => set({ compareVisit: e.target.value === '' ? null : +e.target.value })}>
           <option value="">{L('없음', 'none')}</option>
           {validVisits.filter((i) => i !== k).map((i) => <option key={i} value={i}>{L('관측', 'Visit')} {i + 1} · {fmtDate(meta.visits[i].mjd)}{i === ab[0] ? ' (A)' : i === ab[1] ? ' (B)' : ''}</option>)}
         </select></label>
@@ -317,11 +318,11 @@ export function VariableLab({ meta }: { meta: Meta }) {
 
       <h4 className="lab-step">{L('③ 파장 구간의 시간 변화', '③ One band over time')} <Badge kind="spherex" /><Badge kind="model" detail={mode === 'raw' ? L('정규화만', 'normalised only') : L('관측별 중앙값·MAD', 'visit median · MAD')} /></h4>
       <div className="toolbar">
-        <label>{L('검출기', 'Detector')} <select aria-label="변광 검출기" value={band?.det ?? ''} onChange={(e) => { const det = +e.target.value; const bb = binsFor(rows, q, det, width); set({ band: bb.length ? { det, bin: [...bb].sort((x, y) => y.visits.size - x.visits.size)[0].bin, width } : { det, bin: -1, width } }) }}>
+        <label>{L('검출기', 'Detector')} <select aria-label={L('변광 검출기', 'Variability detector')} value={band?.det ?? ''} onChange={(e) => { const det = +e.target.value; const bb = binsFor(rows, q, det, width); set({ band: bb.length ? { det, bin: [...bb].sort((x, y) => y.visits.size - x.visits.size)[0].bin, width } : { det, bin: -1, width } }) }}>
           {[1, 2, 3, 4, 5, 6].map((d) => <option key={d} value={d}>D{d} · {DETECTORS[d].range}</option>)}</select></label>
-        <label>{L('구간 폭', 'Band width')} <select aria-label="파장 구간 폭" value={width} onChange={(e) => set({ width: +e.target.value, band: null })}>
+        <label>{L('구간 폭', 'Band width')} <select aria-label={L('파장 구간 폭', 'Wavelength band width')} value={width} onChange={(e) => set({ width: +e.target.value, band: null })}>
           {[0.05, 0.1, 0.2].map((w) => <option key={w} value={w}>{w} µm</option>)}</select></label>
-        <label>{L('파장', 'Band')} <select aria-label="변광 파장 구간" value={bins.some((x) => x.bin === band?.bin) ? band!.bin : ''} onChange={(e) => band && set({ band: { ...band, bin: +e.target.value } })}>
+        <label>{L('파장', 'Band')} <select aria-label={L('변광 파장 구간', 'Variability wavelength band')} value={bins.some((x) => x.bin === band?.bin) ? band!.bin : ''} onChange={(e) => band && set({ band: { ...band, bin: +e.target.value } })}>
           {!bins.some((x) => x.bin === band?.bin) && <option value="">{bins.length ? L('구간 선택', 'choose a band') : `D${band?.det} ${QN(q)} ${L('값 없음', 'no values')}`}</option>}
           {bins.map((x) => <option key={x.bin} value={x.bin}>{binRange(x.bin, width)[0].toFixed(2)}–{binRange(x.bin, width)[1].toFixed(2)} µm · {x.visits.size} {L('회', 'visits')} · {x.n} {L('노출', 'exp.')}</option>)}
         </select></label>
@@ -344,7 +345,7 @@ export function VariableLab({ meta }: { meta: Meta }) {
       </div>
       {kind === 'phase' && (
         <div className="phase-controls" data-testid="phase-controls">
-          <label>{L('시험 주기', 'Trial period')} <input aria-label="시험 주기" type="range" min="100" max="400" step=".5" value={period} onChange={(e) => set({ period: +e.target.value })} />{period.toFixed(1)} {L('일', 'd')}</label>
+          <label>{L('시험 주기', 'Trial period')} <input aria-label={L('시험 주기', 'Trial period')} type="range" min="100" max="400" step=".5" value={period} onChange={(e) => set({ period: +e.target.value })} />{period.toFixed(1)} {L('일', 'd')}</label>
           <button onClick={() => set({ period: 245.6 })}>{L('문헌 참고값 245.6일', 'literature value 245.6 d')}</button>
           <p>{L('주기를 바꿔 다른 회차의 점들이 겹치는지 실험하세요. 위상 0은 선택 자료의 첫 시각이며 최대 밝기 시점이 아닙니다. 주기 검출·적합 기능이 아닙니다.', 'Change the period and see whether points from different cycles line up. Phase 0 is the first selected time, not maximum light. This is not a period search or fit.')} <Badge kind="catalog" detail={L('BAA VSS 참고 주기', 'BAA VSS reference period')} /></p>
         </div>

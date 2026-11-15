@@ -253,6 +253,18 @@ select { border-radius: 6px; padding: 3px 6px; }
 .sky-targets button.on { border-color: var(--target); color: var(--target); }
 .sky-status { line-height: 1.6; }
 .sky-open { margin-left: 8px; }
+/* Find: view switch, sky overlays, below-horizon notice (existing parts, laid out in the panel's flow) */
+.globe-read.on-ground { top: 12px; bottom: auto; }
+.sky-mode { display: flex; }
+.sky-mode button { flex: 1 1 0; }
+.sky-overlays { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.sky-overlays h3 { margin: 0; }
+.sky-overlays p { margin: 0; line-height: 1.5; }
+.sky-side label.check { display: inline-flex; gap: 6px; font-weight: 400; margin: 0; }
+.sky-below { margin: 0; line-height: 1.5; }
+@media (max-width: 600px) {
+  .sky-mode button, .sky-side label.check, .sky-below button.link { min-height: 44px; }
+}
 .marks button.mark.gaia.active { background: rgba(122, 162, 255, .16); border-color: #7aa2ff; color: #a9c2ff; }
 .gaia-status { margin: 0; text-align: center; line-height: 1.5; }
 @media (max-width: 1000px) { .sky-panel { grid-template-columns: minmax(0, 1fr); } .globe-box { height: 60vh; } }

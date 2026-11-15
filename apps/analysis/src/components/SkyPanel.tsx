@@ -1,11 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { TargetsIndex } from '../types'
 import { FOV_MAX, FOV_MIN, SkyGlobe } from '../gl/SkyGlobe'
-import type { GlobeView } from '../gl/SkyGlobe'
+import type { GlobeGround, GlobeView } from '../gl/SkyGlobe'
+import { parseConstellations } from '../gl/globe/constellations'
+import type { Constellation } from '../gl/globe/constellations'
+import { SEOUL, isAboveSkyline, observerFrame } from '../gl/globe/horizon'
 import { MAP_CHANNELS, SPHEREX_HIPS, sesame } from '../lib/sky'
 import { parseCoords } from '../lib/coords'
 import type { Radec } from '../lib/coords'
 import { useL } from '../lib/i18n'
+import { useTime } from '../store'
+import { readView, writeView } from '../lib/urlState'
+import { notifyShell } from '../lib/integration'
+import { SKY_PREF_CONSTELLATIONS, SKY_PREF_GROUND, planetariumMessage, readSkyPref, writeSkyPref } from '../lib/skyView'
 import { DETECTORS } from './PhotometryPanel'
 import { Badge } from './Badge'
 
@@ -33,19 +40,42 @@ const detectorOf = (um: number) => (um < 1.095 ? 1 : um < 1.625 ? 2 : um < 2.415
 
 type Pick = { ra: number; dec: number; name?: string }
 
-export function SkyPanel({ index, currentId, onOpenTarget, onPatch }: {
+// Constellation figures (a guide drawing, not SPHEREx data): fetched once when the Find stage first opens.
+// A failed fetch is not cached, so the next visit tries again.
+let figures: Promise<Constellation[]> | null = null
+function loadFigures(): Promise<Constellation[]> {
+  figures ??= fetch(`${import.meta.env.BASE_URL}data/sky/constellations.json`)
+    .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json() })
+    .then((j) => { const list = parseConstellations(j); if (!list) throw new Error('bad constellation file'); return list })
+    .catch((e) => { figures = null; throw e })
+  return figures
+}
+
+export function SkyPanel({ index, currentId, onOpenTarget, onPatch, embedded = false }: {
   index: TargetsIndex
+  embedded?: boolean
   currentId: string | null
   onOpenTarget: (id: string) => void
   onPatch: (c: Radec, fov: number, label?: string) => void
 }) {
   const L = useL()
+  const lang = useTime((s) => s.lang)
+  const suspended = useTime((s) => s.suspended)
   const box = useRef<HTMLDivElement>(null)
+  const readRef = useRef<HTMLDivElement>(null)
+  const zoomRef = useRef<HTMLDivElement>(null)
+  // `sky=<ra>,<dec>,<fov>` in the URL opens the globe on that sky (a link shared from here or the planetarium)
+  const [initialSky] = useState(() => readView().sky)
+  const [constOn, setConstOn] = useState(() => readSkyPref(SKY_PREF_CONSTELLATIONS, true))
+  const [groundOn, setGroundOn] = useState(() => readSkyPref(SKY_PREF_GROUND, false))
+  const [figuresFailed, setFiguresFailed] = useState(false)
+  const [gs, setGs] = useState<GlobeGround>(() => ({ on: false, epochMs: Date.now() }))
+  const [onScreen, setOnScreen] = useState(true)
   const globe = useRef<SkyGlobe | null>(null)
   const targets = useMemo(() => index.targets.filter((t) => t.ra !== undefined && t.dec !== undefined && t.status === 'ok'), [index])
   const start = targets.find((t) => t.id === currentId) ?? targets[0]
   const [ci, setCi] = useState(() => Math.max(0, MAP_CHANNELS.findIndex((c) => c.um >= 1.2)))
-  const [view, setView] = useState<GlobeView>({ ra: start?.ra ?? 83.8, dec: start?.dec ?? -1.2, fovDeg: 40 })
+  const [view, setView] = useState<GlobeView>(initialSky ? { ra: initialSky.ra, dec: initialSky.dec, fovDeg: initialSky.fov } : { ra: start?.ra ?? 83.8, dec: start?.dec ?? -1.2, fovDeg: 40 })
   const [status, setStatus] = useState({ loaded: 0, pending: 0, failed: 0, order: 0, note: '' })
   const [picked, setPicked] = useState<Pick | null>(null)
   const [query, setQuery] = useState('')
@@ -55,26 +85,63 @@ export function SkyPanel({ index, currentId, onOpenTarget, onPatch }: {
 
   useEffect(() => {
     const el = box.current!
-    const g = new SkyGlobe(el, { baseUrl: SPHEREX_HIPS, view: { ra: start?.ra, dec: start?.dec, fovDeg: 40 }, channel: MAP_CHANNELS[ci].channel })
+    const first = initialSky ? { ra: initialSky.ra, dec: initialSky.dec, fovDeg: initialSky.fov } : { ra: start?.ra, dec: start?.dec, fovDeg: 40 }
+    const g = new SkyGlobe(el, { baseUrl: SPHEREX_HIPS, view: first, channel: MAP_CHANNELS[ci].channel, ground: groundOn })
     globe.current = g
+    g.setConstellationsVisible(constOn)
+    g.setConstellationLang(useTime.getState().lang)
+    g.setLabelAvoid([readRef.current, zoomRef.current].filter((x): x is HTMLDivElement => !!x))
+    setGs(g.getGroundState())
+    let live = true
+    loadFigures().then((list) => { if (live) { setFiguresFailed(false); g.setConstellations(list) } }, () => { if (live) setFiguresFailed(true) })
     const offPick = g.on('pick', (p) => {
       const t = p.markerId ? targets.find((x) => x.id === p.markerId) : undefined
       setPicked({ ra: t?.ra ?? p.ra, dec: t?.dec ?? p.dec, name: t?.display_name })
     })
-    const offView = g.on('view', (v) => setView(v))
+    // the view goes into the URL 400 ms after it settles (same path as the other view parameters)
+    let urlTimer = 0
+    const offView = g.on('view', (v) => {
+      setView(v)
+      clearTimeout(urlTimer)
+      urlTimer = window.setTimeout(() => writeView({ sky: v }), 400)
+    })
+    const offGround = g.on('ground', (x) => setGs(x))
+    // the ground clock only runs while the map is on screen
+    const io = typeof IntersectionObserver !== 'undefined' ? new IntersectionObserver((es) => setOnScreen(es.some((e) => e.isIntersecting))) : null
+    io?.observe(el)
     const timer = window.setInterval(() => {
       const s = g.getStatus()
       setStatus({ loaded: s.tilesLoaded, pending: s.tilesPending, failed: s.tilesFailed, order: s.order, note: s.note })
     }, 700)
     const ro = new ResizeObserver(() => g.resize())
     ro.observe(el)
-    return () => { offPick(); offView(); clearInterval(timer); ro.disconnect(); g.dispose(); globe.current = null }
+    return () => {
+      live = false
+      offPick(); offView(); offGround(); clearInterval(timer); clearTimeout(urlTimer); ro.disconnect(); io?.disconnect(); g.dispose(); globe.current = null
+      // leaving Find: the next visit starts from the target again, as before
+      writeView({ sky: null })
+    }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     globe.current?.setMarkers(targets.map((t) => ({ id: t.id, ra: t.ra!, dec: t.dec!, label: t.display_name, color: t.id === currentId ? '#ffd34d' : '#9fe8d0' })))
   }, [targets, currentId])
   useEffect(() => { globe.current?.setChannel(MAP_CHANNELS[ci].channel) }, [ci])
+  useEffect(() => { globe.current?.setConstellationsVisible(constOn); writeSkyPref(SKY_PREF_CONSTELLATIONS, constOn) }, [constOn])
+  useEffect(() => { globe.current?.setGround(groundOn); writeSkyPref(SKY_PREF_GROUND, groundOn) }, [groundOn])
+  useEffect(() => { globe.current?.setActive(onScreen && !suspended) }, [onScreen, suspended])
+  useEffect(() => {
+    globe.current?.setConstellationLang(lang)
+    globe.current?.setGroundLabels({
+      compass: L('북,동,남,서', 'N,E,S,W').split(','),
+      ariaAllLabel: L('전천 지도. 끌어서 이동하고 스크롤하거나 두 손가락으로 확대·축소합니다. 방향키로 움직이고 플러스와 마이너스 키로 확대·축소합니다.', 'All-sky map. Drag to pan, scroll or pinch to zoom, arrow keys to move, plus and minus to zoom.'),
+      ariaLabel: L('지표면이 있는 서울의 하늘. 끌어서 이동하고 스크롤하거나 두 손가락으로 확대·축소합니다. 방향키로 움직이거나 플러스와 마이너스 키로 확대·축소할 수도 있습니다.', 'Sky over Seoul with the ground. Drag to pan, scroll or pinch to zoom, arrow keys to move, plus and minus to zoom.'),
+    })
+  }, [lang]) // eslint-disable-line react-hooks/exhaustive-deps
+  const toPlanetarium = () => {
+    const v = globe.current?.getView() ?? view
+    notifyShell(planetariumMessage(v))
+  }
 
   const go = (p: Pick, fovDeg = 2) => { globe.current?.lookAt({ ra: p.ra, dec: p.dec }, fovDeg); setPicked(p) }
   const find = async (e: React.FormEvent) => {
@@ -98,22 +165,34 @@ export function SkyPanel({ index, currentId, onOpenTarget, onPatch }: {
   }
   const ch = MAP_CHANNELS[ci]
   const det = detectorOf(ch.um)
+  // ground view: the picked position is under Seoul's horizon (or behind the skyline) at the globe's clock
+  const below = !!picked && gs.on && !isAboveSkyline(observerFrame(gs.epochMs, SEOUL), picked.ra, picked.dec)
+  const fmtAlt = (a: number) => { const r = Math.round(a * 10) / 10; return `${r >= 0 ? '+' : '−'}${Math.abs(r).toFixed(1)}` }
   const near = picked ? targets.map((t) => ({ t, d: sep(picked, { ra: t.ra!, dec: t.dec! }) })).sort((a, b) => a.d - b.d)[0] : null
 
   return (
     <section className="sky-panel" data-testid="sky-panel">
       <div className="sky-globe">
         <div className="globe-box" ref={box} data-testid="sky-globe" aria-label={L('SPHEREx 전천 천구: 끌어서 돌리고, 휠로 확대하고, 눌러서 좌표를 고릅니다', 'SPHEREx all-sky globe: drag to turn, scroll to zoom, click to pick a position')} />
-        <div className="globe-zoom" role="group" aria-label={L('확대', 'Zoom')}>
+        <div className="globe-zoom" ref={zoomRef} role="group" aria-label={L('확대', 'Zoom')}>
           <button onClick={() => zoom(0.6)} aria-label={L('확대', 'Zoom in')}>+</button>
           <button onClick={() => zoom(1 / 0.6)} aria-label={L('축소', 'Zoom out')}>−</button>
         </div>
-        <div className="globe-read" data-testid="sky-view">
-          {fmtHms(view.ra)} {fmtDms(view.dec)} · {L('시야', 'field')} {view.fovDeg.toFixed(view.fovDeg < 10 ? 1 : 0)}°
+        {/* ground on: the read-out moves to the top (the ground fills the bottom) and gives azimuth and altitude, as in TrueBlink */}
+        <div className={`globe-read${gs.on ? ' on-ground' : ''}`} ref={readRef} data-testid="sky-view">
+          {gs.on && view.azDeg !== undefined && view.altDeg !== undefined
+            ? <span data-testid="sky-azalt">{L(`방위각 ${view.azDeg.toFixed(1)}° · 고도 ${fmtAlt(view.altDeg)}°`, `Az ${view.azDeg.toFixed(1)}° · Alt ${fmtAlt(view.altDeg)}°`)}</span>
+            : <>{fmtHms(view.ra)} {fmtDms(view.dec)} · {L('시야', 'field')} {view.fovDeg.toFixed(view.fovDeg < 10 ? 1 : 0)}°</>}
         </div>
       </div>
 
       <aside className="sky-side">
+        {embedded && (
+          <div className="mode-switch sky-mode" role="group" aria-label={L('천구 보기 방식', 'Sky view')} data-testid="sky-mode">
+            <button type="button" className="on" aria-pressed="true" data-testid="sky-mode-spherex">{L('SPHEREx 천구', 'SPHEREx sky')}</button>
+            <button type="button" aria-pressed="false" onClick={toPlanetarium} data-testid="sky-mode-planetarium">{L('플라네타리움', 'Planetarium')}</button>
+          </div>
+        )}
         <form className="sky-find" onSubmit={find} data-testid="sky-find">
           <label htmlFor="sky-q">{L('좌표나 이름으로 찾기', 'Find by coordinates or name')}</label>
           <div className="row">
@@ -130,10 +209,25 @@ export function SkyPanel({ index, currentId, onOpenTarget, onPatch }: {
           <div className="sky-ruler" aria-hidden><span>0.75</span><span>5.0 µm</span></div>
         </div>
 
+        <div className="sky-overlays" data-testid="sky-overlays">
+          <h3>{L('하늘 표시', 'Sky overlays')}</h3>
+          <label className="check"><input type="checkbox" checked={constOn} onChange={(e) => setConstOn(e.target.checked)} data-testid="sky-constellations" />{L('별자리 선과 이름', 'Constellation lines and names')}</label>
+          {figuresFailed && <p className="dim small" data-testid="sky-constellations-failed">{L('별자리 자료를 불러오지 못했습니다', 'Could not load the constellation figures')}</p>}
+          <label className="check"><input type="checkbox" checked={groundOn} onChange={(e) => setGroundOn(e.target.checked)} data-testid="sky-ground" />{L('지면 (서울, 지금)', 'Ground (Seoul, now)')}</label>
+          {constOn && !figuresFailed && <p className="dim small">{L('별자리 선은 길잡이 그림이고 SPHEREx 자료가 아닙니다.', 'Constellation figures are a guide drawing, not SPHEREx data.')} <Badge kind="catalog" /></p>}
+          {groundOn && <p className="dim small">{L('서울(37.57°N, 126.98°E)의 지금 하늘입니다. 지평선 아래는 땅으로 가립니다.', 'The sky over Seoul (37.57°N, 126.98°E) right now. The ground covers what is below the horizon.')}</p>}
+        </div>
+
         {picked ? (
           <div className="sky-pick" data-testid="sky-pick">
             <h3>{picked.name ?? L('고른 위치', 'Picked position')}</h3>
             <p className="coord">{fmtHms(picked.ra)} {fmtDms(picked.dec)}<br /><span className="dim small">{picked.ra.toFixed(5)}°, {picked.dec >= 0 ? '+' : ''}{picked.dec.toFixed(5)}°</span></p>
+            {below && (
+              <p className="small sky-below" role="status" data-testid="sky-below-horizon">
+                {L('고른 위치는 지금 서울의 지평선 아래에 있습니다.', "The picked position is below Seoul's horizon right now.")}{' '}
+                <button type="button" className="link" onClick={() => setGroundOn(false)}>{L('지면 끄기', 'Turn the ground off')}</button>
+              </p>
+            )}
             {near && near.d < 0.3 ? (
               <button className="primary" onClick={() => onOpenTarget(near.t.id)} data-testid="sky-open-target">
                 {L(`${near.t.display_name} 분석 열기`, `Open ${near.t.display_name} analysis`)}

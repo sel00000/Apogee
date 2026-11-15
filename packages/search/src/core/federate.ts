@@ -35,6 +35,9 @@ export interface FedItem {
   origin: 'engine' | 'sesame' | 'imcce' | 'simbad';
   /** True when the model chose the name or plan that led to this item: show it as a choice, with that label. */
   viaModel: boolean;
+  /** Engine items: the English and Korean names of the object, so the screen can order them by language. */
+  nameEn?: string;
+  nameKo?: string | null;
   id?: string;
   ra?: number;
   dec?: number;
@@ -75,7 +78,7 @@ function msg(e: unknown): string {
 }
 
 function fromSuggestion(s: Suggestion, viaModel: boolean): FedItem {
-  return { label: s.label, origin: 'engine', viaModel, id: s.object.id, ra: s.object.ra, dec: s.object.dec, otype: s.object.otypeLabel };
+  return { label: s.label, nameEn: s.object.name, nameKo: s.label !== s.object.name ? s.label : s.object.ko, origin: 'engine', viaModel, id: s.object.id, ra: s.object.ra, dec: s.object.dec, otype: s.object.otypeLabel };
 }
 function fromPosition(p: NamedPosition, viaModel: boolean): FedItem {
   return { label: p.name, origin: 'sesame', viaModel, ra: p.ra, dec: p.dec };

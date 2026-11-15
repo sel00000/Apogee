@@ -332,7 +332,7 @@ select,
 .field-note, .panel-footer, .panel-footer a { font-size: 12px; }
 .time-controls .button, .time-settings .speed-display { min-height: 37px; }
 .quality-section { gap: 12px; }
-.quality-section select { width: 154px; }
+.quality-section select { width: auto; flex: 1 1 154px; min-width: 0; max-width: 200px; }
 .coordinates-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 48px; }
 .engine-status, .observation-status, .status-fov strong { font-size: 14px; }
 .status-fov > span { font-size: 12px; }

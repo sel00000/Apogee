@@ -27,6 +27,16 @@
 .sg-text-button,.sg-skip{background:none;border:0;padding:7px 3px;color:var(--sg-muted,#c1d1df);border-radius:4px;font-size:12px!important;}
 .sg-text-button:hover,.sg-skip:hover{color:var(--sg-ink,#fff);}
 .sg-skip{color:#eee7d9;white-space:nowrap;}
+.sg-top-actions>.sg-text-button{white-space:nowrap;}
+/* Language switch (spec-i18n D2): the portal's two-segment EN | 한 control, built from this guide's button tokens. */
+.sg-lang{display:inline-flex;flex-shrink:0;border:1px solid #496078;border-radius:9px;overflow:hidden;background:#142334;}
+.sky-guide .sg-lang-option{min-width:40px;min-height:34px;padding:0 10px;border:0;border-radius:0;background:none;color:var(--sg-muted);font-size:12px!important;font-weight:650;line-height:1;}
+.sky-guide .sg-lang-option+.sg-lang-option{border-left:1px solid #496078;}
+.sky-guide .sg-lang-option:hover{color:var(--sg-ink);}
+.sky-guide .sg-lang-option[aria-pressed=true]{background:#133130;color:var(--sg-cyan);}
+.sky-guide .sg-lang-option:focus-visible{outline-offset:-3px;}
+@media(max-width:600px),(max-height:500px),(pointer:coarse){.sky-guide .sg-lang-option{min-height:40px;padding:0 9px;}}
+.sg-sr-only{position:absolute!important;width:1px;height:1px;margin:-1px!important;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0;}
 .sg-eyebrow{font:600 10px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace!important;letter-spacing:.11em;color:var(--sg-gold);text-transform:uppercase;}
 .sg-title{font-size:clamp(24px,3vw,34px);line-height:1.35;letter-spacing:-.04em;font-weight:750;color:var(--sg-ink);outline:none;}
 .sg-title:focus-visible{outline:none;}
@@ -160,7 +170,7 @@
   .sg-top{padding:10px 14px;gap:7px;}
   .sg-brand{font-size:9px;letter-spacing:.03em;gap:6px;}
   .sg-brand-star{font-size:19px;}
-  .sg-top-actions{gap:10px;}
+  .sg-top-actions{gap:8px;}
   .sg-text-button,.sg-skip{font-size:11px!important;}
   .sg-chooser{display:block;}
   .sg-intro{display:grid;grid-template-columns:78px 1fr;gap:0 15px;align-items:center;text-align:left;padding:15px 19px;border-right:0;border-bottom:1px solid var(--sg-line);}

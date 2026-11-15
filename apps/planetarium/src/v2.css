@@ -89,7 +89,8 @@ input:focus, select:focus { box-shadow: 0 0 0 2px rgba(233, 196, 143, .45); }
 .reference-observation { border-top-color: var(--line); }
 
 @media (max-width: 720px) {
-  .control-panel { left: 12px; right: 12px; width: auto; }
+  /* the right edge clears the view-control column (about 52 px wide at right: 12px) */
+  .control-panel { left: 12px; right: 70px; width: auto; }
   .selection-panel { right: 12px; left: 12px; width: auto; top: auto; bottom: 74px; }
 }
 

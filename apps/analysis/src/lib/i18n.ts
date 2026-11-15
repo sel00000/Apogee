@@ -18,6 +18,7 @@ const DATA_EN: [RegExp, string][] = [
   [/^중심 포화 — 바깥 고리 밝기\(상대값\)만$/, 'saturated core: ring brightness (relative) only'],
   [/^중심 픽셀 결측\(포화\)$/, 'core pixels missing (saturated)'],
   [/^가장자리$/, 'frame edge'],
+  [/^짧은 파장\(D1–D4\)은 근처 별 빛이 지배해 중심이 1\.2–1\.8 px 끌려감 → WISE 0855가 밝은 D5–D6\(3\.8–5\.0 µm\)만 사용$/, 'At short wavelengths (D1–D4) light from a nearby star dominates and pulls the centroid by 1.2–1.8 px, so only D5–D6 (3.8–5.0 µm), where WISE 0855 is bright, are used'],
 ]
 export function dataText(s: string, L: L): string {
   const en = L('', 'en') === 'en'

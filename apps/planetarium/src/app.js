@@ -6,6 +6,8 @@ import { createAnalysisPicker } from './analysis-picker.js';
 import { integrationPaused, registerIntegration, shareView } from './integration.js';
 import { sanitizeViewState } from './view-state.js';
 import { mountSupplemental } from './supplemental.js';
+import { getLang, locale, onLangChange, t } from './i18n.js';
+import { viewCenter } from './view-state.js';
 let analysisPicker = null;
 
 const $ = (selector) => document.querySelector(selector);
@@ -13,15 +15,20 @@ const rad = Math.PI / 180;
 const base = new URL('../', import.meta.url);
 const asset = (path) => new URL(path, base).href;
 const presets = {
-  seoul: { name: '서울', country: '대한민국', cityEnglish: 'Seoul', countryCode: 'KR', latitude: 37.5665, longitude: 126.9780, elevation: 38 },
-  jinju: { name: '진주', country: '대한민국', cityEnglish: 'Jinju', countryCode: 'KR', latitude: 35.1806, longitude: 128.1076, elevation: 28 },
-  busan: { name: '부산', country: '대한민국', cityEnglish: 'Busan', countryCode: 'KR', latitude: 35.1796, longitude: 129.0756, elevation: 30 },
+  seoul: { name: '서울', nameEn: 'Seoul', country: '대한민국', cityEnglish: 'Seoul', countryCode: 'KR', latitude: 37.5665, longitude: 126.9780, elevation: 38 },
+  jinju: { name: '진주', nameEn: 'Jinju', country: '대한민국', cityEnglish: 'Jinju', countryCode: 'KR', latitude: 35.1806, longitude: 128.1076, elevation: 28 },
+  busan: { name: '부산', nameEn: 'Busan', country: '대한민국', cityEnglish: 'Busan', countryCode: 'KR', latitude: 35.1796, longitude: 129.0756, elevation: 30 },
 };
 for (const [id, place] of Object.entries(presets)) place.id = id;
 const countryNamesEnglish = new Intl.DisplayNames(['en'], { type: 'region' });
 const countryAliases = { AU: '호주', KR: '한국 South Korea', KP: '북한 North Korea', US: 'USA 미합중국', GB: 'UK', ZA: '남아공 남아프리카공화국', AE: 'UAE', SA: '사우디' };
-const capitalLocations = capitals.map((capital) => ({ ...capital, name: `${capital.country} · ${capital.city}`, countryEnglish: countryNamesEnglish.of(capital.countryCode), aliases: countryAliases[capital.countryCode], elevation: capital.elevation ?? 0 }))
-  .sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+const capitalLocations = capitals.map((capital) => {
+  const countryEnglish = countryNamesEnglish.of(capital.countryCode) ?? capital.countryCode;
+  return { ...capital, name: `${capital.country} · ${capital.city}`, nameEn: `${countryEnglish} · ${capital.cityEnglish ?? capital.countryCode}`, countryEnglish, aliases: countryAliases[capital.countryCode], elevation: capital.elevation ?? 0 };
+}).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+const capitalLocationsEnglish = [...capitalLocations].sort((a, b) => a.nameEn.localeCompare(b.nameEn, 'en'));
+// Korean names are the original data; English names come from GeoNames and the browser's region names.
+const placeName = (place) => (!place ? '' : place.id === 'custom' || !place.nameEn ? (place.id === 'custom' ? t('location.custom') : place.name) : getLang() === 'ko' ? place.name : place.nameEn);
 const locations = new Map([...Object.values(presets), ...capitalLocations].map((place) => [place.id, place]));
 const customStorageKey = 'stellarium-web-lab.custom-location';
 let customLocation = { latitude: presets.seoul.latitude, longitude: presets.seoul.longitude };
@@ -48,10 +55,15 @@ const objects = [
   { name: '오리온 성운', id: 'M 42', aliases: ['m42', 'm 42', 'orion', '오리온 성운'], type: '성운 · M 42', fov: 5 },
   { name: '플레이아데스', id: 'M 45', aliases: ['m45', 'm 45', 'pleiades', '플레이아데스', '좀생이별'], type: '산개성단 · M 45', fov: 10 },
 ];
+const typeKeys = { '지구의 위성': 'type.moon', 항성: 'type.star', 행성: 'type.planet', '은하 · M 31': 'type.galaxy', '성운 · M 42': 'type.nebula', '산개성단 · M 45': 'type.cluster' };
+const isListed = (item) => objects.includes(item);
+const objectName = (item) => (isListed(item) ? t(`obj.${item.id}`) : item.name ?? item.id);
+const objectType = (item) => (typeKeys[item.type] ? t(typeKeys[item.type]) : item.type);
 let stel;
 let currentLocation = { ...presets.seoul };
 const MAX_TIME_SPEED = 1_000_000;
-const TIME_SPEED_HINT = '입력 후 Enter 또는 다른 칸 클릭 · 음수는 역방향';
+let statusKey = 'status.preparing';
+let loadingKey = 'loading.preparing';
 let speedInputDirty = false;
 let toastTimer;
 let startupTimer;
@@ -68,11 +80,18 @@ let savedSkyView = null;
 const MOLLWEIDE_PROJECTION = 5;
 const normalize = (value) => value.toLocaleLowerCase().replace(/\s+/g, '').trim();
 
+let toastSource = null;
 function toast(message) {
+  toastSource = null;
   $('#toast').textContent = message;
   $('#toast').hidden = false;
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => { $('#toast').hidden = true; }, 5500);
+}
+// A toast built from a dictionary key, so a language switch can re-render it.
+function toastT(key, params) {
+  toast(t(key, params));
+  toastSource = { key, params };
 }
 
 function toLocalInput(date) {
@@ -80,16 +99,18 @@ function toLocalInput(date) {
   return new Date(date.getTime() - offset).toISOString().slice(0, 16);
 }
 
-function fail(message, error) {
+function fail(key, error) {
+  loadingKey = key;
+  statusKey = 'status.error';
   ready = false;
   clearTimeout(startupTimer);
   clearInterval(statusTimer);
   for (const button of document.querySelectorAll('.view-controls button')) button.disabled = true;
   $('#loading-overlay').hidden = false;
   $('#loading-overlay').classList.add('error');
-  $('#loading-message').textContent = message;
+  $('#loading-message').textContent = t(key);
   $('#retry-button').hidden = false;
-  $('#engine-status').textContent = '연결 확인 필요';
+  $('#engine-status').textContent = t(statusKey);
   $('#engine-status').dataset.state = 'error';
   $('#app-controls').disabled = true;
   if (error) console.error(error);
@@ -102,32 +123,37 @@ function changeLocation(location) {
   stel.observer.elevation = location.elevation ?? 0;
   $('#latitude').value = String(location.latitude);
   $('#longitude').value = String(location.longitude);
-  $('#location-status').textContent = `${location.name} · ${Math.abs(location.latitude).toFixed(2)}°${location.latitude >= 0 ? 'N' : 'S'} ${Math.abs(location.longitude).toFixed(2)}°${location.longitude >= 0 ? 'E' : 'W'}`;
+  syncLocationStatus();
   // Nearby bodies have observer-dependent positions even while time is paused.
   analysis.updateSelection();
   updateSelectionMagnitude();
 }
 
+function syncLocationStatus() {
+  const location = currentLocation;
+  $('#location-status').textContent = `${placeName(location)} · ${Math.abs(location.latitude).toFixed(2)}°${location.latitude >= 0 ? 'N' : 'S'} ${Math.abs(location.longitude).toFixed(2)}°${location.longitude >= 0 ? 'E' : 'W'}`;
+}
+
 function populateLocations(query = '') {
   const select = $('#location-preset');
   const previous = select.value || 'seoul';
-  const match = (place) => !query || normalize([place.name, place.country, place.city, place.countryCode, place.cityEnglish, place.countryEnglish, place.aliases].filter(Boolean).join(' ')).includes(normalize(query));
-  select.replaceChildren(new Option('사용자 위치 · 위도/경도 입력', 'custom'));
+  const match = (place) => !query || normalize([place.name, place.nameEn, place.country, place.city, place.countryCode, place.cityEnglish, place.countryEnglish, place.aliases].filter(Boolean).join(' ')).includes(normalize(query));
+  select.replaceChildren(new Option(t('location.customOption'), 'custom'));
   const addGroup = (label, places) => {
     if (!places.length) return;
     const group = document.createElement('optgroup');
     group.label = label;
-    for (const place of places) group.append(new Option(place.name, place.id));
+    for (const place of places) group.append(new Option(placeName(place), place.id));
     select.append(group);
   };
   const nearby = Object.values(presets).filter(match);
-  const matches = capitalLocations.filter(match);
-  addGroup('빠른 위치 · 대한민국', nearby);
-  addGroup('국가·지역별 수도', matches);
+  const matches = (getLang() === 'ko' ? capitalLocations : capitalLocationsEnglish).filter(match);
+  addGroup(t('location.groupNearby'), nearby);
+  addGroup(t('location.groupCapitals'), matches);
   const selected = locations.get(previous);
-  if (selected && ![...nearby, ...matches].some((place) => place.id === previous)) addGroup('현재 선택한 위치', [selected]);
+  if (selected && ![...nearby, ...matches].some((place) => place.id === previous)) addGroup(t('location.groupCurrent'), [selected]);
   select.value = previous;
-  $('#location-search-status').textContent = query ? `${nearby.length + matches.length}개 위치 검색됨` : `국가·지역별 수도 ${capitalLocations.length}곳`;
+  $('#location-search-status').textContent = query ? t(nearby.length + matches.length === 1 ? 'location.foundOne' : 'location.found', { count: nearby.length + matches.length }) : t('location.capitalCount', { count: capitalLocations.length });
 }
 
 function saveCustomLocation(latitude, longitude) {
@@ -137,7 +163,7 @@ function saveCustomLocation(latitude, longitude) {
 
 function syncTime() {
   const date = stel.MJD2date(stel.observer.utc);
-  $('#time-status').textContent = new Intl.DateTimeFormat('ko-KR', {
+  $('#time-status').textContent = new Intl.DateTimeFormat(locale(), {
     month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
     timeZoneName: 'short',
   }).format(date);
@@ -173,11 +199,28 @@ function formatRightAscension(angle) {
 function syncCoordinates() {
   const equatorial = coordinateMode === 'equatorial';
   const [longitude, latitude] = stel.c2s(centerDirection(equatorial ? 'ASTROM' : 'OBSERVED'));
-  $('#coordinate-longitude-label').textContent = equatorial ? '적경 RA' : '방위각 Az';
-  $('#coordinate-latitude-label').textContent = equatorial ? '적위 Dec' : '고도 Alt';
+  $('#coordinate-longitude-label').textContent = t(equatorial ? 'coords.ra' : 'coords.az');
+  $('#coordinate-latitude-label').textContent = t(equatorial ? 'coords.dec' : 'coords.alt');
   $('#coordinate-longitude').textContent = equatorial ? formatRightAscension(longitude) : `${(stel.anp(longitude) / rad).toFixed(3)}°`;
   $('#coordinate-latitude').textContent = `${latitude < 0 ? '−' : '+'}${Math.abs(latitude / rad).toFixed(equatorial ? 6 : 3)}°`;
-  $('#coordinate-reference').textContent = equatorial ? '화면 중심 · ICRS' : '화면 중심 · 지평 좌표';
+  $('#coordinate-reference').textContent = t(equatorial ? 'coords.refIcrs' : 'coords.refHorizon');
+}
+
+// Screen centre for the portal: astrometric ICRS (J2000) degrees and the field of view, in every coordinate mode.
+// While rendering is paused the engine applies a restored direction only on its next frame,
+// so a restore made in that state reports the requested centre until rendering resumes.
+let pendingCenter = null;
+function currentCenter() {
+  if (!stel) return null;
+  if (pendingCenter && $('#sky-canvas').dataset.rendering === 'paused') return { ...pendingCenter, fov: stel.core.fov / rad };
+  pendingCenter = null;
+  try { return viewCenter(centerDirection('ASTROM'), stel.core.fov); } catch { return null; }
+}
+
+function syncCoordinateText() {
+  const equatorial = coordinateMode === 'equatorial';
+  $('#toggle-coordinates').setAttribute('aria-label', t(equatorial ? 'viewControls.toHorizon' : 'viewControls.toEquatorial'));
+  $('#coordinate-hint').textContent = t(viewMode === 'allsky' ? 'coords.hintAllsky' : equatorial ? 'coords.hintEquatorial' : 'coords.hintHorizon');
 }
 
 async function setCoordinateMode(mode, { updateGrid = true } = {}) {
@@ -197,10 +240,7 @@ async function setCoordinateMode(mode, { updateGrid = true } = {}) {
     $('#equatorial-target').hidden = !equatorial;
     $('#center-marker').hidden = !equatorial;
     $('#toggle-coordinates').setAttribute('aria-pressed', String(equatorial));
-    $('#toggle-coordinates').setAttribute('aria-label', equatorial ? '지평 좌표계로 전환' : '천구 좌표계로 전환');
-    $('#coordinate-hint').textContent = equatorial
-      ? '격자·표시·입력·분석 좌표는 ICRS 기준입니다. 지평선 아래는 지표면을 끄고 보세요.'
-      : '관측 위치의 지평선을 기준으로 방위각과 고도를 표시합니다.';
+    syncCoordinateText();
     if (updateGrid) {
       $('#layer-equatorial').checked = equatorial;
       $('#layer-azimuthal').checked = !equatorial;
@@ -229,20 +269,18 @@ function syncViewControls() {
   for (const button of document.querySelectorAll('.view-controls button, [data-view], #map-full-view')) button.disabled = busy;
   for (const button of document.querySelectorAll('[data-view]')) button.setAttribute('aria-pressed', String(button.dataset.view === viewMode));
   $('#toggle-allsky').setAttribute('aria-pressed', String(allsky));
-  $('#toggle-allsky').setAttribute('aria-label', allsky ? '하늘 보기로 돌아가기' : '전천 지도로 전환');
+  $('#toggle-allsky').setAttribute('aria-label', t(allsky ? 'viewControls.toSky' : 'viewControls.toAllsky'));
   $('#toggle-coordinates').disabled = busy || allsky;
   $('#toggle-ground').disabled = busy || allsky;
   $('#coordinate-system').disabled = allsky;
   $('#layer-landscape').disabled = allsky;
   $('#layer-atmosphere').disabled = allsky;
   $('#map-banner').hidden = !allsky;
-  $('#reset-view').title = allsky ? '전천 지도 전체 보기' : '시야 초기화';
+  $('#reset-view').title = t(allsky ? 'viewControls.resetAllsky' : 'viewControls.resetTitle');
   $('#analysis-pick').disabled = busy;
   $('#analysis-field-size').disabled = busy;
-  $('#sky-hint').textContent = document.body.classList.contains('analysis-picking')
-    ? '네모 영역 클릭하여 분석 · Esc로 취소 · 드래그로 이동'
-    : `클릭하여 천체 정보 · 드래그로 ${allsky ? '지도' : '하늘'} 이동 · 스크롤로 확대 / 축소`;
-  if (allsky) $('#coordinate-hint').textContent = '360° 천구를 펼친 지도입니다. 표시·입력·분석 좌표는 ICRS 기준이며, 지형과 대기는 숨깁니다.';
+  $('#sky-hint').textContent = t(document.body.classList.contains('analysis-picking') ? 'skyHint.picking' : allsky ? 'skyHint.allsky' : 'skyHint.sky');
+  if (allsky) $('#coordinate-hint').textContent = t('coords.hintAllsky');
   fitSkyCanvas();
 }
 
@@ -320,7 +358,7 @@ function goToEquatorialCoordinates(event) {
   const ra = $('#target-ra').valueAsNumber;
   const dec = $('#target-dec').valueAsNumber;
   if (!Number.isFinite(ra) || ra < 0 || ra > 24 || !Number.isFinite(dec) || Math.abs(dec) > 90) {
-    toast('적경은 0~24시간, 적위는 −90~+90°로 입력하세요.');
+    toastT('coords.invalid');
     return;
   }
   const direction = stel.s2c((ra % 24) * 15 * rad, dec * rad);
@@ -329,7 +367,7 @@ function goToEquatorialCoordinates(event) {
   // lookAt's direction follows the active mount, including equatorial mode.
   stel.lookAt(stel.convertFrame(stel.observer, 'ASTROM', 'MOUNT', direction), 0.5);
   renderSelection();
-  toast(`적경 ${ra % 24}h · 적위 ${dec}°로 이동합니다.`);
+  toastT('coords.moving', { ra: ra % 24, dec });
 }
 
 function setSpeed(speed) {
@@ -338,7 +376,7 @@ function setSpeed(speed) {
   speedInputDirty = false;
   $('#time-speed-input').value = String(limitedSpeed);
   $('#time-speed-input').removeAttribute('aria-invalid');
-  $('#time-speed-hint').textContent = TIME_SPEED_HINT;
+  $('#time-speed-hint').textContent = t('time.speedHint');
   stel.core.time_speed = limitedSpeed;
   syncSpeedControls();
 }
@@ -350,13 +388,13 @@ function syncSpeedControls() {
   $('#time-forward').classList.toggle('is-active', speed > 0);
   $('#time-backward').disabled = speed <= -MAX_TIME_SPEED;
   $('#time-forward').disabled = speed >= MAX_TIME_SPEED;
-  $('#time-state').textContent = speed === 0 ? '정지' : speed === 1 ? '실시간' : speed > 0 ? '정방향' : '역방향';
+  $('#time-state').textContent = t(speed === 0 ? 'time.stopped' : speed === 1 ? 'time.realtime' : speed > 0 ? 'time.forward' : 'time.reverse');
   const magnitude = Math.abs(speed);
   const multiplier = magnitude > 0 && magnitude < 0.001
     ? Number(magnitude.toPrecision(6)).toExponential()
-    : magnitude.toLocaleString('ko-KR', { maximumSignificantDigits: 6 });
+    : magnitude.toLocaleString(locale(), { maximumSignificantDigits: 6 });
   $('#time-multiplier').textContent = `×${multiplier}`;
-  $('#time-speed').title = `현재 시간 배속: ${speed}`;
+  $('#time-speed').title = t('time.speedTitle', { speed });
   if (!speedInputDirty && document.activeElement !== $('#time-speed-input')) $('#time-speed-input').value = String(speed);
 }
 
@@ -366,7 +404,7 @@ function applyTypedSpeed(reportError = true) {
   const speed = input.valueAsNumber;
   if (!Number.isFinite(speed) || Math.abs(speed) > MAX_TIME_SPEED) {
     input.setAttribute('aria-invalid', 'true');
-    $('#time-speed-hint').textContent = '배속은 −1,000,000~1,000,000 사이의 숫자로 입력하세요.';
+    $('#time-speed-hint').textContent = t('time.speedInvalid');
     if (reportError) input.reportValidity();
     return;
   }
@@ -421,7 +459,7 @@ function layer(name, enabled) {
         dssAdded = true;
       }
       c.dss.visible = enabled;
-      if (enabled) toast('DSS 실제 관측 영상: 시야를 10° 이하로 확대하세요. 인터넷 연결이 필요합니다.');
+      if (enabled) toastT('layers.dssToast');
       break;
   }
 }
@@ -430,17 +468,17 @@ function syncGroundControls() {
   const enabled = Boolean(stel.core.landscapes.visible);
   $('#layer-landscape').checked = enabled;
   $('#toggle-ground').setAttribute('aria-pressed', String(enabled));
-  const label = `지표면 ${enabled ? '끄기' : '켜기'} (G)`;
+  const label = t(enabled ? 'viewControls.groundOff' : 'viewControls.groundOn');
   $('#toggle-ground').setAttribute('aria-label', label);
   $('#toggle-ground').title = label;
 }
 
 function toggleGround() {
   if (!ready) return;
-  if (viewMode === 'allsky') return toast('전천 지도에서는 지표면을 숨깁니다. 하늘 보기로 돌아가면 복원됩니다.');
+  if (viewMode === 'allsky') return toastT('ground.allskyHidden');
   const enabled = !stel.core.landscapes.visible;
   layer('landscape', enabled);
-  toast(enabled ? '지표면을 켰습니다.' : '지표면을 껐습니다. 지평선 아래의 하늘도 볼 수 있습니다.');
+  toastT(enabled ? 'ground.on' : 'ground.off');
 }
 
 function getObject(id) {
@@ -451,7 +489,7 @@ function updateSelectionMagnitude() {
   const object = stel.core.selection;
   const magnitude = object ? object.getInfo('vmag', stel.observer) : NaN;
   const field = $('#selection-magnitude');
-  const text = Number.isFinite(magnitude) ? `겉보기 등급 ${magnitude.toFixed(2)}` : '';
+  const text = Number.isFinite(magnitude) ? t('selection.magnitude', { value: magnitude.toFixed(2) }) : '';
   if (field.textContent !== text) field.textContent = text;
   field.hidden = !text;
 }
@@ -463,10 +501,10 @@ function renderSelection() {
   const names = object.designations().map((name) => name.replace(/^NAME /, ''));
   const known = objects.find((item) => names.includes(item.id));
   const constellation = names.length === 1 ? constellationNames[names[0]] : null;
-  $('#selection-name').textContent = known?.name ?? constellation ?? names[0] ?? '선택한 천체';
+  $('#selection-name').textContent = (known && objectName(known)) ?? constellation ?? names[0] ?? t('selection.default');
   const rows = [];
-  if (constellation) rows.push('별자리');
-  else if (known?.type) rows.push(known.type);
+  if (constellation) rows.push(t('selection.constellation'));
+  else if (known?.type) rows.push(objectType(known));
   if (names.length) rows.push(names.slice(0, 3).join(' · '));
   $('#selection-details').textContent = rows.join('\n');
   updateSelectionMagnitude();
@@ -477,17 +515,17 @@ function selectObject(item) {
   if (!ready) return;
   const object = getObject(item.id);
   if (!object) {
-    toast('현재 포함된 카탈로그에서 찾지 못했습니다. 데이터 로딩 후 다시 시도하거나 달·화성·M 31을 검색하세요.');
+    toastT('selection.notFound');
     return;
   }
   stel.core.selection = object;
   stel.pointAndLock(object, 0.8);
   stel.zoomTo((item.fov ?? 12) * rad, 0.8);
-  $('#search-input').value = item.name ?? item.id;
+  $('#search-input').value = objectName(item);
   $('#search-results').replaceChildren();
   renderSelection();
   if (window.innerWidth < 720) setPanel(false);
-  toast(viewMode === 'allsky' ? `${item.name ?? item.id}(으)로 확대했습니다. ‘전체 보기’를 누르면 전천 지도로 돌아갑니다.` : `${item.name ?? item.id}(으)로 이동했습니다. 지평선 아래 천체는 지형을 끄면 볼 수 있습니다.`);
+  toastT(viewMode === 'allsky' ? 'selection.zoomedAllsky' : 'selection.moved', { name: objectName(item) });
 }
 
 function search(query) {
@@ -495,7 +533,7 @@ function search(query) {
   const container = $('#search-results');
   container.replaceChildren();
   if (!normalized) return;
-  const matches = objects.filter((item) => item.aliases.some((alias) => normalize(alias).includes(normalized)) || normalize(item.name).includes(normalized));
+  const matches = objects.filter((item) => item.aliases.some((alias) => normalize(alias).includes(normalized)) || normalize(item.name).includes(normalized) || normalize(objectName(item)).includes(normalized));
   for (const item of matches.slice(0, 6)) {
     const li = document.createElement('li');
     const button = document.createElement('button');
@@ -503,8 +541,8 @@ function search(query) {
     button.className = 'search-result';
     const label = document.createElement('span');
     const detail = document.createElement('small');
-    label.textContent = item.name;
-    detail.textContent = item.type;
+    label.textContent = objectName(item);
+    detail.textContent = objectType(item);
     button.append(label, detail);
     button.addEventListener('click', () => selectObject(item));
     li.append(button);
@@ -513,7 +551,7 @@ function search(query) {
   if (!matches.length) {
     const li = document.createElement('li');
     li.className = 'search-hint';
-    li.textContent = '추천 목록에 없습니다. 영문 이름 또는 M 31 같은 번호를 입력하고 Enter를 누르세요.';
+    li.textContent = t('search.none');
     container.append(li);
   }
 }
@@ -568,6 +606,7 @@ async function applySharedView(value = new URL(location.href).searchParams) {
     await setCoordinateMode('equatorial');
     const direction = stel.s2c(((targetRa % 360 + 360) % 360) * rad, targetDec * rad);
     stel.lookAt(stel.convertFrame(stel.observer, 'ASTROM', 'MOUNT', direction), 0);
+    pendingCenter = { ra: (targetRa % 360 + 360) % 360, dec: targetDec };
   }
   if (sharedLayers !== null) {
     const names = new Set(sharedLayers.split(','));
@@ -589,7 +628,7 @@ function serializeView() {
 }
 
 async function restoreView(query) {
-  if (!ready) throw new Error('천구가 아직 준비되지 않았습니다.');
+  if (!ready) throw new Error(t('error.notReady'));
   await applySharedView(query);
   for (const input of document.querySelectorAll('[data-layer]')) layer(input.dataset.layer, input.checked);
   syncViewControls(); syncTime(); renderSelection();
@@ -627,7 +666,7 @@ function setupControls() {
     event.preventDefault();
     const query = $('#search-input').value.trim();
     if (!query) return;
-    const item = objects.find((entry) => normalize(entry.name) === normalize(query) || entry.aliases.some((alias) => normalize(alias) === normalize(query)));
+    const item = objects.find((entry) => normalize(entry.name) === normalize(query) || normalize(objectName(entry)) === normalize(query) || entry.aliases.some((alias) => normalize(alias) === normalize(query)));
     selectObject(item ?? { id: query, name: query });
   });
   $('#location-preset').addEventListener('change', (event) => {
@@ -640,7 +679,7 @@ function setupControls() {
     const place = locations.get(event.target.value);
     if (!place) return;
     changeLocation(place);
-    toast(`${place.name}의 위치를 적용했습니다.`);
+    toastT('location.placeApplied', { name: placeName(place) });
   });
   $('#location-search').addEventListener('input', (event) => populateLocations(event.target.value.trim()));
   $('#location-search').addEventListener('keydown', (event) => {
@@ -651,17 +690,17 @@ function setupControls() {
     event.preventDefault();
     const latitude = $('#latitude').valueAsNumber;
     const longitude = $('#longitude').valueAsNumber;
-    if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || Math.abs(latitude) > 90 || Math.abs(longitude) > 180) return toast('위도는 −90~90°, 경도는 −180~180°로 입력하세요.');
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || Math.abs(latitude) > 90 || Math.abs(longitude) > 180) return toastT('location.invalid');
     const preset = locations.get($('#location-preset').value);
     if (!preset) saveCustomLocation(latitude, longitude);
-    changeLocation({ id: preset?.id ?? 'custom', name: preset?.name ?? '사용자 위치', latitude, longitude, elevation: preset?.elevation ?? 0 });
-    toast('관측 위치를 변경했습니다.');
+    changeLocation({ id: preset?.id ?? 'custom', name: preset?.name ?? '사용자 위치', nameEn: preset?.nameEn, latitude, longitude, elevation: preset?.elevation ?? 0 });
+    toastT('location.applied');
   });
   $('#observation-time').addEventListener('input', () => { timeInputDirty = true; });
   $('#time-form').addEventListener('submit', (event) => {
     event.preventDefault();
     const date = new Date($('#observation-time').value);
-    if (!Number.isFinite(date.getTime()) || date.getFullYear() < 1900 || date.getFullYear() > 2100) return toast('1900~2100년 사이의 날짜를 입력하세요.');
+    if (!Number.isFinite(date.getTime()) || date.getFullYear() < 1900 || date.getFullYear() > 2100) return toastT('time.invalidYear');
     stel.observer.utc = stel.date2MJD(date.getTime());
     timeInputDirty = false;
     setSpeed(0);
@@ -673,7 +712,7 @@ function setupControls() {
   $('#time-speed-input').addEventListener('input', () => {
     speedInputDirty = true;
     $('#time-speed-input').removeAttribute('aria-invalid');
-    $('#time-speed-hint').textContent = TIME_SPEED_HINT;
+    $('#time-speed-hint').textContent = t('time.speedHint');
   });
   $('#time-speed-form').addEventListener('submit', (event) => {
     event.preventDefault();
@@ -687,7 +726,7 @@ function setupControls() {
     stel.observer.utc = stel.date2MJD(Date.now());
     setSpeed(1);
     syncTime();
-    toast('현재시간으로 돌아왔습니다. 실시간 ×1로 재생합니다.');
+    toastT('time.backToNow');
   });
   stel.core.change('time_speed', syncSpeedControls);
   for (const input of document.querySelectorAll('[data-layer]')) input.addEventListener('change', () => layer(input.dataset.layer, input.checked));
@@ -709,8 +748,8 @@ function setupControls() {
     if (shareView(state)) return;
     const url = new URL(base);
     url.search = new URLSearchParams(state).toString();
-    try { await navigator.clipboard.writeText(url.href); toast('같은 위치·시간·시야를 여는 링크를 복사했습니다.'); }
-    catch { window.prompt('이 주소를 복사하세요.', url.href); }
+    try { await navigator.clipboard.writeText(url.href); toastT('share.copied'); }
+    catch { window.prompt(t('share.prompt'), url.href); }
   });
   stel.core.change('selection', renderSelection);
 }
@@ -745,12 +784,14 @@ async function onReady(engine) {
       canInteract: () => !integrationPaused() && document.documentElement.dataset.skyTutorialActive !== 'true' && ready && !coordinateTransition && !viewTransition && !$('#help-dialog').open && !$('#analysis-dialog').open,
     });
     syncViewControls();
+    syncCoordinateText();
     $('#loading-overlay').hidden = true;
-    $('#engine-status').textContent = '하늘 탐색 중';
+    statusKey = 'status.ready';
+    $('#engine-status').textContent = t(statusKey);
     $('#engine-status').dataset.state = 'ready';
     syncTime();
     registerIntegration({
-      getState: () => ({ ready, viewMode, coordinateMode, query: serializeView(), selected: $('#selection-name').textContent, selection: !!stel.core.selection, statusPolling: !!statusTimer, rendering: $('#sky-canvas').dataset.rendering }),
+      getState: () => ({ ready, viewMode, coordinateMode, center: currentCenter(), query: serializeView(), selected: $('#selection-name').textContent, selection: !!stel.core.selection, statusPolling: !!statusTimer, rendering: $('#sky-canvas').dataset.rendering }),
       restoreState: restoreView,
       onPauseChanged: syncRendering,
       focusObject: id => selectObject(objects.find(item => item.id === id) || { id, name: id }),
@@ -760,10 +801,10 @@ async function onReady(engine) {
       await setCoordinateMode('equatorial');
       stel.core.selection = null; stel.core.lock = null; renderSelection();
       stel.lookAt(stel.convertFrame(stel.observer, 'ASTROM', 'MOUNT', stel.s2c(ra * rad, dec * rad)), .8);
-      stel.zoomTo(12 * rad, .8); toast(`${label} 관측 좌표로 이동했습니다.`);
+      stel.zoomTo(12 * rad, .8); toastT('supp.moved', { label });
     }).catch(error => console.warn('Supplemental observation links', error));
     if (window.innerWidth < 720) setPanel(false);
-  } catch (error) { fail('하늘을 초기화하지 못했습니다. 새로고침 후 다시 시도해 주세요.', error); }
+  } catch (error) { fail('error.init', error); }
 }
 
 for (const button of document.querySelectorAll('.view-controls button')) button.disabled = true;
@@ -776,22 +817,22 @@ $('#fullscreen-button').addEventListener('click', async () => {
   try {
     if (document.fullscreenElement) await document.exitFullscreen();
     else await document.documentElement.requestFullscreen();
-  } catch { toast('이 브라우저에서는 전체 화면을 사용할 수 없습니다.'); }
+  } catch { toastT('fullscreen.unavailable'); }
 });
 $('#sky-canvas').addEventListener('webglcontextlost', (event) => {
   event.preventDefault();
   ready = false;
-  fail('그래픽 연결이 중단되었습니다. 다른 무거운 탭을 닫고 다시 시작해 주세요.');
+  fail('error.contextLost');
 });
 
 async function start() {
-  if (location.protocol === 'file:') return fail('Start-Web.cmd를 실행해 주세요. WebAssembly는 HTTP 서버에서 열어야 합니다.');
-  if (!window.WebAssembly) return fail('WebAssembly를 지원하는 최신 Chrome 또는 Edge에서 열어 주세요.');
+  if (location.protocol === 'file:') return fail('error.fileProtocol');
+  if (!window.WebAssembly) return fail('error.noWasm');
   const probe = document.createElement('canvas');
   const context = probe.getContext('webgl') || probe.getContext('experimental-webgl');
-  if (!context) return fail('WebGL을 사용할 수 없습니다. 브라우저의 그래픽 가속을 켜고 다시 시작해 주세요.');
+  if (!context) return fail('error.noWebgl');
   context.getExtension('WEBGL_lose_context')?.loseContext();
-  startupTimer = setTimeout(() => fail('로딩이 지연되고 있습니다. 서버 연결을 확인하고 다시 시도해 주세요.'), 45000);
+  startupTimer = setTimeout(() => fail('error.slow'), 45000);
   try {
     await new Promise((resolve, reject) => {
       const script = document.createElement('script');
@@ -800,15 +841,16 @@ async function start() {
       script.onerror = () => reject(new Error('Engine script failed to load'));
       document.head.append(script);
     });
-    $('#loading-message').textContent = '천체 엔진과 하늘 데이터를 불러오는 중…';
+    loadingKey = 'loading.engine';
+    $('#loading-message').textContent = t(loadingKey);
     const engine = window.StelWebEngine({
       wasmFile: asset('engine/stellarium-web-engine.wasm'), canvas: $('#sky-canvas'), maxPixelRatio: 1.5,
       translateFn: (_domain, text) => text,
       onReady,
-      onAbort: (reason) => fail('천체 엔진을 실행하지 못했습니다. 브라우저와 WASM 파일을 확인해 주세요.', reason),
+      onAbort: (reason) => fail('error.abort', reason),
     });
-    if (engine?.catch) engine.catch((error) => fail('WebAssembly를 불러오지 못했습니다. 서버 연결을 확인해 주세요.', error));
-  } catch (error) { fail('엔진 파일을 찾을 수 없습니다. npm run build 후 다시 실행해 주세요.', error); }
+    if (engine?.catch) engine.catch((error) => fail('error.wasmLoad', error));
+  } catch (error) { fail('error.engineMissing', error); }
 }
 function syncRendering() {
   // Keep the sky and its selection in memory, but stop GPU/CPU work while covered.
@@ -820,9 +862,47 @@ function syncRendering() {
   stel.setRenderPaused(paused);
   $('#sky-canvas').dataset.rendering = paused ? 'paused' : 'running';
 }
+// Switching language rewrites texts only: sky, time, selection, open panels and camera stay as they are.
+function relocalize() {
+  $('#engine-status').textContent = t(statusKey);
+  $('#loading-message').textContent = t(loadingKey);
+  if (toastSource && !$('#toast').hidden) $('#toast').textContent = t(toastSource.key, toastSource.params);
+  populateLocations($('#location-search').value.trim());
+  syncLocationStatus();
+  analysisPicker?.relabel();
+  analysis.relabel();
+  if (!stel || !ready) return relocalizeStartup();
+  syncCoordinateText();
+
+  syncViewControls();
+  syncGroundControls();
+  syncSpeedControls();
+  $('#time-speed-hint').textContent = t($('#time-speed-input').getAttribute('aria-invalid') === 'true' ? 'time.speedInvalid' : 'time.speedHint');
+  syncTime();
+  renderSelection();
+  if ($('#search-results').children.length) search($('#search-input').value);
+}
+// Texts that scripts write before the engine is ready (the static ones follow data-i18n).
+function relocalizeStartup() {
+  $('#engine-status').textContent = t(statusKey);
+  $('#loading-message').textContent = t(loadingKey);
+  $('#time-status').textContent = t('time.statusPreparing');
+  $('#time-state').textContent = t('time.realtime');
+  $('#time-speed-hint').textContent = t('time.speedHint');
+  $('#coordinate-reference').textContent = t('coords.refHorizon');
+  $('#coordinate-longitude-label').textContent = t('coords.az');
+  $('#coordinate-latitude-label').textContent = t('coords.alt');
+  $('#coordinate-hint').textContent = t('coords.hintHorizon');
+  syncCoordinateText();
+  $('#sky-hint').textContent = t('skyHint.sky');
+  $('#selection-name').textContent = t('selection.default');
+  $('#analysis-pick-hint').textContent = t('picker.normalHint');
+}
+onLangChange(relocalize);
 const analysis = createAnalysisController({ getEngine: () => stel, notify: toast, onVisibilityChange: syncRendering });
 document.addEventListener('visibilitychange', syncRendering);
 window.addEventListener('sky-tutorial-visibility', syncRendering);
 window.addEventListener('pagehide', () => stel?.setRenderPaused?.(true));
 window.addEventListener('pageshow', syncRendering);
+relocalizeStartup();
 start();

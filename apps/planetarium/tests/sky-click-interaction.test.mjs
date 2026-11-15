@@ -74,7 +74,7 @@ test('a short DOM click opens the exact canvas-local coordinates even without a 
   assert.equal(h.opened.length, 1);
   assert.ok(Math.abs(h.opened[0].ra - 36.86989764584402) < 1e-9);
   assert.equal(h.opened[0].dec, 0);
-  assert.equal(h.opened[0].label, '클릭한 하늘 영역');
+  assert.equal(h.opened[0].label, 'Clicked sky region');
 });
 
 test('the native click callback only consumes nearest-object selection and never opens analysis twice', () => {

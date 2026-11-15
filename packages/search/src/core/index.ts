@@ -3,6 +3,7 @@
 // Every searchable name of an object becomes an Entry; entries are numbered in object popularity order
 // (the baked objects are sorted by nbref, descending), so every posting list is already popularity-sorted.
 
+import { SearchError } from '../i18n';
 import { compact, displayId, normalize, starNameVariants, tokens } from './normalize';
 import { hasHangul, initials, toJamo } from './hangul';
 import { NgramIndex } from './fuzzy';
@@ -19,12 +20,12 @@ export interface SkyIndexData {
 
 /** Reject a stale HTML response, unsupported schema or malformed catalogue at the load boundary. */
 export function validateIndexData(value: unknown): asserts value is SkyIndexData {
-  if (!value || typeof value !== 'object') throw new Error('검색 목록이 올바른 JSON 객체가 아닙니다.');
+  if (!value || typeof value !== 'object') throw new SearchError('indexNotObject');
   const data = value as SkyIndexData;
-  if (data.v !== 1) throw new Error('지원하지 않는 검색 목록 버전입니다.');
+  if (data.v !== 1) throw new SearchError('indexVersion');
   if (!data.otypes || typeof data.otypes !== 'object' || Array.isArray(data.otypes)
     || Object.values(data.otypes).some(v => typeof v !== 'string') || !Array.isArray(data.objects)) {
-    throw new Error('검색 목록의 자료 형식이 올바르지 않습니다.');
+    throw new SearchError('indexFormat');
   }
   for (let i = 0; i < data.objects.length; i++) {
     const row = data.objects[i];
@@ -34,7 +35,7 @@ export function validateIndexData(value: unknown): asserts value is SkyIndexData
       || (row[3] !== null && typeof row[3] !== 'string') || !Number.isFinite(row[4]) || row[4] < 0
       || !Array.isArray(row[5]) || row[5].some(v => typeof v !== 'string')
       || !Array.isArray(row[6]) || row[6].some(v => typeof v !== 'string')) {
-      throw new Error(`검색 목록 ${i + 1}번째 천체의 좌표 또는 별칭이 올바르지 않습니다.`);
+      throw new SearchError('indexRow', { n: i + 1 });
     }
   }
 }

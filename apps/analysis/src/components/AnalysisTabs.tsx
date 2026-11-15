@@ -10,7 +10,7 @@ import { Badge } from './Badge'
 import { TargetCard } from './TargetCard'
 import { VariableLab } from './VariableExplorer'
 import { SpectrumLab } from './SpectrumLab'
-import { useL } from '../lib/i18n'
+import { dataText, useL } from '../lib/i18n'
 
 type Meta = TargetMeta & { photometry?: PhotRow[] }
 
@@ -139,7 +139,7 @@ function ProvenancePanel({ meta }: { meta: TargetMeta }) {
           </tbody>
         </table>
       </div>
-      {meta.notes && meta.notes.length > 0 && <ul className="notes-list">{meta.notes.map((n) => <li key={n}>{n}</li>)}</ul>}
+      {meta.notes && meta.notes.length > 0 && <ul className="notes-list">{meta.notes.map((n) => <li key={n}>{dataText(n, L)}</li>)}</ul>}
     </div>
   )
 }

@@ -123,7 +123,7 @@ test('click targeting converts canvas-local CSS pixels through the current obser
   direction(f.calls[0].vector, [0.8, 0, -0.6, 0]);
   close(target.ra, 270);
   close(target.dec, 45);
-  assert.equal(target.label, '클릭한 하늘 영역');
+  assert.equal(target.label, 'Clicked sky region');
 });
 
 test('an invalid map point never reaches the frame converter or silently targets the center', () => {

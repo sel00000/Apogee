@@ -193,7 +193,7 @@ export function Guides({ open = false }: { open?: boolean }) {
         <LvfDiagram />
         <p>{L('SPHEREx의 필터는 무지개처럼 자리마다 보는 파장이 다릅니다. 망원경이 조금씩 옮겨 가며 찍기 때문에, 같은 별도 노출마다 다른 색(파장)으로 찍힙니다.', 'The SPHEREx filter is a rainbow: each position sees a different wavelength. The telescope steps the sky across it, so the same star is imaged in a different colour in every exposure.')}</p>
         <p>{L('날짜순 깜빡임에는 색에 따른 밝기 차이가 섞입니다. 위 눈금은 검출기의 넓은 파장 범위를 고르는 기능이며, 같은 검출기를 선택해도 픽셀별 파장이 같아지지는 않습니다. 정량 비교에는 실제 파장 응답·PSF·품질·불확도 확인이 필요합니다.', 'Date-order blinking mixes in colour-dependent brightness. The ruler selects a broad detector range; selecting one detector does not make pixel wavelengths identical. Quantitative comparison needs wavelength response, PSF, quality and uncertainty checks.')}</p>
-        <p className="dim small">{L('이 설명과 “같은 것끼리 깜빡이기” 원칙은 팀원 경보의 TrueBlink에서 가져왔습니다.', 'This explanation and the like-with-like principle come from our teammate 경보\'s TrueBlink.')}</p>
+        <p className="dim small">{L('이 설명과 “같은 것끼리 깜빡이기” 원칙은 팀원 경보의 TrueBlink에서 가져왔습니다.', '') || <>This explanation and the like-with-like principle come from our teammate <span lang="ko">경보</span>'s TrueBlink.</>}</p>
       </details>
       <details>
         <summary>{L('지금 보이는 건 뭘까요?', 'What am I looking at?')}</summary>

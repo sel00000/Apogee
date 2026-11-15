@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 import { sanitizeViewState, portalShareUrl } from './view-state.js';
+import { t } from './i18n.js';
 const embedded = typeof window !== 'undefined' && window.parent !== window && typeof location !== 'undefined' && new URLSearchParams(location.search).has('embed');
 let controls = null, paused = false, restoreSequence = Promise.resolve();
 const send = message => { if (embedded) window.parent.postMessage(message, location.origin); };
@@ -36,7 +37,7 @@ if (typeof window !== 'undefined') window.addEventListener('message', event => {
     const query = sanitizeViewState(message.state ?? message.query).toString();
     restoreSequence = restoreSequence.then(() => controls.restoreState(query)).then(() => {
       send({ type: 'spherex-planetarium-restored', requestId: message.requestId, state: controls.getState() });
-    }).catch(error => send({ type: 'spherex-planetarium-error', requestId: message.requestId, message: String(error?.message || '하늘 상태를 복원하지 못했습니다.') }));
+    }).catch(error => send({ type: 'spherex-planetarium-error', requestId: message.requestId, message: String(error?.message || t('error.restore')) }));
   } else if (message.type === 'spherex-planetarium-focus' && controls) {
     const query = sanitizeViewState(message.target).toString();
     if (query) restoreSequence = restoreSequence.then(() => controls.restoreState(query)).catch(() => {});

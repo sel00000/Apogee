@@ -156,7 +156,7 @@ test('a valid field click opens the clicked coordinates once and disarms before 
   assert.equal(h.targets.length, 1);
   assert.equal(h.targets[0].ra, 0);
   assert.equal(h.targets[0].dec, 0);
-  assert.equal(h.targets[0].label, '선택한 네모 영역');
+  assert.equal(h.targets[0].label, 'Selected square field');
   assert.equal(h.targets[0].fovArcsec, 180);
   assert.deepEqual(h.activeAtLaunch, [false]);
   assert.equal(h.element('#analysis-picker-overlay').hidden, true);
@@ -187,7 +187,7 @@ test('a field extending outside the canvas does not launch and can be reposition
   assert.equal(h.selections.length, 0);
   assert.equal(h.picker.active, true);
   assert.equal(h.element('#analysis-picker-overlay').hidden, true);
-  assert.match(h.notices.at(-1), /네모 전체/);
+  assert.match(h.notices.at(-1), /all of it is inside the sky/);
   h.move(500, 400); h.click();
   assert.equal(h.targets.length, 1);
 });
