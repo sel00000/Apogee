@@ -1,4 +1,5 @@
 import type { Body } from './types';
+import {normalizeApiBase} from './api-config';
 
 export interface CatalogItem { id: string; name: string; detail: string; objectId?: string; numberedId?: string; aliases?: string[]; confidence?: string; quality?: string; nSpectralPoints?: number; analysisTimestamp?: string }
 export interface Catalog { schema: string; targets: CatalogItem[]; generatedAt?: string }
@@ -54,13 +55,27 @@ export function artifactUrl(base: string, file: string): string {
   if (url.origin !== parent.origin || !url.pathname.startsWith(parent.pathname) || url.username || url.password || /[\\\u0000]/.test(file) || !/^https?:$/.test(url.protocol)) throw Error('허용되지 않은 결과 파일 경로입니다.');
   return url.href;
 }
-export function sceneDataUrl(value: string|null, origin: string): string|null {
+function jobUrl(value: string|null, origin: string, apiBase: string, leaf: 'scene/'|'result.json'): string|null {
   if (!value) return null;
   try {
-    const url = new URL(value, origin);
-    if (url.origin !== origin || !/^\/api\/asteroid-analysis\/jobs\/[a-f0-9-]{36}\/scene\/$/.test(url.pathname) || url.search || url.hash) return null;
+    const root = normalizeApiBase(apiBase || origin,origin);
+    const trusted = new URL(root);
+    const prefix = trusted.pathname.replace(/\/$/, '');
+    if (/[\\\s%\u0000]/.test(value) || value.startsWith('//')) return null;
+    // The API returns root-relative routes even when deployed behind a prefix.
+    let path = value.replace(/^\/+/, '');
+    if(prefix && path.startsWith(prefix.slice(1)+'/'))path=path.slice(prefix.length);
+    const url = /^https?:\/\//.test(value) ? new URL(value) : new URL(root + '/' + path);
+    const expected = new RegExp('^' + prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '/api/asteroid-analysis/jobs/[a-f0-9-]{36}/' + (leaf === 'scene/' ? 'scene/' : 'result\\.json') + '$');
+    if (url.origin !== trusted.origin || !expected.test(url.pathname) || url.search || url.hash || url.username || url.password || value.split('/').includes('..')) return null;
     return url.href;
   } catch { return null; }
+}
+export function sceneDataUrl(value: string|null, origin: string, apiBase = ''): string|null {
+  return jobUrl(value, origin, apiBase, 'scene/');
+}
+export function jobResultUrl(value: string|null, origin: string, apiBase = ''): string|null {
+  return jobUrl(value, origin, apiBase, 'result.json');
 }
 export function number(value: unknown, digits = 2): string {
   return typeof value === 'number' && Number.isFinite(value) ? value.toLocaleString('ko-KR', {maximumFractionDigits: digits}) : '산출되지 않음';

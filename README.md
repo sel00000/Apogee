@@ -6,7 +6,7 @@
 
 팀 소스 저장소: https://github.com/sel00000/Apogee
 
-GitHub Pages에서는 준비된 관측·소행성 결과, 천구, 검색과 튜토리얼을 제공합니다. 새 좌표의 관측 처리와 새 Python 분석은 로컬 실행에서 사용할 수 있습니다. 공개 웹의 우주 탐험은 원본 Sojourner를 별도 창으로 엽니다.
+GitHub Pages에서는 준비된 관측·소행성 결과, 천구, 검색과 튜토리얼을 제공합니다. 우주 탐험은 공개 HTTPS 중계 서비스를 통해 홈페이지 안에서 실행합니다. 새 좌표의 관측 처리와 새 Python 분석은 로컬 또는 별도로 배포한 Python 서버가 필요합니다. 현재 `deployment/public.json`의 `apiBase`는 서버 계정 연결 전까지 비워 둡니다.
 
 `main`에 push하면 웹 검증과 빌드가 실행됩니다. `jp-feynman/stellarium-web-preview`에서는 Pages 배포까지 이어지고, `sel00000/Apogee`에서는 검증·빌드만 수행합니다. 두 저장소 사이에 자동 동기화는 설정하지 않았습니다.
 
@@ -53,6 +53,8 @@ npm test
 
 ## 배포 범위
 
-이번 구성의 Python 작업 API는 로컬·동일 출처 요청만 허용합니다. `dist`를 정적 호스팅하면 준비된 화면·결과를 볼 수 있지만 새 Python 분석은 실행되지 않습니다. 공개 서비스는 별도 작업 서버, 사용자별 작업 접근 정책과 API 설정이 필요합니다. `HOST=0.0.0.0`만 설정한다고 공개 분석 API가 되는 것은 아닙니다.
+Python 작업 API는 기본적으로 로컬·동일 출처 요청만 허용합니다. 공개 서버는 `SPHEREX_PUBLIC_MODE=1`과 HTTPS 허용 출처를 설정하면 익명 세션별 작업 관리 및 실행 제한을 사용합니다. `Dockerfile`과 `render.yaml`은 무료 서버 테스트용이며, 실행 서버를 실제로 배포한 뒤 `deployment/public.json`의 `apiBase`를 연결해야 합니다. GitHub에 코드를 저장하는 것만으로 Python 서버가 실행되지는 않습니다. [무료 서버 배포와 제한](docs/public-server.md)을 확인하십시오.
+
+우주 탐험의 주소는 같은 파일의 `experienceUrl`입니다. 중계 서비스 원본 코드는 `deployment/experience-worker/index.js`에도 포함되어 있습니다. Worker 소스 수정은 해당 서비스에 별도로 배포해야 반영됩니다.
 
 출처와 구성요소별 라이선스는 각 앱, `docs/sources.json`, 배포본의 `notices`에 보존합니다. Stellarium 대응 소스는 천구 빌드에 포함됩니다. Sojourner는 복구된 배포물이며 전체 앱의 재배포 근거는 별도 확인이 필요한 상태로 기록했습니다.

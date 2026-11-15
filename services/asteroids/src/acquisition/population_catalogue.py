@@ -16,6 +16,7 @@ removed before training, so that no object's own catalogue class or diameter ent
 from __future__ import annotations
 
 import json
+import os
 import time
 from pathlib import Path
 
@@ -24,7 +25,7 @@ import pandas as pd
 import yaml
 
 from ..classification.reference_library import complex_of
-from ..common.config import PROJECT_ROOT, data_sources, resolve, settings
+from ..common.config import PROJECT_ROOT, cache_directory, data_sources, resolve, settings
 from ..common.http import DataAccessError, get_json
 from ..common.provenance import utc_now
 
@@ -45,6 +46,8 @@ SMASSII_TO_BUSDEMEO = {"Sk": "S", "Sl": "S", "Ld": "L"}
 
 
 def catalogue_dir() -> Path:
+    if os.environ.get('SPHEREX_ASTEROID_CACHE_DIR'):
+        return cache_directory('sbdb_physical')
     return resolve(settings()["population_prior"]["catalogue_dir"])
 
 

@@ -1,5 +1,5 @@
 import {describe,it,expect} from 'vitest';
-import {artifactUrl,initialBody,matchTarget,sceneDataUrl,statusLabel,validateCatalog,validateResult} from '../src/research-model';
+import {artifactUrl,initialBody,jobResultUrl,matchTarget,sceneDataUrl,statusLabel,validateCatalog,validateResult} from '../src/research-model';
 import type {Body} from '../src/types';
 
 describe('asteroid workspace target identity',()=>{
@@ -25,4 +25,16 @@ describe('analysis result boundaries',()=>{
     expect(sceneDataUrl('/api/private/','http://localhost:4173')).toBeNull();
   });
   it('distinguishes missing data from pipeline failure',()=>{expect(statusLabel('no_data')).toBe('관측 자료 없음');expect(statusLabel('failed')).toBe('실패');});
+  it('resolves relative and absolute job results against the configured API prefix',()=>{
+    const api='https://science.example/service',origin='https://owner.github.io',route='/api/asteroid-analysis/jobs/00000000-0000-0000-0000-000000000001/result.json';
+    for(const value of [route,route.slice(1),'/service'+route,api+route])expect(jobResultUrl(value,origin,api)).toBe(api+route);
+    expect(artifactUrl(api+route,'spectrum.csv')).toBe(api+route.replace('result.json','spectrum.csv'));
+    expect(artifactUrl(api+route,'spectrum.png')).toBe(api+route.replace('result.json','spectrum.png'));
+  });
+  it('permits remote scenes only at the configured server and deployment prefix',()=>{
+    const api='https://science.example/service',origin='https://owner.github.io',route='/api/asteroid-analysis/jobs/00000000-0000-0000-0000-000000000001/scene/';
+    expect(sceneDataUrl(route,origin,api)).toBe(api+route);
+    expect(sceneDataUrl(api+route,origin,api)).toBe(api+route);
+    for(const value of ['https://evil.example'+route,'https://science.example'+route,'//science.example'+route,route+'?x=1',route+'#x',route.replace('/jobs/','/jobs/../jobs/'),route.replace('/jobs/','/jobs/%2e%2e/jobs/')])expect(sceneDataUrl(value,origin,api)).toBeNull();
+  });
 });

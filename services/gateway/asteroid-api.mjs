@@ -1,10 +1,12 @@
 import { spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { createReadStream } from 'node:fs';
-import { access, mkdir, realpath, stat } from 'node:fs/promises';
+import { access, mkdir, realpath, stat, rm, readdir, lstat } from 'node:fs/promises';
 import { dirname, extname, join, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { exportAsteroidResult } from './asteroid-export.mjs';
+import { boundedNumber } from './public-access.mjs';
+import { requireRuntimeSpace } from './runtime-budget.mjs';
 
 const defaultProjectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const PREFIX = '/api/asteroid-analysis';
@@ -65,7 +67,7 @@ export function validateAsteroidJob(value) {
   return { target, start, end, maxImages };
 }
 
-function bodyJson(req) {
+export function bodyJson(req) {
   if (!/^application\/json(?:\s*;|\s*$)/i.test(req.headers['content-type'] || '')) {
     req.resume();
     return Promise.reject(Object.assign(new Error('Use Content-Type: application/json.'), { status: 415 }));
@@ -144,17 +146,25 @@ export async function probeAsteroidPython(projectRoot, { timeoutMs = 60000 } = {
 
 export function createAsteroidApi({ projectRoot = defaultProjectRoot, probePython, spawnProcess = spawn,
   exportResult = exportAsteroidResult, generateScene, timeoutMs = 30 * 60 * 1000,
-  sceneTimeoutMs = 30 * 60 * 1000, maxJobs = 25 } = {}) {
+  sceneTimeoutMs = 30 * 60 * 1000, maxJobs = 25, access: publicAccess, admission,
+  retentionMs = 6 * 3600_000 } = {}) {
   const root = resolve(projectRoot);
   const scienceRoot = join(root, 'services', 'asteroids');
   const jobsRoot = join(root, 'var', 'jobs', 'asteroids');
   const jobs = new Map();
+  const publicMode = !!publicAccess?.enabled;
+  if (publicMode && !admission) throw Error('Public analysis requires the shared admission controller.');
+  const runtimeLimit = boundedNumber(process.env.SPHEREX_MAX_RUNTIME_BYTES, 512 * 1024 ** 2, 1024 ** 2, 8 * 1024 ** 3);
+  if (publicMode) { timeoutMs = publicAccess.limits.jobTimeoutSeconds * 1000; sceneTimeoutMs = timeoutMs; maxJobs = Math.min(maxJobs, 8); }
   let activeJob = null, activeScene = null, starting = false, closed = false, probe = null, probedAt = 0;
   async function capabilities() {
-    if (!probe || Date.now() - probedAt > 30000) {
+    // Public dependency imports are expensive: cache a successful probe for this
+    // process lifetime and never overlap it with a scientific worker.
+    if (!probe || (!publicMode && Date.now() - probedAt > 30000)) {
+      const release = publicMode ? admission?.acquire('asteroid dependencies') : null;
       probedAt = Date.now();
       probe = Promise.resolve().then(() => probePython ? probePython() : probeAsteroidPython(root))
-        .catch(error => ({ available: false, reason: error.message }));
+        .catch(error => ({ available: false, reason: error.message })).finally(() => release?.());
     }
     return probe;
   }
@@ -184,11 +194,32 @@ export function createAsteroidApi({ projectRoot = defaultProjectRoot, probePytho
       job.killTimer.unref?.();
     }
   }
-  async function startJob(input, python) {
+  async function removeJobDirectory(directory) {
+    // Only UUID directories created under this API's runtime root are removable.
+    const name = directory.slice(resolve(jobsRoot).length + 1);
+    if (resolve(directory) !== join(resolve(jobsRoot), name) || !/^[a-f0-9-]{36}$/.test(name)) throw Error('Invalid cleanup directory.');
+    const info = await lstat(directory).catch(() => null);
+    if (info && info.isDirectory() && !info.isSymbolicLink()) await rm(directory, { recursive: true, force: true });
+  }
+  async function cleanup() {
+    if (!publicMode) return;
+    const entries = await readdir(jobsRoot, { withFileTypes: true }).catch(() => []);
+    for (const entry of entries) {
+      if (!entry.isDirectory() || !/^[a-f0-9-]{36}$/.test(entry.name) || entry.name === activeJob || entry.name === activeScene) continue;
+      const directory = join(jobsRoot, entry.name), info = await lstat(directory).catch(() => null);
+      const job = jobs.get(entry.name);
+      const touched = job ? Date.parse(job.finishedAt || job.createdAt) : info?.mtimeMs;
+      if (Number.isFinite(touched) && Date.now() - touched > retentionMs) { jobs.delete(entry.name); await removeJobDirectory(directory); }
+    }
+  }
+  async function startJob(input, python, owner, release) {
+    await cleanup();
+    if (publicMode) await requireRuntimeSpace(join(root, 'var'), runtimeLimit);
     while (jobs.size >= maxJobs) {
       const removable = [...jobs.values()].find(job => job.id !== activeJob && job.id !== activeScene && !['queued', 'running'].includes(job.status));
       if (!removable) break;
       jobs.delete(removable.id);
+      if (publicMode) await removeJobDirectory(removable.directory);
     }
     const id = randomUUID();
     const directory = join(jobsRoot, id);
@@ -197,7 +228,7 @@ export function createAsteroidApi({ projectRoot = defaultProjectRoot, probePytho
     await mkdir(output, { recursive: true });
     if (closed) throw Object.assign(new Error('Analysis server is shutting down.'), { status: 503 });
     const job = { id, ...input, status: 'queued', createdAt: new Date().toISOString(), logs: [], directory, output, bundle,
-      dbPath: join(directory, 'asteroids.sqlite'), python, scene: { status: 'not_started' }, child: null };
+      dbPath: join(directory, 'asteroids.sqlite'), python, owner, release, scene: { status: 'not_started' }, child: null };
     jobs.set(id, job);
     activeJob = id;
     const args = [...(python.args || []), '-X', 'utf8', '-u', '-B', join(scienceRoot, 'web_bridge.py'),
@@ -208,6 +239,7 @@ export function createAsteroidApi({ projectRoot = defaultProjectRoot, probePytho
       if (finished) return;
       finished = true;
       clearTimeout(job.timer); clearTimeout(job.killTimer);
+      clearInterval(job.storageTimer);
       if (job.status === 'running' || job.status === 'queued') {
         if (reportedFailure) {
           job.status = reportedFailure.status === 'no_data' ? 'no_data' : 'failed';
@@ -231,11 +263,14 @@ export function createAsteroidApi({ projectRoot = defaultProjectRoot, probePytho
       }
       job.finishedAt ||= new Date().toISOString();
       job.child = null;
+      if (publicMode && job.status !== 'completed') await rm(join(job.directory, 'cache'), { recursive:true, force:true }).catch(() => {});
       if (activeJob === id) activeJob = null;
+      job.release?.(); job.release = null;
     };
     try {
       job.child = spawnProcess(python.executable, args, { cwd: scienceRoot, shell: false, windowsHide: true,
-        env: { ...process.env, PYTHONUTF8: '1', PYTHONUNBUFFERED: '1', PYTHONDONTWRITEBYTECODE: '1', MPLBACKEND: 'Agg' }, stdio: ['ignore', 'pipe', 'pipe'] });
+        env: { ...process.env, PYTHONUTF8: '1', PYTHONUNBUFFERED: '1', PYTHONDONTWRITEBYTECODE: '1', MPLBACKEND: 'Agg',
+          ...(publicMode ? { SPHEREX_ASTEROID_CACHE_DIR:join(job.directory, 'cache') } : {}) }, stdio: ['ignore', 'pipe', 'pipe'] });
       job.status = 'running';
       log(job, `Searching SPHEREx observations for ${input.target}: ${input.start} — ${input.end}.`);
       for (const stream of [job.child.stdout, job.child.stderr]) {
@@ -267,8 +302,19 @@ export function createAsteroidApi({ projectRoot = defaultProjectRoot, probePytho
       }
       job.child.once('error', error => { void settle(null, error); });
       job.child.once('close', code => { void settle(code); });
-      job.timer = setTimeout(() => stop(job, 'failed', 'Analysis exceeded the 30-minute limit. Try a shorter date range or fewer images.'), timeoutMs);
+      job.timer = setTimeout(() => stop(job, 'failed', `Analysis exceeded the ${Math.round(timeoutMs / 60000)}-minute limit. No incomplete result was published.`), timeoutMs);
       job.timer.unref?.();
+      if (publicMode) {
+        let checking = false;
+        job.storageTimer = setInterval(async () => {
+          if (checking || !['queued','running'].includes(job.status)) return;
+          checking = true;
+          try { await requireRuntimeSpace(join(root, 'var'), runtimeLimit); }
+          catch (error) { stop(job, 'failed', error.message); }
+          finally { checking = false; }
+        }, 2000);
+        job.storageTimer.unref?.();
+      }
     } catch (error) { await settle(null, error); }
     return job;
   }
@@ -281,6 +327,8 @@ export function createAsteroidApi({ projectRoot = defaultProjectRoot, probePytho
   async function startScene(job) {
     if (job.scene?.status === 'completed') return;
     if (activeScene) throw Object.assign(new Error('Another 3D scene is already being prepared.'), { status: 409 });
+    const release = publicMode ? admission?.acquire('asteroid 3D') : null;
+    try { if (publicMode) publicAccess.charge(job.owner); } catch (error) { release?.(); throw error; }
     const controller = new AbortController();
     job.sceneController = controller;
     job.scene = { status: 'running', startedAt: new Date().toISOString() };
@@ -288,8 +336,17 @@ export function createAsteroidApi({ projectRoot = defaultProjectRoot, probePytho
     const destinationDir = join(job.directory, 'scene');
     const timer = setTimeout(() => cancelScene(job, '3D generation exceeded its time limit.'), sceneTimeoutMs);
     timer.unref?.();
+    let checkingStorage = false;
+    const storageTimer = publicMode ? setInterval(async () => {
+      if (checkingStorage) return;
+      checkingStorage = true;
+      try { await requireRuntimeSpace(join(root,'var'), runtimeLimit); } catch (error) { cancelScene(job, error.message); }
+      finally { checkingStorage = false; }
+    },2000) : null;
+    storageTimer?.unref?.();
     job.sceneTask = (async () => {
       try {
+        if (publicMode) await requireRuntimeSpace(join(root,'var'), runtimeLimit);
         const physicalOutput = await realpath(job.output);
         const physicalSource = await realpath(job.sourceDir);
         if (!physicalSource.startsWith(physicalOutput + sep)) throw new Error('The analysis source escaped its job directory.');
@@ -309,8 +366,10 @@ export function createAsteroidApi({ projectRoot = defaultProjectRoot, probePytho
         }
       } finally {
         clearTimeout(timer);
+        clearInterval(storageTimer);
         if (activeScene === job.id) activeScene = null;
         job.sceneController = null;
+        release?.();
       }
     })();
   }
@@ -335,26 +394,33 @@ export function createAsteroidApi({ projectRoot = defaultProjectRoot, probePytho
       const route = path.slice(PREFIX.length);
       const mutation = !['GET', 'HEAD'].includes(req.method);
       const local = isLocalAsteroidRequest(req, mutation);
+      // Exported scientific files are public; controls/status remain owned by
+      // the session that created the job. Raw FITS, SQLite and cache paths have
+      // no HTTP route.
+      const artifact = ['GET','HEAD'].includes(req.method) && (/^\/jobs\/[a-f0-9-]{36}\/scene\/.+/.test(route) || /^\/jobs\/[a-f0-9-]{36}\/[A-Za-z0-9_.-]+$/.test(route));
+      const owner = publicMode && !artifact && route !== '/capabilities' ? publicAccess.session(req) : null;
       if (route === '/capabilities' && req.method === 'GET') {
-        if (!local || closed) json(res, 200, { available: false, code: closed ? 'server_stopped' : 'local_only', reason: 'New analyses are available only on this computer through the local web server.', maxImages: MAX_IMAGES });
+        if ((!local && !publicMode) || closed) json(res, 200, { available: false, code: closed ? 'server_stopped' : 'local_only', reason: 'New analyses are available only on this computer through the local web server.', maxImages: MAX_IMAGES });
         else {
           const state = await capabilities();
           json(res, 200, { available: !!state.available, code: state.available ? 'ready' : 'python_unavailable', ...(state.reason ? { reason: state.reason } : {}), maxImages: MAX_IMAGES,
-            ...(activeJob ? { activeJobId: activeJob } : {}) });
+            publicMode, ...(publicMode ? { limits: publicAccess.limits } : {}), ...(!publicMode && activeJob ? { activeJobId: activeJob } : {}) });
         }
         return true;
       }
-      if (!local) { json(res, 403, { error: 'This analysis API only accepts local, same-origin requests.' }); return true; }
+      if (!local && !publicMode) { json(res, 403, { error: 'This analysis API only accepts local, same-origin requests.' }); return true; }
       if (closed) { json(res, 503, { error: 'Analysis server is shutting down.' }); return true; }
       if (route === '/jobs' && req.method === 'POST') {
         const input = validateAsteroidJob(await bodyJson(req));
-        if (activeJob || starting) { json(res, 409, { error: 'Another analysis is already running.', ...(activeJob ? { id: activeJob } : {}) }); return true; }
+        if (activeJob || starting) { json(res, publicMode ? 429 : 409, { error: 'Another analysis is already running.', ...(!publicMode && activeJob ? { id: activeJob } : {}) }); return true; }
         starting = true;
         try {
           const python = await capabilities();
           if (!python.available) { json(res, 503, { error: python.reason || 'Python analysis is unavailable. Run npm run setup:asteroids.' }); return true; }
           if (closed) { json(res, 503, { error: 'Analysis server is shutting down.' }); return true; }
-          const job = await startJob(input, python);
+          const release = publicMode ? admission?.acquire('asteroid analysis') : null;
+          let job;
+          try { if (publicMode) publicAccess.charge(owner); job = await startJob(input, python, owner, release); } catch (error) { release?.(); throw error; }
           json(res, 202, view(job));
         } finally { starting = false; }
         return true;
@@ -364,6 +430,7 @@ export function createAsteroidApi({ projectRoot = defaultProjectRoot, probePytho
         const job = jobs.get(sceneMatch[1]);
         if (!job) { json(res, 404, { error: 'Analysis job not found.' }); return true; }
         const asset = sceneMatch[2];
+        if (publicMode && asset === undefined && job.owner !== owner) { json(res, 404, { error: 'Analysis job not found.' }); return true; }
         if (asset !== undefined && ['GET', 'HEAD'].includes(req.method)) { await serveScene(req, res, job, asset); return true; }
         if (asset === undefined && req.method === 'POST') {
           if (job.status !== 'completed') { json(res, 409, { error: 'Complete the scientific analysis before preparing its 3D scene.' }); return true; }
@@ -377,6 +444,7 @@ export function createAsteroidApi({ projectRoot = defaultProjectRoot, probePytho
         const job = jobs.get(match[1]);
         if (!job) { json(res, 404, { error: 'Analysis job not found. The local server may have restarted.' }); return true; }
         const asset = match[2];
+        if (publicMode && !asset && job.owner !== owner) { json(res, 404, { error: 'Analysis job not found.' }); return true; }
         if (!asset && req.method === 'GET') { json(res, 200, view(job)); return true; }
         if (!asset && req.method === 'DELETE') { stop(job, 'cancelled', 'Analysis cancelled.'); cancelScene(job); json(res, 200, view(job)); return true; }
         if (asset && ['GET', 'HEAD'].includes(req.method)) {
@@ -395,12 +463,13 @@ export function createAsteroidApi({ projectRoot = defaultProjectRoot, probePytho
       else json(res, 404, { error: 'Unknown asteroid analysis endpoint.' });
     } catch (error) {
       if (res.headersSent) res.destroy();
-      else json(res, error.status || (['ENOENT', 'ENOTDIR'].includes(error.code) ? 404 : error.code ? 500 : 400), { error: error.message || 'Analysis request failed.' });
+      else json(res, error.status || (['ENOENT', 'ENOTDIR'].includes(error.code) ? 404 : error.code ? 500 : 400), { error: error.message || 'Analysis request failed.', ...(error.status && error.code ? { code: error.code } : {}) });
     }
     return true;
   }
   async function close() {
     closed = true;
+    clearInterval(cleanupTimer);
     const waits = [];
     for (const job of jobs.values()) {
       if (job.child) waits.push(new Promise(resolveExit => {
@@ -413,5 +482,7 @@ export function createAsteroidApi({ projectRoot = defaultProjectRoot, probePytho
     }
     await Promise.all(waits);
   }
+  const cleanupTimer = publicMode ? setInterval(() => { void cleanup().catch(() => {}); }, 600_000) : null;
+  cleanupTimer?.unref?.();
   return { handle, close };
 }

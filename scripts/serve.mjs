@@ -6,6 +6,7 @@ import { projectRoot } from './paths.mjs';
 import { findPython } from './python.mjs';
 import { createSiteServer, listenOnAvailablePort } from '../services/gateway/server.mjs';
 import { createAsteroidApi } from '../services/gateway/asteroid-api.mjs';
+import { createPublicAccess, createAdmission } from '../services/gateway/public-access.mjs';
 
 async function startObservations() {
   const python=await findPython({imports:['numpy','astropy','pyvo','requests','PIL','reproject','astroquery']});
@@ -15,8 +16,10 @@ async function startObservations() {
   });
   return new Promise(resolveService=>{
     let settled=false,pending='',logs='';
-    const close=async()=>{if(child.exitCode!==null)return;child.kill();await new Promise(r=>{const t=setTimeout(r,3000);child.once('exit',()=>{clearTimeout(t);r();});});};
-    const finish=value=>{if(settled)return;settled=true;clearTimeout(timer);resolveService({...value,close});};
+    let exited=false;
+    child.once('exit',()=>{exited=true;});
+    const close=async()=>{if(exited||child.exitCode!==null)return;child.kill('SIGTERM');await new Promise(r=>{const t=setTimeout(()=>{child.kill('SIGKILL');r();},4000);child.once('exit',()=>{clearTimeout(t);r();});});};
+    const finish=value=>{if(settled)return;settled=true;clearTimeout(timer);resolveService({...value,close,isAlive:()=>!exited&&child.exitCode===null});};
     const timer=setTimeout(()=>{child.kill();finish({url:'',error:'Observation service start timed out.'});},45000);
     child.stdout.setEncoding('utf8');child.stdout.on('data',chunk=>{pending+=chunk;const lines=pending.split(/\r?\n/);pending=lines.pop()||'';for(const line of lines){if(line.startsWith('SPHEREX_OBSERVATIONS_READY=')){try{const {port}=JSON.parse(line.slice('SPHEREX_OBSERVATIONS_READY='.length));if(Number.isInteger(port)&&port>0)finish({url:`http://127.0.0.1:${port}`});}catch{}}else if(line)console.log(`[observations] ${line}`);}});
     child.stderr.setEncoding('utf8');child.stderr.on('data',chunk=>{logs=(logs+chunk).slice(-3000);if(settled)process.stderr.write(`[observations] ${chunk}`);});
@@ -24,13 +27,14 @@ async function startObservations() {
   });
 }
 export async function startSiteServer(args=process.argv.slice(2)) {
+  const access=createPublicAccess(),admission=createAdmission();
   const portAt=args.indexOf('--port'),port=Number(portAt<0?(process.env.PORT||4173):args[portAt+1]);
   if(!Number.isInteger(port)||port<0||port>65535)throw new Error('Use --port 0–65535.');
   const webRoot=join(projectRoot,'dist');await stat(join(webRoot,'index.html')).catch(()=>{throw new Error('Run npm run build first.');});
   const observations=await startObservations();
   if(observations.error)console.warn(observations.error);
   let experience=null,experienceUrl=process.env.SPHEREX_EXPERIENCE_URL||'';
-  if(!experienceUrl&&!args.includes('--no-experience')){
+  if(!experienceUrl&&!access.enabled&&!args.includes('--no-experience')){
     try{
       const {startServer}=await import('../services/experience/scripts/serve.mjs');
       const settingsFile=join(projectRoot,'var/local-settings.json');
@@ -42,8 +46,9 @@ export async function startSiteServer(args=process.argv.slice(2)) {
       if(!configured){await mkdir(join(projectRoot,'var'),{recursive:true});await writeFile(settingsFile,JSON.stringify({...settings,experiencePort:experience.port},null,2));}
     }catch(error){console.warn(`Experience service: ${error.message}. The saved experience port was kept to preserve flight records; choose SPHEREX_EXPERIENCE_PORT if necessary.`);}
   }
-  const asteroids=createAsteroidApi({projectRoot});
-  const server=createSiteServer({webRoot,asteroids,observationsUrl:observations.url,observationError:observations.error,experienceUrl});
+  const asteroids=createAsteroidApi({projectRoot,access,admission});
+  const server=createSiteServer({webRoot,asteroids,observationsUrl:observations.url,observationError:observations.error,experienceUrl,
+    access,admission,observationsAlive:observations.isAlive,stopObservations:observations.close});
   let actualPort;
   try { actualPort=await listenOnAvailablePort(server,{port,host:process.env.HOST||'127.0.0.1',automatic:portAt<0&&!process.env.PORT}); }
   catch(error){await Promise.allSettled([asteroids.close(),observations.close(),experience?.close?.()]);throw error;}

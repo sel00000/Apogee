@@ -2,13 +2,15 @@ import './style.css';
 import './research.css';
 import {mountResearch} from './research';
 import {sceneDataUrl} from './research-model';
+import {loadApiConfig} from './api-config';
 import type {mountOrbit} from './orbit';
 
 const app=document.querySelector<HTMLDivElement>('#app')!;
 const params=new URLSearchParams(location.search);
 let selected=params.get('target') || '';
 let tab=params.get('tab')==='orbit'||params.get('tab')==='observations'?'orbit':'research';
-let dataBase=sceneDataUrl(params.get('data'),location.origin) || new URL('./data/',location.href).href;
+let dataBase=new URL('./data/',location.href).href;
+let pendingScene=params.get('data');
 let orbit: Awaited<ReturnType<typeof mountOrbit>>|null=null;
 let loading: Promise<void>|null=null, loadGeneration=0, paused=false, disposed=false;
 let orbitLoad: AbortController|null=null;
@@ -35,10 +37,14 @@ function setTarget(target: string, from: 'research'|'orbit'|'parent') {
 const research=mountResearch(researchHost,{
   target:selected,
   onTarget(target){setTarget(target,'research');},
-  onOrbit(target,sceneUrl){
+  async onOrbit(target,sceneUrl){
     selected=target;
-    const nextBase=sceneUrl?sceneDataUrl(sceneUrl,location.origin):new URL('./data/',location.href).href;
+    let nextBase: string|null;
+    try{nextBase=sceneUrl?sceneDataUrl(sceneUrl,location.origin,(await loadApiConfig(lifecycle.signal)).apiBase):new URL('./data/',location.href).href;}
+    catch(error){window.alert((error as Error).message);return;}
+    if(disposed)return;
     if(!nextBase){window.alert('3D 자료 주소가 올바르지 않습니다.');return;}
+    pendingScene=null;
     if(nextBase!==dataBase){
       ++loadGeneration;orbitLoad?.abort();orbit?.dispose();orbit=null;loading=null;dataBase=nextBase;
       const url=new URL(location.href);sceneUrl?url.searchParams.set('data',nextBase):url.searchParams.delete('data');history.replaceState(null,'',url);
@@ -66,6 +72,12 @@ async function openOrbit() {
   orbitHost.innerHTML='<div class="orbit-message" role="status">궤도·관측 자료와 3D 화면을 준비하는 중…</div>';
   loading=(async()=>{
     try{
+      if(pendingScene){
+        const config=await loadApiConfig(ownLoad.signal);
+        const validated=sceneDataUrl(pendingScene,location.origin,config.apiBase);
+        if(!validated)throw Error('3D 자료 주소가 설정된 분석 서버의 작업 경로와 일치하지 않습니다.');
+        dataBase=validated;pendingScene=null;
+      }
       const module=await import('./orbit');
       if(disposed||generation!==loadGeneration)return;
       const mounted=await module.mountOrbit(orbitHost,{target:selected,dataBase,signal:ownLoad.signal,onTarget(target){setTarget(target,'orbit');}});

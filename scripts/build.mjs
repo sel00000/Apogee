@@ -2,6 +2,7 @@ import { cp, mkdir, rename, rm, stat, writeFile, readdir } from 'node:fs/promise
 import { join, basename } from 'node:path';
 import { projectRoot, insideRoot } from './paths.mjs';
 import { npm, run } from './process.mjs';
+import { publicConfig } from './public-config.mjs';
 const stage = insideRoot(`.build-${process.pid}`), output = insideRoot('dist'), previous = insideRoot('.previous-dist');
 const exists = file => stat(file).then(() => true, () => false);
 await mkdir(stage, { recursive: false });
@@ -24,7 +25,7 @@ try {
   await cp(join(projectRoot, 'apps/experience/web'), join(stage, 'experience'), { recursive: true });
   for (const name of ['NOTICE.md','provenance','integration-manifest.json']) await cp(join(projectRoot,'apps/experience',name),join(stage,'notices/experience',name),{recursive:true});
   for (const name of ['LICENSE','THIRD_PARTY_NOTICES.md']) if(await exists(join(projectRoot,'apps/analysis',name))) await cp(join(projectRoot,'apps/analysis',name),join(stage,'analysis',name));
-  await writeFile(join(stage, 'config.json'), JSON.stringify({ version: '5.0.0', apiBase: '', experienceUrl: '', localServices: false }));
+  await writeFile(join(stage, 'config.json'), JSON.stringify(await publicConfig(projectRoot)));
   await writeFile(join(stage, '.nojekyll'), '');
   await writeFile(join(stage, 'build-info.json'), JSON.stringify({ version: '5.0.0', builtAt: new Date().toISOString(), modules: ['portal', 'planetarium', 'analysis', 'asteroids', 'search', 'tutorial', 'experience'] }, null, 2));
   for (const required of ['index.html','analysis/index.html','planetarium/index.html','asteroids/index.html','search/search.js','tutorial/boot.js','experience/index.html']) {

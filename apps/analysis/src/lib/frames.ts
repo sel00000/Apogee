@@ -9,6 +9,7 @@ export type Frame = Float32Array // n×n, row 0 = north (top), NaN = no data
 async function fromPng(url: string, n: number): Promise<Frame> {
   // fallback for data without .f32 files (e.g. ?mock=1): grey level 0-255, alpha 0 = NaN
   const img = new Image()
+  img.crossOrigin = 'anonymous'
   img.src = url
   await img.decode()
   const c = document.createElement('canvas')

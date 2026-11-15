@@ -1,0 +1,53 @@
+name: Validate free server container
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'Dockerfile'
+      - '.dockerignore'
+      - 'render.yaml'
+      - 'services/**'
+      - 'scripts/**'
+      - '.github/workflows/server.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: server-${{ github.repository }}
+  cancel-in-progress: true
+
+jobs:
+  container:
+    if: github.repository == 'jp-feynman/stellarium-web-preview'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+      - name: Build the portable Python and Node server
+        run: docker build -t spherex-server-test .
+      - name: Start with the free test memory ceiling
+        run: >-
+          docker run -d --name spherex-server-test
+          --memory=512m --memory-swap=512m --cpus=1 --pids-limit=256
+          -e HOST=0.0.0.0 -e PORT=4173
+          -e SPHEREX_PUBLIC_MODE=1
+          -e SPHEREX_ALLOWED_ORIGINS=https://jp-feynman.github.io
+          -e SPHEREX_MAX_FOV=0.1
+          -p 127.0.0.1:4173:4173 spherex-server-test
+      - name: Check the running public API
+        run: node scripts/check-public-server.mjs http://127.0.0.1:4173
+      - name: Show container diagnostics
+        if: always()
+        run: |
+          docker logs spherex-server-test
+          docker stats --no-stream spherex-server-test
+          docker inspect --format '{{json .State}}' spherex-server-test
+      - name: Stop test container
+        if: always()
+        run: docker rm -f spherex-server-test || true

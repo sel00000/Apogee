@@ -102,6 +102,12 @@ npm run build
 
 새 분석은 `/api/asteroid-analysis`의 capabilities/jobs/status/cancel을 사용합니다. 완료 후 사용자가 3D 생성 버튼을 누르면 원본 분석 폴더와 SQLite를 별도 입력으로 받아 6단계 자료 생성을 실행합니다. 결과가 완성되기 전에 웹 경로에 공개하지 않습니다. 취소와 실패는 과학 분석 결과를 지우지 않습니다. 실시간 신규 자료 생성에는 JPL/IRSA 연결이 필요하며 외부 장애가 발생하면 오류로 표시합니다.
 
+GitHub Pages 같은 정적 웹에서는 한 단계 위 `config.json`의 `apiBase`로 별도 분석 서버를 지정합니다. 예: `{"apiBase":"https://science.example/backend","localServices":false}`. 이 값은 **서버 origin 또는 배포 prefix**이며 `/api`를 붙이지 않습니다. `/backend` 같은 값은 현재 웹 origin 기준으로 해석합니다. 외부 서버는 HTTPS를 사용하고, localhost 개발 서버만 HTTP를 허용합니다. 비어 있지 않은 빌드 환경변수 `VITE_API_BASE`가 런타임 설정보다 우선합니다. 로컬 통합 서버는 빈 `apiBase`를 유지합니다. 같은 origin에서 공개 모드 API를 운영한다면 `publicMode:true`도 설정합니다.
+
+설정은 5초간 캐시하며 **서버 다시 연결** 버튼은 즉시 재조회합니다. 설정이나 서버에 문제가 있어도 준비된 정적 결과는 계속 표시합니다. 결과 JSON·CSV·그림·3D 경로는 설정된 API origin과 배포 prefix 안에서만 허용합니다. 서버가 반환한 `/api/...` 경로에도 배포 prefix를 적용합니다.
+
+공개 API는 `GET /api/session`으로 발급받은 세션을 `X-Spherex-Session` 헤더에 담아 작업 생성·상태 확인·취소에 사용합니다. 세션은 API 주소별로 `sessionStorage`에 보관하며 두 분석 앱이 공유합니다. 쿠키나 브라우저에 저장한 배포 비밀키는 사용하지 않습니다. 공개 과학 결과와 그림·CSV·3D 파일은 세션 헤더 없이 읽을 수 있어야 합니다. 서버는 웹 origin에 대한 CORS와 `Content-Type`, `X-Spherex-Session` preflight를 허용해야 합니다. 테스트: `node tests/remote-api.browser.mjs`는 서로 다른 localhost origin에서 실제 브라우저 CORS를 검증하며 새 NASA 분석은 실행하지 않습니다.
+
 ```text
 node scripts/generate-scene.mjs --source-dir <raw-target-folder> --source-root <raw-outputs> --db-path <sqlite> --output-dir <new-scene-directory> --python <python-executable>
 ```

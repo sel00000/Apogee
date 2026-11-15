@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import time
 from pathlib import Path
 
@@ -36,7 +37,8 @@ def _cache_path(key: str) -> Path | None:
     cfg = data_sources().get("cache", {})
     if not cfg.get("enabled", False):
         return None
-    d = resolve(cfg.get("directory", "data/raw/cache"))
+    runtime = os.environ.get("SPHEREX_ASTEROID_CACHE_DIR")
+    d = Path(runtime).resolve() / "http" if runtime else resolve(cfg.get("directory", "data/raw/cache"))
     d.mkdir(parents=True, exist_ok=True)
     return d / (hashlib.sha256(key.encode()).hexdigest()[:24] + ".cache")
 

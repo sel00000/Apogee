@@ -1,7 +1,7 @@
 import { afterEach, expect, it, vi } from 'vitest'
 import { readFileSync } from 'node:fs'
 import type { TargetMeta } from '../types'
-vi.mock('./data', () => ({ frameUrl: (id: string, file: string) => `/data/${id}/${file}` }))
+vi.mock('./data', () => ({ frameUrl: (id: string, file: string, root?: string) => root ? root+file : `/data/${id}/${file}` }))
 import { loadFrames } from './frames'
 const source: TargetMeta = JSON.parse(readFileSync('public/data/barnard/meta.json', 'utf8'))
 afterEach(() => vi.unstubAllGlobals())
@@ -42,4 +42,28 @@ it('does not start downloads after a target has been cancelled', async () => {
   const fetch = vi.fn(); vi.stubGlobal('fetch', fetch)
   await expect(loadFrames(source, 0, false, controller.signal)).rejects.toThrow()
   expect(fetch).not.toHaveBeenCalled()
+})
+it('sets anonymous CORS before requesting a remote PNG so canvas pixels remain readable', async () => {
+  const m=structuredClone(source);m.visits=m.visits.slice(0,1);m.visits[0].f32=undefined;m.wcs.size_px=[1,1]
+  m.base='https://api.example/service/api/observations/data/patches/x/'
+  const requests:string[]=[]
+  vi.stubGlobal('Image', class {
+    crossOrigin=''
+    set src(value:string){ expect(this.crossOrigin).toBe('anonymous'); requests.push(value) }
+    async decode(){}
+  })
+  vi.stubGlobal('document',{createElement:()=>({getContext:()=>({drawImage:()=>{},getImageData:()=>({data:new Uint8ClampedArray([42,42,42,255])})})})})
+  const frames=await loadFrames(m)
+  expect(requests).toEqual([m.base+m.visits[0].png])
+  expect(frames[0][0]).toBe(42)
+})
+it('reads remote floating-point frames from the metadata base without credentials',async()=>{
+  const m=structuredClone(source);m.visits=m.visits.slice(0,1);m.wcs.size_px=[1,1]
+  m.base='https://api.example/service/api/observations/data/patches/x/'
+  const fetch=vi.fn(async (_url:string,_options:RequestInit)=>new Response(new Float32Array([1.25]).buffer))
+  vi.stubGlobal('fetch',fetch)
+  const frames=await loadFrames(m)
+  expect(fetch.mock.calls[0][0]).toBe(m.base+m.visits[0].f32)
+  expect(fetch.mock.calls[0][1].credentials).toBeUndefined()
+  expect(frames[0][0]).toBe(1.25)
 })

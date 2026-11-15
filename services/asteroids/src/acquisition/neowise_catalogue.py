@@ -20,7 +20,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from ..common.config import data_sources, resolve, settings
+from ..common.config import cache_directory, data_sources, resolve, settings
+import os
 from ..common.http import DataAccessError, get_json, session
 from ..common.provenance import utc_now
 
@@ -31,6 +32,8 @@ ORBIT_FIELDS = ["pdes", "a", "e", "i", "om", "w", "ma", "epoch"]
 
 
 def catalogue_dir() -> Path:
+    if os.environ.get('SPHEREX_ASTEROID_CACHE_DIR'):
+        return cache_directory('neowise')
     cfg = settings()["thermal_model"]["eta_prior_relations"].get("neowise_population", {})
     return resolve(cfg.get("catalogue_dir", "data/raw/neowise"))
 

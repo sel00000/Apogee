@@ -45,6 +45,12 @@ export function loadMeta(id: string, signal?: AbortSignal): Promise<TargetMeta> 
 }
 
 export function frameUrl(id: string, png: string, root?: string): string {
-  if (png.startsWith('data:')) return png
-  return root ? `${root}${png}` : `${base}/${id}/${png}`
+  if (!root) return png.startsWith('data:') ? png : `${base}/${id}/${png}`
+  // A dynamic frame must stay inside its validated result directory.
+  if (/[\\\u0000-\u0020?#%]/.test(png) || png.split('/').some(part => part === '.' || part === '..')) throw new DataError(png, '관측 영상 경로가 올바르지 않습니다.')
+  const parent = new URL(root, typeof document === 'undefined' ? 'http://localhost/' : document.baseURI)
+  const url = new URL(png, parent)
+  if (!/^https?:$/.test(url.protocol) || url.origin !== parent.origin || !url.pathname.startsWith(parent.pathname) || url.username || url.password)
+    throw new DataError(png, '관측 영상 경로가 올바르지 않습니다.')
+  return /^https?:\/\//.test(root) ? url.href : url.pathname
 }

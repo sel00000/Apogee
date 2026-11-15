@@ -1,4 +1,6 @@
-import {artifactUrl, interval, matchTarget, number, scientific, statusLabel, validateCatalog, validateResult} from './research-model';
+import {artifactUrl, interval, jobResultUrl, matchTarget, number, scientific, statusLabel, validateCatalog, validateResult} from './research-model';
+import {forgetSession, loadApiConfig, sessionHeaders} from './api-config';
+import type {ApiConfig} from './api-config';
 import type {AnalysisJob, AnalysisResult, CatalogItem} from './research-model';
 
 const esc = (v: unknown) => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
@@ -15,7 +17,8 @@ export function mountResearch(host: HTMLElement, options: {
   let capabilities: {available: boolean; reason?: string; maxImages?: number; activeJobId?: string}|null = null;
   let loadController: AbortController|null = null, pollController: AbortController|null = null;
   const controller = new AbortController();
-  const storageKey = 'spherex-v5-asteroid-job';
+  let apiConfig: ApiConfig = {apiBase:''}, checking = false;
+  const storageKey = () => 'spherex-v5-asteroid-job:'+(apiConfig.apiBase || location.origin);
   let loadedJobResult = '', lastJobId = '', submitting = false;
   host.innerHTML = `<div class="research-layout">
     <aside class="research-controls"><div class="eyebrow">SPHEREX ASTEROID LAB</div><h1>소행성의 빛을<br>분석합니다.</h1>
@@ -28,7 +31,7 @@ export function mountResearch(host: HTMLElement, options: {
         <div class="date-fields"><label>시작일 UTC<input id="job-start" type="date" value="2025-06-01" min="1900-01-01" max="2100-12-31" required></label><label>종료일 UTC<input id="job-end" type="date" value="2025-08-01" min="1900-01-01" max="2100-12-31" required></label></div>
         <label for="job-limit">최대 노출 수</label><input id="job-limit" type="number" min="1" max="360" step="1" value="120" required>
         <p class="form-note">실제 아카이브를 조회하고 측광·분광 모델을 계산합니다. 관측 수와 외부 응답에 따라 시간이 걸립니다.</p>
-        <button id="job-submit" type="submit" disabled>분석 실행</button><p id="capabilities" role="status">분석 서버 확인 중…</p>
+        <button id="job-submit" type="submit" disabled>분석 실행</button><p id="capabilities" role="status">분석 서버 확인 중…</p><button id="server-retry" type="button">서버 다시 연결</button>
       </form>
       <section class="job-panel" id="job-panel" hidden aria-label="분석 진행 상태"><h2 id="job-title">분석 작업</h2><p id="job-status" role="status" aria-live="polite"></p><pre id="job-logs" aria-label="분석 진행 기록"></pre><div class="job-actions"><button id="job-cancel">분석 취소</button><button id="job-retry-status" hidden>상태 다시 확인</button><button id="job-open" hidden>결과 열기</button><button id="scene-build" hidden>이 결과의 3D 자료 생성</button><button id="scene-cancel" hidden>3D 생성 취소</button><button id="scene-open" hidden>생성된 3D 열기</button></div><p id="scene-status" role="status"></p></section>
     </aside>
@@ -40,27 +43,44 @@ export function mountResearch(host: HTMLElement, options: {
   const resultContent = el('result-content');
   const setStatus = (message: string, isError = false) => { resultStatus.textContent = message; resultStatus.classList.toggle('error', isError); };
   async function request<T>(url: string, init: RequestInit = {}): Promise<T> {
-    const response = await fetch(url, {cache:'no-store', ...init});
+    const response = await fetch(url, {cache:'no-store', credentials:'omit', ...init});
     let value: any;
     try { value = await response.json(); } catch { throw Error(`서버 응답을 읽을 수 없습니다 (${response.status}).`); }
     if (!response.ok) throw Object.assign(Error(value.error || `요청 실패 (${response.status})`),{status:response.status,jobId:value.id});
     return value;
   }
-  async function checkCapabilities() {
+  async function requestApi<T>(path: string, init: RequestInit = {}): Promise<T> {
+    const config=apiConfig;
+    const headers = new Headers(init.headers);
+    for(const [name,value] of Object.entries(await sessionHeaders(config, init.signal ?? controller.signal))) headers.set(name,value);
+    try{return await request<T>(config.apiBase+api+path,{...init,headers,redirect:'error'});}
+    catch(error){if((error as {status?:number}).status===401)forgetSession(config);throw error;}
+  }
+  async function checkCapabilities(force = false) {
+    if(checking || disposed)return;
+    checking=true;el<HTMLButtonElement>('server-retry').disabled=true;updateRunButton();
     try {
-      capabilities = await request(api+'/capabilities', {signal:controller.signal});
+      const config=await loadApiConfig(controller.signal,force);
+      if(disposed)return;
+      if(config.apiBase!==apiConfig.apiBase){clearTimeout(pollTimer);pollController?.abort();currentJob=null;lastJobId='';loadedJobResult='';el('job-panel').hidden=true;}
+      apiConfig=config;
+      if(!config.apiBase && config.localServices===false && !config.publicMode)throw Error('새 분석 서버가 연결되어 있지 않습니다. 준비된 결과는 계속 볼 수 있습니다.');
+      capabilities = await request(config.apiBase+api+'/capabilities', {signal:controller.signal});
+      if(disposed)return;
       el('capabilities').textContent = capabilities!.available ? '분석 서버에 연결되었습니다. 결과와 3D 자료는 각각 준비됩니다.' : capabilities!.reason || '새 분석 서버를 사용할 수 없습니다. 준비된 결과는 볼 수 있습니다.';
       el<HTMLInputElement>('job-limit').max = String(capabilities!.maxImages ?? 360);
       if (!currentJob && capabilities!.activeJobId) void poll(capabilities!.activeJobId);
+      else if(!currentJob && capabilities!.available){try{const remembered=sessionStorage.getItem(storageKey());if(remembered&&/^[a-f0-9-]{36}$/.test(remembered))void poll(remembered);}catch{/* Optional persistence. */}}
     } catch (error) {
       if (disposed) return;
       capabilities = {available:false};
-      el('capabilities').textContent = '새 분석 서버에 연결되지 않았습니다. 로컬 실행 서버를 시작하거나 서버 설정을 확인하세요. 준비된 결과는 계속 볼 수 있습니다.';
+      el('capabilities').textContent = '새 분석 서버에 연결되지 않았습니다. '+(error as Error).message+' 준비된 결과는 계속 볼 수 있습니다.';
+    } finally {
+      checking=false;if(!disposed){el<HTMLButtonElement>('server-retry').disabled=false;updateRunButton();}
     }
-    updateRunButton();
   }
   function updateRunButton() {
-    el<HTMLButtonElement>('job-submit').disabled = submitting || !capabilities?.available || !!currentJob && ['running','queued'].includes(currentJob.status);
+    el<HTMLButtonElement>('job-submit').disabled = checking || submitting || !capabilities?.available || !!currentJob && ['running','queued'].includes(currentJob.status);
   }
   function renderResult(result: AnalysisResult, url: string) {
     const r = result.record;
@@ -135,7 +155,7 @@ export function mountResearch(host: HTMLElement, options: {
       setStatus('준비된 결과 목록을 불러오지 못했습니다. 다시 시도하거나 새 분석 서버 상태를 확인하세요.',true);
     }
   }
-  function rememberJob(id: string) { try {sessionStorage.setItem(storageKey,id);} catch { /* Session persistence is optional. */ } }
+  function rememberJob(id: string) { try {sessionStorage.setItem(storageKey(),id);} catch { /* Session persistence is optional. */ } }
   function renderJob(job: AnalysisJob) {
     currentJob=job;rememberJob(job.id);el('job-panel').hidden=false;
     el('job-title').textContent=job.target+' · 분석 작업';
@@ -153,16 +173,18 @@ export function mountResearch(host: HTMLElement, options: {
   }
   async function openJobResult() {
     if(!currentJob?.resultUrl)return;
+    const url=jobResultUrl(currentJob.resultUrl,location.origin,apiConfig.apiBase);
+    if(!url){el('job-status').textContent='분석 결과 주소가 설정된 서버의 작업 경로와 일치하지 않습니다.';return;}
     loadedJobResult=currentJob.id;
     target=currentJob.target;input.value=target;options.onTarget(target);
-    await loadResult(new URL(currentJob.resultUrl,location.origin).href);
+    await loadResult(url);
   }
   async function poll(id: string) {
     lastJobId=id;
     clearTimeout(pollTimer);if(disposed||!active)return;
     pollController?.abort();const ownController=new AbortController();pollController=ownController;
     try {
-      const job=await request<AnalysisJob>(api+'/jobs/'+encodeURIComponent(id),{signal:ownController.signal});
+      const job=await requestApi<AnalysisJob>('/jobs/'+encodeURIComponent(id),{signal:ownController.signal});
       if(disposed||ownController.signal.aborted||pollController!==ownController)return;
       el('job-retry-status').hidden=true;renderJob(job);
       if(job.status==='completed'&&loadedJobResult!==job.id&&target===job.target)void openJobResult();
@@ -180,7 +202,7 @@ export function mountResearch(host: HTMLElement, options: {
     if(end<start){el('capabilities').textContent='종료일은 시작일 이후여야 합니다.';return;}
     submitting=true;updateRunButton();
     try {
-      const job=await request<AnalysisJob>(api+'/jobs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({target:input.value.trim(),start,end,maxImages:el<HTMLInputElement>('job-limit').valueAsNumber}),signal:controller.signal});
+      const job=await requestApi<AnalysisJob>('/jobs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({target:input.value.trim(),start,end,maxImages:el<HTMLInputElement>('job-limit').valueAsNumber}),signal:controller.signal});
       target=job.target;options.onTarget(target);renderJob(job);void poll(job.id);
     }catch(error){
       if(!disposed){
@@ -190,20 +212,20 @@ export function mountResearch(host: HTMLElement, options: {
       }
     }finally{submitting=false;updateRunButton();}
   };
-  el('job-cancel').onclick=async()=>{if(!currentJob)return;try{renderJob(await request(api+'/jobs/'+currentJob.id,{method:'DELETE',signal:controller.signal}));clearTimeout(pollTimer);}catch(error){el('job-status').textContent=(error as Error).message;}};
-  el('scene-build').onclick=async()=>{if(!currentJob)return;el<HTMLButtonElement>('scene-build').disabled=true;try{renderJob(await request(api+'/jobs/'+currentJob.id+'/scene',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}',signal:controller.signal}));void poll(currentJob.id);}catch(error){el('scene-status').textContent=(error as Error).message;}finally{el<HTMLButtonElement>('scene-build').disabled=false;}};
-  el('scene-cancel').onclick=async()=>{if(!currentJob)return;try{renderJob(await request(api+'/jobs/'+currentJob.id+'/scene',{method:'DELETE',signal:controller.signal}));clearTimeout(pollTimer);}catch(error){el('scene-status').textContent=(error as Error).message;}};
+  el('job-cancel').onclick=async()=>{if(!currentJob)return;try{renderJob(await requestApi('/jobs/'+currentJob.id,{method:'DELETE',signal:controller.signal}));clearTimeout(pollTimer);}catch(error){el('job-status').textContent=(error as Error).message;}};
+  el('scene-build').onclick=async()=>{if(!currentJob)return;el<HTMLButtonElement>('scene-build').disabled=true;try{renderJob(await requestApi('/jobs/'+currentJob.id+'/scene',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}',signal:controller.signal}));void poll(currentJob.id);}catch(error){el('scene-status').textContent=(error as Error).message;}finally{el<HTMLButtonElement>('scene-build').disabled=false;}};
+  el('scene-cancel').onclick=async()=>{if(!currentJob)return;try{renderJob(await requestApi('/jobs/'+currentJob.id+'/scene',{method:'DELETE',signal:controller.signal}));clearTimeout(pollTimer);}catch(error){el('scene-status').textContent=(error as Error).message;}};
   el('scene-open').onclick=()=>{if(currentJob?.scene?.url)options.onOrbit(currentJob.target,currentJob.scene.url);};
   el('job-open').onclick=()=>void openJobResult();
   el('job-retry-status').onclick=()=>{if(lastJobId)void poll(lastJobId);};
   el('catalog-retry').onclick=()=>void loadCatalog();
+  el('server-retry').onclick=()=>void checkCapabilities(true);
   el<HTMLSelectElement>('research-target').onchange=event=>selectTarget((event.target as HTMLSelectElement).value);
   el('research-orbit').onclick=()=>options.onOrbit(target);
   void loadCatalog();void checkCapabilities();
-  try{const remembered=sessionStorage.getItem(storageKey);if(remembered&&/^[a-f0-9-]{36}$/.test(remembered))void poll(remembered);}catch{/* Optional persistence. */}
   return {
     selectTarget,
-    setActive(value: boolean){active=value;if(!value){clearTimeout(pollTimer);pollController?.abort();}else if(currentJob)void poll(currentJob.id);},
+    setActive(value: boolean){active=value;if(!value){clearTimeout(pollTimer);pollController?.abort();}else if(lastJobId)void poll(lastJobId);},
     dispose(){disposed=true;++generation;clearTimeout(pollTimer);controller.abort();loadController?.abort();pollController?.abort();host.replaceChildren();},
   };
 }

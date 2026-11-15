@@ -4,6 +4,7 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import os
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -54,4 +55,5 @@ def cache_directory(name: str) -> Path:
     """Writable runtime cache, separate from versioned reference/calibration data."""
     if not name or Path(name).name != name or name in (".", ".."):
         raise ValueError("Cache name must be a single directory name.")
-    return resolve(settings()["project"].get("cache_dir", "../../var/cache/asteroids")) / name
+    runtime = os.environ.get("SPHEREX_ASTEROID_CACHE_DIR")
+    return (Path(runtime).resolve() if runtime else resolve(settings()["project"].get("cache_dir", "../../var/cache/asteroids"))) / name

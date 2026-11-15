@@ -4,6 +4,8 @@ import { createReadStream } from 'node:fs';
 import { realpath, stat } from 'node:fs/promises';
 import { extname, resolve, sep } from 'node:path';
 import { isLocalAsteroidRequest } from './asteroid-api.mjs';
+import { createPublicAccess, createAdmission } from './public-access.mjs';
+import { createObservationApi } from './observation-api.mjs';
 
 const MIME = {'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json; charset=utf-8','.jsonl':'application/x-ndjson','.wasm':'application/wasm','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp','.svg':'image/svg+xml','.ico':'image/x-icon','.ttf':'font/ttf','.woff':'font/woff','.woff2':'font/woff2','.glb':'model/gltf-binary','.gltf':'model/gltf+json','.mp3':'audio/mpeg','.wav':'audio/wav','.ogg':'audio/ogg','.mp4':'video/mp4','.webm':'video/webm','.txt':'text/plain; charset=utf-8','.md':'text/plain; charset=utf-8','.csv':'text/csv; charset=utf-8','.zip':'application/zip','.xml':'application/xml','.gz':'application/gzip'};
 export function staticPath(root, raw) {
@@ -38,22 +40,34 @@ function proxy(req,res,url,base) {
     req.pipe(upstream);
   });
 }
-export function createSiteServer({webRoot,asteroids,observationsUrl='',experienceUrl='',observationError=''}={}) {
+export function createSiteServer({webRoot,asteroids,observationsUrl='',experienceUrl='',observationError='',
+  access = createPublicAccess(), admission = createAdmission(), observationsAlive, stopObservations}={}) {
   if(!webRoot)throw new Error('webRoot is required.');
   const root=resolve(webRoot);
-  return createServer(async(req,res)=>{
+  const observations = createObservationApi({base:observationsUrl,access,admission,isAlive:observationsAlive,stopWorker:stopObservations});
+  const server = createServer(async(req,res)=>{
     res.setHeader('X-Content-Type-Options','nosniff');
     res.setHeader('Referrer-Policy','strict-origin-when-cross-origin');
     try {
       staticPath(root,(req.url||'/').split('?')[0]);
       const url=new URL(req.url||'/','http://localhost');
       url.pathname=url.pathname.replace(/^\/(analysis|asteroids)\/api(?=\/|$)/,'/api');
-      if(url.pathname==='/config.json')return json(res,200,{version:'5.0.0',apiBase:'',experienceUrl,localServices:true,observationsAvailable:!!observationsUrl});
-      if(url.pathname==='/api/health')return json(res,200,{status:'ok',version:'5.0.0',observations:!!observationsUrl,experience:!!experienceUrl});
+      if(url.pathname.startsWith('/api/') && access.cors(req,res))return;
+      if(url.pathname==='/config.json')return json(res,200,{version:'5.0.0',apiBase:'',experienceUrl,localServices:true,publicMode:access.enabled,limits:access.limits,observationsAvailable:!!observationsUrl && (!observationsAlive || observationsAlive())});
+      if(url.pathname==='/api/health')return json(res,200,{status:'ok',version:'5.0.0',publicMode:access.enabled,busy:admission.busy,observations:!!observationsUrl && (!observationsAlive || observationsAlive()),experience:!!experienceUrl});
+      if(url.pathname==='/api/session'){
+        if(req.method!=='GET')return json(res,405,{error:'Method not allowed.'});
+        if(!access.enabled && !isLocalAsteroidRequest(req))return json(res,403,{error:'Local same-origin requests only.',code:'local_only'});
+        return json(res,200,access.issue(req));
+      }
       if(asteroids && await asteroids.handle(req,res,url))return;
       if(/^\/api\/(resolve|patch)(\/|$)/.test(url.pathname)||url.pathname.startsWith('/api/observations/')) {
-        if(!isLocalAsteroidRequest(req,!['GET','HEAD'].includes(req.method)))return json(res,403,{error:'Local same-origin requests only.',code:'local_only'});
+        if(!access.enabled && !isLocalAsteroidRequest(req,!['GET','HEAD'].includes(req.method)))return json(res,403,{error:'Local same-origin requests only.',code:'local_only'});
         if(!observationsUrl)return json(res,503,{error:observationError||'Python analysis is unavailable. Run npm run setup:python.',code:'python_unavailable'});
+        if(access.enabled){
+          if(await observations.handle(req,res,url))return;
+          if(!['GET','HEAD'].includes(req.method)||!url.pathname.startsWith('/api/observations/data/patches/'))return json(res,404,{error:'Unknown observation endpoint.'});
+        }
         return await proxy(req,res,url,observationsUrl);
       }
       if(url.pathname.startsWith('/api/'))return json(res,404,{error:'Unknown API endpoint.'});
@@ -73,8 +87,10 @@ export function createSiteServer({webRoot,asteroids,observationsUrl='',experienc
       res.writeHead(range?206:200,headers);
       if(req.method==='HEAD')return res.end();
       createReadStream(path,range||{}).on('error',()=>res.destroy()).pipe(res);
-    }catch(error){if(res.headersSent)return res.destroy();const status=error.status||(['ENOENT','ENOTDIR'].includes(error.code)?404:500);json(res,status,{error:status===500?'Request failed.':error.message});}
+    }catch(error){if(res.headersSent)return res.destroy();const status=error.status||(['ENOENT','ENOTDIR'].includes(error.code)?404:500);if(status===429)res.setHeader('Retry-After','10');json(res,status,{error:status===500?'Request failed.':error.message,...(error.status&&error.code?{code:error.code}:{})});}
   });
+  server.once('close',()=>observations.close());
+  return server;
 }
 export async function listenOnAvailablePort(server,{port=4173,host='127.0.0.1',automatic=true}={}){
   const ports=automatic&&port!==0?[port,...Array.from({length:19},(_,i)=>port+i+1).filter(p=>p<=65535),0]:[port];
