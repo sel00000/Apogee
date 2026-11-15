@@ -1,6 +1,7 @@
 import {describe,it,expect} from 'vitest';
 import {artifactUrl,initialBody,jobResultUrl,matchTarget,sceneDataUrl,statusLabel,validateCatalog,validateResult} from '../src/research-model';
 import type {Body} from '../src/types';
+import {setLang} from '../src/i18n';
 
 describe('asteroid workspace target identity',()=>{
   const bodies=[{id:'10',name:'10 Hygiea',kind:'asteroid'},{id:'764',name:'764 Gedania',kind:'asteroid'}] as Body[];
@@ -24,7 +25,7 @@ describe('analysis result boundaries',()=>{
     expect(sceneDataUrl('https://evil.test'+route,'http://localhost:4173')).toBeNull();
     expect(sceneDataUrl('/api/private/','http://localhost:4173')).toBeNull();
   });
-  it('distinguishes missing data from pipeline failure',()=>{expect(statusLabel('no_data')).toBe('관측 자료 없음');expect(statusLabel('failed')).toBe('실패');});
+  it('distinguishes missing data from pipeline failure',()=>{setLang('ko');expect(statusLabel('no_data')).toBe('관측 자료 없음');expect(statusLabel('failed')).toBe('실패');setLang('en');expect(statusLabel('no_data')).toBe('No observation data');expect(statusLabel('failed')).toBe('Failed');});
   it('resolves relative and absolute job results against the configured API prefix',()=>{
     const api='https://science.example/service',origin='https://owner.github.io',route='/api/asteroid-analysis/jobs/00000000-0000-0000-0000-000000000001/result.json';
     for(const value of [route,route.slice(1),'/service'+route,api+route])expect(jobResultUrl(value,origin,api)).toBe(api+route);

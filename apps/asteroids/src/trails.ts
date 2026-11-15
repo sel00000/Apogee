@@ -1,3 +1,4 @@
+import { t } from "./i18n";
 import type { ImageTrail, TrailPoint } from "./types";
 export function visibleTrail(trail: ImageTrail | undefined): TrailPoint[] {
   return (
@@ -95,10 +96,10 @@ export function drawTrail(
   ctx.restore();
 }
 export function trailDescription(trail: ImageTrail | undefined) {
-  if (!trail) return "준비된 관측 영상이 없습니다.";
+  if (!trail) return t("tr.none");
   if (trail.points.length === 1)
-    return "촬영 1회 · 위치 원만 표시 (이동 비교 자료 없음)";
+    return t("tr.single");
   const visible = visibleTrail(trail).length,
     outside = trail.points.length - visible;
-  return `촬영 ${trail.points.find((p) => p.id === trail.currentId)?.order} / ${trail.points.length} · 화면 안 ${visible}개 위치${outside ? ` · 화면 밖 ${outside}개` : ""} · 원은 JPL 관측시각별 예측 위치`;
+  return t("tr.count", { order: String(trail.points.find((p) => p.id === trail.currentId)?.order), total: trail.points.length, visible, outside: outside ? t("tr.outside", { n: outside }) : "" });
 }

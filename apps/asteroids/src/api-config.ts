@@ -1,14 +1,15 @@
+import {LocalError} from './i18n';
 /// <reference types="vite/client" />
 /** apiBase is a server origin/deployment prefix, never the /api route itself. */
 export function normalizeApiBase(value: unknown, origin = typeof location === 'undefined' ? undefined : location.origin): string {
   if (value == null || value === '') return '';
-  if (typeof value !== 'string' || /[\\\s\u0000]/.test(value)) throw Error('분석 서버 주소 형식이 올바르지 않습니다.');
-  if(value.startsWith('//'))throw Error('분석 서버 주소 형식이 올바르지 않습니다.');
+  if (typeof value !== 'string' || /[\\\s\u0000]/.test(value)) throw new LocalError('api.badFormat');
+  if(value.startsWith('//'))throw new LocalError('api.badFormat');
   const url = value.startsWith('/') ? new URL(value, origin) : new URL(value);
   const local = ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname);
-  if ((url.protocol !== 'https:' && !(local && url.protocol === 'http:')) || url.username || url.password || url.search || url.hash || /%|(?:^|\/)\.\.(?:\/|$)/.test(value)) throw Error('분석 서버는 HTTPS 주소여야 합니다. 로컬 테스트는 HTTP를 사용할 수 있습니다.');
+  if ((url.protocol !== 'https:' && !(local && url.protocol === 'http:')) || url.username || url.password || url.search || url.hash || /%|(?:^|\/)\.\.(?:\/|$)/.test(value)) throw new LocalError('api.https');
   const path = url.pathname.replace(/\/+$/, '');
-  if (/\/api$/.test(path)) throw Error('분석 서버 주소에는 /api를 붙이지 마세요.');
+  if (/\/api$/.test(path)) throw new LocalError('api.noApi');
   return url.origin + path;
 }
 
@@ -45,13 +46,13 @@ async function createSession(config: ApiConfig, key: string): Promise<Session> {
     const response = await fetch(config.apiBase+'/api/session', {credentials:'omit',cache:'no-store',redirect:'error',signal:AbortSignal.timeout(10000)});
     // A pre-integration local development server may not implement sessions.
     if(response.status===404 && /^http:\/\/(localhost|127\.0\.0\.1|\[::1\])(?=[:/]|$)/.test(config.apiBase)) return {sessionToken:null,expiresAt:Date.now()+60000};
-    if (!response.ok) throw Error(`분석 서버 세션을 시작하지 못했습니다 (${response.status}). 다시 연결하세요.`);
+    if (!response.ok) throw new LocalError('api.session',{s:response.status});
     const value = await response.json();
     let session: Session;
     if (value.publicMode === false) session={sessionToken:null,expiresAt:Date.now()+60000};
     else {
       const expiresAt = Date.parse(value.expiresAt);
-      if(value.publicMode!==true || typeof value.sessionToken!=='string' || !/^[\x21-\x7e]{1,4096}$/.test(value.sessionToken) || !Number.isFinite(expiresAt) || expiresAt<=Date.now()) throw Error('분석 서버 세션 응답이 올바르지 않습니다.');
+      if(value.publicMode!==true || typeof value.sessionToken!=='string' || !/^[\x21-\x7e]{1,4096}$/.test(value.sessionToken) || !Number.isFinite(expiresAt) || expiresAt<=Date.now()) throw new LocalError('api.sessionBad');
       session={sessionToken:value.sessionToken,expiresAt};
     }
     sessions.set(key,session);

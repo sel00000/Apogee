@@ -319,6 +319,7 @@ h1 {
 }
 .panel-title {
   display: flex;
+  gap: 8px;
   align-items: center;
   justify-content: space-between;
   margin-top: 7px;
@@ -329,6 +330,8 @@ h1 {
   margin: 7px 0;
 }
 .badge {
+  flex: none;
+  white-space: nowrap;
   font-size: 8px;
   letter-spacing: 1px;
   border: 1px solid #36504a;
@@ -760,10 +763,13 @@ button:disabled {
     right: 12px;
   }
   .photo-controls {
-    gap: 8px;
+    gap: 6px;
     flex-wrap: wrap;
     font-size: 10px;
     padding: 6px;
+  }
+  .photo-controls input[type="range"] {
+    width: 64px;
   }
 }
 .compare-modes {
@@ -826,4 +832,57 @@ button:disabled {
   line-height: 1.6;
   color: #8fa7b5;
   margin: 7px 0 14px;
+}
+.scene-toggles {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+#scene canvas:focus-visible {
+  outline: 2px solid #87dfc9;
+  outline-offset: -2px;
+}
+/* Only while the Gaia background is shown: same shadow the body labels already use, so the small text stays readable. */
+.universe.sky-on .compass,
+.universe.sky-on .scene-bottom,
+.universe.sky-on .scale-note,
+.universe.sky-on .scene-top #target-sub {
+  text-shadow: 0 1px 5px #000, 0 0 2px #000;
+}
+/* Only while the Gaia background is shown and not in SPHEREx view (it must not darken the real photo plane): scrim in the scene's own background colour under the edge text. */
+.sky-scrim {
+  display: none;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.universe.sky-on:not(.observing) .sky-scrim {
+  display: block;
+  background:
+    linear-gradient(to bottom, #090e17 0, #090e17 60px, #090e17f2 105px, #090e1700 140px),
+    linear-gradient(to top, #090e17 0, #090e17 60px, #090e17f2 112px, #090e1700 150px);
+}
+/* Narrow screens: stack the controls line and the check boxes above the explanation line so longer text never runs into it (same layout in both languages). */
+@media (max-width: 800px) {
+  .scene-bottom {
+    left: 18px;
+    right: 18px;
+    bottom: 56px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .scene-toggles label {
+    white-space: nowrap;
+  }
+  .scale-note {
+    left: 18px;
+    right: 18px;
+    bottom: 12px;
+    line-height: 1.4;
+  }
+  .compass {
+    left: 18px;
+    bottom: 124px;
+  }
 }

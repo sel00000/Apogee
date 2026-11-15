@@ -1,3 +1,5 @@
+import {LocalError, t} from './i18n';
+import type {Key} from './i18n';
 import type { Body } from './types';
 import {normalizeApiBase} from './api-config';
 
@@ -35,24 +37,24 @@ export function initialBody(bodies: Body[], requested = ''): Body|undefined {
 }
 export function validateCatalog(value: unknown): Catalog {
   const data = value as Catalog;
-  if (!data || data.schema !== 'spherex-asteroid-web-1' || !Array.isArray(data.targets)) throw Error('지원하지 않는 분석 목록 형식입니다.');
+  if (!data || data.schema !== 'spherex-asteroid-web-1' || !Array.isArray(data.targets)) throw new LocalError('rm.catalogFormat');
   const ids = new Set<string>();
   for (const row of data.targets) {
-    if (!row || typeof row.id !== 'string' || typeof row.name !== 'string' || typeof row.detail !== 'string' || ids.has(row.id)) throw Error('분석 목록의 대상 정보가 올바르지 않습니다.');
+    if (!row || typeof row.id !== 'string' || typeof row.name !== 'string' || typeof row.detail !== 'string' || ids.has(row.id)) throw new LocalError('rm.catalogRow');
     ids.add(row.id);
   }
   return data;
 }
 export function validateResult(value: unknown): AnalysisResult {
   const result = value as AnalysisResult;
-  if (!result || result.schema !== 'spherex-asteroid-web-1' || typeof result.id !== 'string' || !result.record || typeof result.record !== 'object' || Array.isArray(result.record)) throw Error('분석 결과 형식을 확인할 수 없습니다.');
+  if (!result || result.schema !== 'spherex-asteroid-web-1' || typeof result.id !== 'string' || !result.record || typeof result.record !== 'object' || Array.isArray(result.record)) throw new LocalError('rm.resultFormat');
   return result;
 }
 /** Result artifacts stay in their own directory; arbitrary URL schemes and traversal are rejected. */
 export function artifactUrl(base: string, file: string): string {
   const parent = new URL('.', base);
   const url = new URL(file, parent);
-  if (url.origin !== parent.origin || !url.pathname.startsWith(parent.pathname) || url.username || url.password || /[\\\u0000]/.test(file) || !/^https?:$/.test(url.protocol)) throw Error('허용되지 않은 결과 파일 경로입니다.');
+  if (url.origin !== parent.origin || !url.pathname.startsWith(parent.pathname) || url.username || url.password || /[\\\u0000]/.test(file) || !/^https?:$/.test(url.protocol)) throw new LocalError('rm.artifactPath');
   return url.href;
 }
 function jobUrl(value: string|null, origin: string, apiBase: string, leaf: 'scene/'|'result.json'): string|null {
@@ -78,15 +80,15 @@ export function jobResultUrl(value: string|null, origin: string, apiBase = ''): 
   return jobUrl(value, origin, apiBase, 'result.json');
 }
 export function number(value: unknown, digits = 2): string {
-  return typeof value === 'number' && Number.isFinite(value) ? value.toLocaleString('ko-KR', {maximumFractionDigits: digits}) : '산출되지 않음';
+  return typeof value === 'number' && Number.isFinite(value) ? value.toLocaleString('ko-KR', {maximumFractionDigits: digits}) : t('rm.notComputed');
 }
 export function interval(value: unknown): string {
-  return Array.isArray(value) && value.length === 2 && value.every(n => typeof n === 'number' && Number.isFinite(n)) ? `${number(value[0])}–${number(value[1])}` : '구간 미제공';
+  return Array.isArray(value) && value.length === 2 && value.every(n => typeof n === 'number' && Number.isFinite(n)) ? `${number(value[0])}–${number(value[1])}` : t('rm.noInterval');
 }
 export function scientific(value: unknown): string {
-  if(typeof value!=='number'||!Number.isFinite(value))return '산출되지 않음';
+  if(typeof value!=='number'||!Number.isFinite(value))return t('rm.notComputed');
   return Math.abs(value)>=1e9?value.toExponential(3).replace('e+',' × 10^'):number(value);
 }
 export function statusLabel(status: string): string {
-  return ({queued:'대기',running:'분석 중',completed:'처리 완료',failed:'실패',cancelled:'취소됨',no_data:'관측 자료 없음',not_started:'미생성'} as Record<string,string>)[status] ?? status;
+  return ['queued','running','completed','failed','cancelled','no_data','not_started'].includes(status) ? t(('st.'+status) as Key) : status;
 }
