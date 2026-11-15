@@ -4,7 +4,8 @@ import test from 'node:test';
 import vm from 'node:vm';
 import { buildAnalysisUrl, targetFromApparentVector, archiveTargetFromSelection, withObservationContext } from '../src/analysis-target.js';
 import { loadEngine } from '../scripts/check-astrometry.mjs';
-import { sanitizeViewState } from '../src/view-state.js';
+import { sanitizeViewState, viewCenter } from '../src/view-state.js';
+import { getLang, locale, onLangChange, t } from '../src/i18n.js';
 
 // Run the actual app event functions and actual analysis controller together.
 // Only the engine/DOM are replaced; the test must catch a missing refresh call
@@ -63,7 +64,7 @@ function harness(nativeEngine, { layerControls = false } = {}) {
     anp: angle => (angle + 2*Math.PI) % (2*Math.PI),
   };
   const context = vm.createContext({
-    URL, URLSearchParams, Intl, console, engine, capitals: [], constellationNames: {}, sanitizeViewState,
+    URL, URLSearchParams, Intl, console, engine, capitals: [], constellationNames: {}, sanitizeViewState, viewCenter, getLang, locale, onLangChange, t,
     buildAnalysisUrl, targetFromApparentVector, archiveTargetFromSelection, withObservationContext, createAnalysisPicker() {}, openParentAnalysis: () => false, integrationPaused: () => false,
     localStorage: { getItem: () => null },
     document: { documentElement: { dataset: {} }, querySelector: element, querySelectorAll: selector => layerControls && selector === '[data-layer]' ? ['landscape','atmosphere'].map(name => { const node = element('#layer-' + name); node.dataset.layer = name; return node; }) : [], addEventListener() {}, activeElement: null, hidden: false },
@@ -205,11 +206,11 @@ test('actual WASM Moon card follows date and observer changes and matches the an
   h.run('syncTime()');
   assert.notEqual(card.textContent, before, 'the same native Moon object must update after a date change');
   assert.notEqual(magnitude.textContent, magnitudeBefore);
-  assert.equal(magnitude.textContent, `겉보기 등급 ${moon.getInfo('vmag').toFixed(2)}`);
+  assert.equal(magnitude.textContent, `Apparent magnitude ${moon.getInfo('vmag').toFixed(2)}`);
   const dated = card.textContent;
   h.run("changeLocation({name:'Sydney', latitude:-33.8688, longitude:151.2093, elevation:58})");
   assert.notEqual(card.textContent, dated, 'lunar topocentric parallax must update after relocation');
-  assert.equal(magnitude.textContent, `겉보기 등급 ${moon.getInfo('vmag').toFixed(2)}`);
+  assert.equal(magnitude.textContent, `Apparent magnitude ${moon.getInfo('vmag').toFixed(2)}`);
   assert.equal(h.element('#selection-details').textWrites, detailWrites, 'static selection text must retain its DOM content');
   h.element('#selection-analyze').emit('click');
   const url = new URL(h.element('#analysis-new-tab').href);
@@ -224,13 +225,13 @@ test('forward/reverse updates only the changing magnitude and hides unavailable 
   const h = harness();
   const field = h.element('#selection-magnitude');
   const staticWrites = h.element('#selection-details').textWrites;
-  assert.equal(field.textContent, '겉보기 등급 -12.00');
+  assert.equal(field.textContent, 'Apparent magnitude -12.00');
   h.observer.utc += 14;
   h.run('syncTime()');
-  assert.equal(field.textContent, '겉보기 등급 -10.60');
+  assert.equal(field.textContent, 'Apparent magnitude -10.60');
   h.observer.utc -= 14;
   h.run('syncTime()');
-  assert.equal(field.textContent, '겉보기 등급 -12.00');
+  assert.equal(field.textContent, 'Apparent magnitude -12.00');
   h.moon.getInfo = () => NaN;
   h.run('updateSelectionMagnitude()');
   assert.equal(field.textContent, '');

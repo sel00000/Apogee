@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 import { targetFromVector } from './analysis-target.js';
 import { selectObjectAtPoint } from './sky-selection.js';
+import { t } from './i18n.js';
 
 const STEREOGRAPHIC = 2;
 const MOLLWEIDE = 5;
@@ -50,7 +51,7 @@ export function targetAtSkyPoint(engine, point, canvas) {
   if (!direction) return null;
   // ASTROM removes the observer's aberration and solar light deflection too.
   // The engine's ICRF axes alone still contain those apparent-position effects.
-  return targetFromVector(engine.convertFrame(engine.observer, 'VIEW', 'ASTROM', direction), '클릭한 하늘 영역');
+  return targetFromVector(engine.convertFrame(engine.observer, 'VIEW', 'ASTROM', direction), t('picker.clickedLabel'));
 }
 
 export function bindSkyClickAnalysis({ engine, canvas, canAnalyze = () => true, isAnalysisMode = () => false, onTarget, onSelection = () => {} }) {

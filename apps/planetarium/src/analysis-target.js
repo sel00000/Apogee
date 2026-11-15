@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
+import { getLang, t } from './i18n.js';
 // Convert an astrometric Cartesian direction to archive ICRS degrees.
-export function targetFromVector(vector, label = '선택한 천체') {
+export function targetFromVector(vector, label = t('selection.default')) {
   if (!vector || vector.length < 3) return null;
   const [x, y, z] = vector;
   if (![x, y, z].every(Number.isFinite) || Math.hypot(x, y, z) === 0) return null;
@@ -12,7 +13,7 @@ export function targetFromVector(vector, label = '선택한 천체') {
 // Object `radec` is an apparent vector in the engine's ICRF axes. Normalize
 // explicitly: ASTROM's inverse operates on directions at infinity, including
 // when a nearby object's info vector contains a distance component.
-export function targetFromApparentVector(engine, vector, label = '선택한 천체') {
+export function targetFromApparentVector(engine, vector, label = t('selection.default')) {
   if (!targetFromVector(vector) || typeof engine?.convertFrame !== 'function') return null;
   const length = Math.hypot(...vector.slice(0, 3));
   const direction = [vector[0] / length, vector[1] / length, vector[2] / length, 0];
@@ -22,7 +23,7 @@ export function targetFromApparentVector(engine, vector, label = '선택한 천�
 // A solar-system body's apparent direction must not be labeled as a catalogue
 // ICRS position by applying the infinity-only inverse. Preserve its observing
 // context; the analysis screen explicitly treats it as a fixed-direction query.
-export function archiveTargetFromSelection(engine, object, label = '선택한 천체') {
+export function archiveTargetFromSelection(engine, object, label = t('selection.default')) {
   if (!engine || !object) return null;
   try {
     const vector = object.getInfo('radec', engine.observer);
@@ -47,17 +48,17 @@ export function withObservationContext(target, engine) {
 
 export function buildAnalysisUrl(target, planetariumUrl, embedded = true) {
   if (!target || !Number.isFinite(target.ra) || !Number.isFinite(target.dec) || Math.abs(target.dec) > 90) {
-    throw new TypeError('분석할 천체의 좌표가 올바르지 않습니다.');
+    throw new TypeError(t('analysis.badCoords'));
   }
   const url = new URL('../analysis/', planetariumUrl);
   const query = new URLSearchParams({
     ra: (((target.ra % 360) + 360) % 360).toFixed(8), dec: target.dec.toFixed(8),
-    label: target.label || '선택한 천체', mode: 'research', lang: 'ko',
+    label: target.label || t('selection.default'), mode: 'research', lang: getLang(),
   });
   // The portal contract preserves arcseconds; the observation API takes degrees.
   if (target.fovArcsec !== undefined) {
     if (!Number.isInteger(target.fovArcsec) || target.fovArcsec < 60 || target.fovArcsec > 780) {
-      throw new TypeError('분석 영역 크기가 지원 범위를 벗어났습니다.');
+      throw new TypeError(t('analysis.badField'));
     }
     query.set('fovArcsec', String(target.fovArcsec));
     query.set('fov', String(target.fovArcsec / 3600));
