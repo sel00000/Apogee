@@ -79,8 +79,10 @@ test('federation deduplicates across 0 degrees at nonzero declination and close 
 
 test('invalid coordinates fail before network lookup; invalid remote coordinates are rejected', async () => {
   let called = false;
-  const service = createSearchService({fetchFn: async () => {called = true; return jsonResponse({});}});
+  // Changed by the user's instruction (English is the default language): the Korean wording is now asked for with lang 'ko'.
+  const service = createSearchService({lang: 'ko', fetchFn: async () => {called = true; return jsonResponse({});}});
   await assert.rejects(service.search('05:70:00 -05:20:00'), /좌표/);
+  await assert.rejects(createSearchService({fetchFn: async () => {called = true; return jsonResponse({});}}).search('05:70:00 -05:20:00'), /Check the coordinates/);
   assert.equal(called, false);
   assert.equal(readSesamePosition('<jradeg>NaN</jradeg><jdedeg>0</jdedeg>', 'bad'), null);
   assert.equal(readSesamePosition('<jradeg>30</jradeg><jdedeg>-91</jdedeg>', 'bad'), null);

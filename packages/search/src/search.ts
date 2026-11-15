@@ -1,14 +1,18 @@
+import { asLang, readStoredLang, LANG_KEY, SearchError, tagged, t, type Lang } from './i18n';
 import { createSearchService, type SearchChoice, type SearchOptions, type SearchSelection } from './service';
 export { createSearchService, selectionFromItem, bodyChoices, readSesamePosition } from './service';
 export { parseCoords } from './core/intent';
 export { createSkySearch } from './core/search';
 export { validateIndexData } from './core/index';
 export type { SearchSelection, SearchChoice, SearchOptions } from './service';
+export { TEXT, t, readStoredLang, type Lang } from './i18n';
 
 export type SearchAction = 'planetarium' | 'analysis' | 'asteroids';
 export interface MountOptions extends SearchOptions {
   onSelect: (selection: SearchSelection, action: SearchAction) => void;
   signal?: AbortSignal;
+  /** Initial language. Without it the stored 'spherex-lang' is read; the search then follows the language events. */
+  lang?: Lang;
 }
 
 const CSS = `
@@ -35,22 +39,22 @@ let sequence = 0;
 
 /** Shell-owned, lazy-search UI. No routing or scientific processing is started until an action is chosen. */
 export function mountSearch(host: HTMLElement, options: MountOptions) {
-  if (!host || !options?.onSelect) throw new Error('검색을 표시할 요소와 선택 처리기가 필요합니다.');
+  if (!host || !options?.onSelect) throw new SearchError('needHostAndHandler');
   const doc = host.ownerDocument;
   if (!doc.getElementById('spherex-search-style')) {
     const style = doc.createElement('style'); style.id = 'spherex-search-style'; style.textContent = CSS; doc.head.append(style);
   }
   const id = `sx-search-${++sequence}`;
   const root = doc.createElement('section'); root.className = 'sx-search';
-  root.innerHTML = `<label for="${id}-input">천체 이름 · 한글/영문 · 천구 좌표</label>
+  let lang: Lang = options.lang ? asLang(options.lang) : readStoredLang();
+  root.innerHTML = `<label for="${id}-input"></label>
     <form role="search"><input id="${id}-input" type="search" autocomplete="off" spellcheck="false" maxlength="160"
-      role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="${id}-results"
-      placeholder="예: 바너드별, M31, 433 Eros, 10.684, 41.269" data-tutorial-search-input>
-      <button class="sx-search-submit" type="submit">검색</button></form>
-    <p class="sx-search-status" role="status" aria-live="polite">검색 목록을 준비하고 있습니다.</p>
-    <ul class="sx-search-results" id="${id}-results" role="listbox" aria-label="천체 검색 결과" hidden></ul>
-    <section class="sx-search-choice" aria-label="선택한 천체" hidden></section>
-    <p class="sx-search-help">좌표는 ICRS/J2000 기준 도 단위 또는 시·분·초로 입력하세요. 예: 05:35:17.3 −05:23:28<br>이동 천체는 날짜·관측자에 맞는 위치 확인이 필요합니다.</p>`;
+      role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="${id}-results" data-tutorial-search-input>
+      <button class="sx-search-submit" type="submit"></button></form>
+    <p class="sx-search-status" role="status" aria-live="polite"></p>
+    <ul class="sx-search-results" id="${id}-results" role="listbox" hidden></ul>
+    <section class="sx-search-choice" hidden></section>
+    <p class="sx-search-help"><span data-help="coords"></span><br><span data-help="moving"></span></p>`;
   host.replaceChildren(root);
   const input = root.querySelector('input')! as HTMLInputElement;
   const form = root.querySelector('form')!;
@@ -58,16 +62,29 @@ export function mountSearch(host: HTMLElement, options: MountOptions) {
   const list = root.querySelector('ul')!;
   const choice = root.querySelector('.sx-search-choice')! as HTMLElement;
   const events = new AbortController();
-  const service = createSearchService(options);
+  const service = createSearchService({...options, lang: () => lang});
   let destroyed = false, composing = false, generation = 0, active = -1;
   let choices: SearchChoice[] = [];
   let selectedChoice: SearchChoice | undefined;
   let running: AbortController | undefined;
   let loadReady = false;
+  // The status line is kept as a function of the language so that a switch re-words it in place.
+  let describeStatus: (l: Lang) => string = l => t(l, 'preparing');
+  let statusError = false;
+  const labelEl = root.querySelector('label')! as HTMLElement;
+  const submitEl = root.querySelector('.sx-search-submit')! as HTMLElement;
+  const field = (name: string) => root.querySelector(`[data-help=${name}]`)! as HTMLElement;
+  const failure = (error: unknown): ((l: Lang) => string) => {
+    const e = error as (Error & {i18nKey?: Parameters<typeof t>[1]});
+    if (e instanceof SearchError) return l => e.text(l);
+    if (e?.i18nKey) return l => t(l, e.i18nKey!);
+    return () => e?.message || '';
+  };
 
-  const say = (text: string, error = false) => {
+  const say = (describe: (l: Lang) => string, error = false) => {
     if (destroyed) return;
-    status.textContent = text; status.toggleAttribute('data-error', error);
+    describeStatus = describe; statusError = error;
+    status.textContent = describe(lang); status.toggleAttribute('data-error', error);
   };
   const cancel = () => {generation++; running?.abort(); running = undefined; form.removeAttribute('aria-busy');};
   const setActive = (index: number) => {
@@ -84,22 +101,29 @@ export function mountSearch(host: HTMLElement, options: MountOptions) {
     cancel();
     options.onSelect({...selected.selection}, action);
   };
+  const applyChoiceText = () => {
+    if (!selectedChoice) return;
+    const text = selectedChoice.texts[lang];
+    choice.querySelector('[data-role=title]')!.textContent = text.label;
+    choice.querySelector('[data-role=detail]')!.textContent = text.detail;
+    choice.querySelectorAll<HTMLElement>('button[data-i18n]').forEach(b => {b.textContent = t(lang, b.dataset.i18n as 'viewSky');});
+  };
   const choose = (index: number) => {
     const selected = choices[index]; if (!selected || destroyed) return;
     cancel(); setActive(index); selectedChoice = selected; choice.replaceChildren(); choice.hidden = false;
-    const title = doc.createElement('strong'); title.textContent = selected.label;
-    const detail = doc.createElement('p'); detail.textContent = selected.detail;
+    const title = doc.createElement('strong'); title.dataset.role = 'title';
+    const detail = doc.createElement('p'); detail.dataset.role = 'detail';
     const actions = doc.createElement('div'); actions.className = 'sx-search-actions';
-    const add = (text: string, action: SearchAction) => {
-      const button = doc.createElement('button'); button.type = 'button'; button.textContent = text;
+    const add = (key: 'openAsteroid' | 'viewSky' | 'analyse', action: SearchAction) => {
+      const button = doc.createElement('button'); button.type = 'button'; button.dataset.i18n = key;
       button.dataset.action = action; actions.append(button);
     };
-    if (selected.selection.kind === 'asteroid') add('소행성 분석 열기', 'asteroids');
+    if (selected.selection.kind === 'asteroid') add('openAsteroid', 'asteroids');
     else {
-      add('천구에서 보기', 'planetarium');
-      if (selected.selection.kind === 'sky') add('SPHEREx 자료 분석', 'analysis');
+      add('viewSky', 'planetarium');
+      if (selected.selection.kind === 'sky') add('analyse', 'analysis');
     }
-    choice.append(title, detail, actions);
+    choice.append(title, detail, actions); applyChoiceText();
     actions.querySelector('button')?.focus({preventScroll: true});
   };
   const render = (items: SearchChoice[]) => {
@@ -111,33 +135,33 @@ export function mountSearch(host: HTMLElement, options: MountOptions) {
       const button = doc.createElement('button'); button.type = 'button'; button.className = 'sx-search-result';
       button.id = `${id}-option-${i}`; button.setAttribute('role', 'option'); button.setAttribute('aria-selected', 'false');
       button.dataset.index = String(i);
-      const title = doc.createElement('strong'); title.textContent = item.label;
-      const detail = doc.createElement('small'); detail.textContent = item.detail;
+      const title = doc.createElement('strong'); title.textContent = item.texts[lang].label; title.dataset.role = 'title';
+      const detail = doc.createElement('small'); detail.textContent = item.texts[lang].detail; detail.dataset.role = 'detail';
       button.append(title, detail); li.append(button); list.append(li);
     });
   };
   const suggest = () => {
     if (!loadReady || composing || destroyed) return;
     render(service.suggest(input.value));
-    say(input.value.trim() ? '후보를 고르거나 검색을 눌러 외부 목록까지 조회하세요.' : '천체 이름이나 좌표를 입력하세요.');
+    say(l => t(l, input.value.trim() ? 'suggestHint' : 'typeHint'));
   };
   const ready = service.ready().then(() => {
     if (!destroyed) {loadReady = true; suggest();}
-  }).catch(error => {say(`검색 목록을 불러오지 못했습니다. 검색을 눌러 다시 시도하세요. ${error.message}`, true);});
+  }).catch(error => {const why = failure(error); say(l => t(l, 'loadFailed', {detail: why(l)}), true);});
   const search = async (text?: string) => {
     if (destroyed || composing) return;
     if (text !== undefined) input.value = text;
     cancel(); const current = generation; running = new AbortController(); const request = running;
-    const timer = setTimeout(() => request.abort(new DOMException('검색 시간이 초과되었습니다. 다시 시도하세요.', 'TimeoutError')), 20000);
-    render([]); form.setAttribute('aria-busy', 'true'); say('천체를 찾고 있습니다…');
+    const timer = setTimeout(() => request.abort(tagged(new DOMException(t(lang, 'searchTimeout'), 'TimeoutError'), 'searchTimeout', lang)), 20000);
+    render([]); form.setAttribute('aria-busy', 'true'); say(l => t(l, 'searching'));
     try {
       const result = await service.search(input.value, request.signal);
       if (destroyed || current !== generation) return;
-      loadReady = true; render(result.items); say(result.message, result.partial && !result.items.length);
+      loadReady = true; render(result.items); say(result.describe, result.partial && !result.items.length);
     } catch (error) {
       if (destroyed || current !== generation) return;
       const e = error as Error;
-      if (e.name !== 'AbortError') say(e.message || '검색을 완료하지 못했습니다. 다시 시도하세요.', true);
+      if (e.name !== 'AbortError') {const why = failure(e); say(l => why(l) || t(l, 'searchFailed'), true);}
     } finally {
       clearTimeout(timer);
       if (current === generation) {running = undefined; form.removeAttribute('aria-busy');}
@@ -161,13 +185,33 @@ export function mountSearch(host: HTMLElement, options: MountOptions) {
       if (!choices.length || list.hidden) return;
       event.preventDefault(); setActive((active + (event.key === 'ArrowDown' ? 1 : -1) + choices.length) % choices.length);
     } else if (event.key === 'Enter' && active >= 0 && !list.hidden) {event.preventDefault(); choose(active);}
-    else if (event.key === 'Escape' && (!list.hidden || !choice.hidden || running)) {event.preventDefault(); event.stopPropagation(); close(); say('검색을 닫았습니다. 다시 입력해 검색할 수 있습니다.');}
+    else if (event.key === 'Escape' && (!list.hidden || !choice.hidden || running)) {event.preventDefault(); event.stopPropagation(); close(); say(l => t(l, 'closed'));}
   }, {signal: events.signal});
+  const applyLang = () => {
+    root.lang = lang; labelEl.textContent = t(lang, 'label'); submitEl.textContent = t(lang, 'submit');
+    input.placeholder = t(lang, 'placeholder');
+    list.setAttribute('aria-label', t(lang, 'resultsAria')); choice.setAttribute('aria-label', t(lang, 'choiceAria'));
+    field('coords').textContent = t(lang, 'helpCoords'); field('moving').textContent = t(lang, 'helpMoving');
+    status.textContent = describeStatus(lang); status.toggleAttribute('data-error', statusError);
+    list.querySelectorAll<HTMLElement>('button[data-index]').forEach(button => {
+      const text = choices[Number(button.dataset.index)]?.texts[lang]; if (!text) return;
+      button.querySelector('strong')!.textContent = text.label; button.querySelector('small')!.textContent = text.detail;
+    });
+    applyChoiceText();
+  };
+  /** Switch language in place: the typed query, the results and the open choice stay as they are. */
+  const setLang = (next: Lang) => {if (destroyed || next === lang) return; lang = next; applyLang();};
+  const onChange = (event: Event) => setLang(asLang((event as CustomEvent).detail?.lang));
+  const onStorage = (event: StorageEvent) => {if (event.key === LANG_KEY) setLang(asLang(event.newValue));};
+  const view = doc.defaultView;
+  view?.addEventListener('spherex-lang-change', onChange, {signal: events.signal});
+  view?.addEventListener('storage', onStorage, {signal: events.signal});
+  applyLang();
   const destroy = () => {
     if (destroyed) return;
     destroyed = true; cancel(); events.abort(); options.signal?.removeEventListener('abort', destroy); root.remove();
   };
   if (options.signal?.aborted) destroy(); else options.signal?.addEventListener('abort', destroy, {once: true});
   return {ready, search, close, destroy, focus: () => {if (!destroyed) input.focus();},
-    setValue: (value: string) => {if (!destroyed) {input.value = value; cancel(); suggest();}}};
+    setLang, setValue: (value: string) => {if (!destroyed) {input.value = value; cancel(); suggest();}}};
 }
