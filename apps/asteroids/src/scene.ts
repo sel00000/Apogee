@@ -497,8 +497,34 @@ export class SolarScene {
         this.camera,
       );
       const hit = raycaster.intersectObjects(this.instances)[0];
-      if (hit && hit.instanceId !== undefined)
+      if (hit && hit.instanceId !== undefined) {
         this.onSelect(hit.object.userData.ids[hit.instanceId]);
+        return;
+      }
+      // Distant asteroids are only a few pixels wide: fall back to the
+      // nearest instance centre within a 12 px pick tolerance on screen.
+      const m = new T.Matrix4(),
+        v = new T.Vector3();
+      let best: string | undefined,
+        bestD = 12;
+      for (const mesh of this.instances) {
+        if (!mesh.visible) continue;
+        const ids: string[] = mesh.userData.ids;
+        for (let i = 0; i < ids.length; i++) {
+          mesh.getMatrixAt(i, m);
+          v.setFromMatrixPosition(m).applyMatrix4(mesh.matrixWorld).project(this.camera);
+          if (v.z < -1 || v.z > 1) continue;
+          const d = Math.hypot(
+            ((v.x + 1) / 2) * r.width + r.left - e.clientX,
+            ((1 - v.y) / 2) * r.height + r.top - e.clientY,
+          );
+          if (d < bestD) {
+            bestD = d;
+            best = ids[i];
+          }
+        }
+      }
+      if (best) this.onSelect(best);
     });
     this.resizeObserver = new ResizeObserver(() => {
       const w = element.clientWidth,
@@ -547,10 +573,17 @@ export class SolarScene {
       focus &&
       focus !== canvas &&
       (focus.isContentEditable ||
-        /^(INPUT|SELECT|TEXTAREA|BUTTON)$/.test(focus.tagName))
+        /^(INPUT|SELECT|TEXTAREA)$/.test(focus.tagName))
     )
       return;
-    if (!this.pointerOver && focus !== canvas) return;
+    if (focus && focus !== canvas && focus.tagName === "BUTTON") {
+      // A button that was just clicked (Follow, play) keeps the focus. With the pointer over
+      // the scene the keys belong to the scene, so the focus moves there and Space does not
+      // press the button again. Without the pointer over the scene the button keeps its keys.
+      if (!this.pointerOver) return;
+      canvas.focus({ preventScroll: true });
+    }
+    if (!this.pointerOver && document.activeElement !== canvas) return;
     e.preventDefault();
     if (this.keys.has(e.code)) return;
     this.keys.add(e.code);
@@ -657,6 +690,7 @@ export class SolarScene {
       this.turnView(yawRate * CONTROLS.lookRate * dt, pitchRate * CONTROLS.lookRate * dt);
     const speed = flightSpeed(this.nearestSurface()),
       forward = this.camera.getWorldDirection(new T.Vector3()),
+      // Lift follows the camera's own up, as in the reference experience (not the scene's +Z).
       up = new T.Vector3(0, 1, 0).applyQuaternion(this.camera.quaternion);
     this.velocity
       .copy(forward)
