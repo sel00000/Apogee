@@ -2,34 +2,41 @@ import {mountHomeBackground} from './home-background.js';
 import {mountGlassCards} from './glass.js';
 import {mountHomeWaveform} from './home-waveform.js';
 import {mountHomeStory} from './home-story.js';
-import {VIEWS, HOME_ANCHORS, parseRoute, routeHash, analysisParams, childURL, trustedFrameMessage} from './routing.js';
+import {VIEWS, HOME_ANCHORS, parseRoute, routeHash, analysisParams, childURL, trustedFrameMessage, headerCurrent, headerStage, skyReturnHash, viewTitle, documentTitle} from './routing.js';
+import {startI18n, t, getLang, setLang, applyI18n, onLangChange} from './i18n.js';
+startI18n();
 const $=s=>document.querySelector(s),reduce=matchMedia('(prefers-reduced-motion:reduce)');
 const homeWave=mountHomeWaveform(document.querySelector('#home-wave'));
 const disposeGlass=mountGlassCards(document.querySelectorAll('.tool-card'),{reducedMotionMedia:reduce,refraction:false});
 let route='', currentView='home', generation=0, feature=null, home=null, paused=reduce.matches, toastTimer;
 let tutorialActive=false, readyPromise=Promise.resolve(), searchController=null, searchLoading=null;
 try{home=mountHomeBackground($('#home-lens'),undefined,{onStage:info=>homeWave.update(info)});}catch(e){console.warn('Static home background',e);}
-function toast(message){clearTimeout(toastTimer);$('#app-toast').textContent=message;$('#app-toast').classList.add('show');toastTimer=setTimeout(()=>$('#app-toast').classList.remove('show'),3500);}
+let toastKey=null;
+function toast(message,key=null){toastKey=key;clearTimeout(toastTimer);$('#app-toast').textContent=message;$('#app-toast').classList.add('show');toastTimer=setTimeout(()=>{$('#app-toast').classList.remove('show');toastKey=null;},3500);}
+const toastKeyed=key=>toast(t(key),key);
 function updateMotion(){
  const blocked=tutorialActive||document.hidden||!!document.querySelector('dialog[open]');
  home?.setActive(currentView==='home'&&!paused&&!blocked);
  window.__spherexModel?.setActive?.(currentView==='home'&&!blocked);
  feature?.setActive?.(!blocked);
- $('#motion-toggle').setAttribute('aria-pressed',String(paused));$('#motion-toggle').setAttribute('aria-label',paused?'배경 움직임 켜기':'배경 움직임 멈추기');$('#motion-toggle').innerHTML=paused?'▷ <span>움직임 켜기</span>':'Ⅱ <span>움직임 멈추기</span>';
+ $('#motion-toggle').setAttribute('aria-pressed',String(paused));$('#motion-toggle').setAttribute('aria-label',t(paused?'motion.play.label':'motion.pause.label'));$('#motion-toggle').innerHTML=t(paused?'motion.play.html':'motion.pause.html');
 }
 $('#motion-toggle').onclick=()=>{paused=!paused;updateMotion();};reduce.addEventListener('change',()=>{paused=reduce.matches;updateMotion();});
 // Liquid Glass: glass.js moves the light, the rim highlight and the tilt; CSS springs the slab back.
 // 3D model: the bundled Three.js module is fetched only when the mission story is about to start.
 async function loadModel(stage){
  const host=stage.querySelector('#model-host'),status=stage.querySelector('#model-status'),dock=stage.querySelector('.model-dock');
- let mod;try{mod=await import('./assets/model/mission-model.js');}catch(e){status.textContent='3D 모형을 불러오지 못했어요. 사진으로 보여 드릴게요.';throw e;}
+ const fail=key=>{status.dataset.i18n=key;status.textContent=t(key);};
+ let mod;try{mod=await import('./assets/model/mission-model.js');}catch(e){fail('model.failed');throw e;}
  const btn=n=>dock.querySelector(`[data-model="${n}"]`);
- const model=mod.mountMissionModel(host,{url:new URL('assets/model/spherex-hero.glb',import.meta.url).href,
+ const lite=matchMedia('(max-width:700px)').matches;
+ const model=mod.mountMissionModel(host,{url:new URL(lite?'assets/model/spherex-lite.glb':'assets/model/spherex-hero.glb',import.meta.url).href,quality:lite?'lite':'hero',ariaLabel:t('model.aria'),lostMessage:t('model.lost'),
   onReady:()=>stage.classList.add('is-ready'),
-  onError:e=>{console.warn('[home] model',e);status.textContent='3D 모형을 불러오지 못했어요. 사진으로 보여 드릴게요.';},
+  onError:e=>{console.warn('[home] model',e);fail('model.failed');},
   onUserOrbit:()=>btn('spin').setAttribute('aria-pressed','false')});
  stage.addEventListener('model-progress',()=>btn('cutaway').setAttribute('aria-pressed',String(model.cutaway)));
- host.addEventListener('model-error',e=>{status.textContent=e.detail;stage.classList.remove('is-ready');});
+ host.addEventListener('model-error',()=>{fail('model.lost');stage.classList.remove('is-ready');});
+ onLangChange(()=>model.setLabels?.({ariaLabel:t('model.aria'),lostMessage:t('model.lost')}));
  const setFree=on=>{stage.classList.toggle('is-free',on);document.body.classList.toggle('model-free',on);btn('free').setAttribute('aria-pressed',String(on));model.setFree(on);if(on)host.querySelector('canvas')?.focus({preventScroll:true});};
  dock.addEventListener('click',e=>{const b=e.target.closest('[data-model]');if(!b)return;const k=b.dataset.model;
   if(k==='cutaway'){const on=!model.cutaway;model.setCutaway(on);b.setAttribute('aria-pressed',String(on));}
@@ -50,12 +57,12 @@ for(const dialog of document.querySelectorAll('dialog')){
  dialog.addEventListener('close',()=>{if(dialog.id==='search-dialog')searchController?.close?.();updateMotion();dialogFocus?.focus?.({preventScroll:true});});
  dialog.addEventListener('click',event=>{if(event.target!==dialog)return;const r=dialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)dialog.close();});
 }
-$('.menu-toggle').onclick=()=>{const on=$('.site-header nav').classList.toggle('open');$('.menu-toggle').setAttribute('aria-expanded',String(on));$('.menu-toggle').setAttribute('aria-label',on?'메뉴 닫기':'메뉴 열기');};
+$('.menu-toggle').onclick=()=>{const on=$('.site-header nav').classList.toggle('open');$('.menu-toggle').setAttribute('aria-expanded',String(on));$('.menu-toggle').setAttribute('aria-label',t(on?'menu.close':'menu.open'));};
 $('#back-top').onclick=()=>window.scrollTo({top:0,behavior:reduce.matches?'instant':'smooth'});
 
 export function analyze(target){
  try{return go('analysis',analysisParams(target));}
- catch(error){toast(error.message);return Promise.resolve(false);}
+ catch(error){if(error?.i18nKey)toastKeyed(error.i18nKey);else toast(error.message);return Promise.resolve(false);}
 }
 export function go(view,params={}){
  const hash=routeHash(view,params);
@@ -77,7 +84,7 @@ async function openSearch(){
  openDialog($('#search-dialog'));
  if(searchController){searchController.focus();return;}
  const host=$('#global-search');
- host.textContent='천체 검색을 준비하고 있습니다…';
+ host.replaceChildren();const prep=document.createElement('span');prep.dataset.i18n='search.preparing';prep.textContent=t('search.preparing');host.append(prep);
  try{
   searchLoading ||= import(new URL('search/search.js',document.baseURI).href);
   const {mountSearch}=await searchLoading;
@@ -89,8 +96,8 @@ async function openSearch(){
   if($('#search-dialog').open)searchController.focus();
  }catch(error){
   searchLoading=null;host.replaceChildren();
-  const note=document.createElement('p');note.textContent='검색 자료를 불러오지 못했습니다. 연결을 확인한 뒤 다시 시도해 주세요.';
-  const retry=document.createElement('button');retry.type='button';retry.className='pill';retry.textContent='다시 시도';retry.onclick=openSearch;host.append(note,retry);
+  const note=document.createElement('p');note.dataset.i18n='search.failed';note.textContent=t('search.failed');
+  const retry=document.createElement('button');retry.type='button';retry.className='pill';retry.dataset.i18n='common.retry';retry.textContent=t('common.retry');retry.onclick=openSearch;host.append(note,retry);
   console.error('[search]',error);
  }
 }
@@ -108,19 +115,46 @@ function syncAsteroidNavigation(params){
   if((params.get('tab')||'orbit')===a.dataset.asteroidTab)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');
  }
 }
+function syncHeader(view,params){
+ const current=headerCurrent(view,params);
+ for(const a of document.querySelectorAll('[data-view]')){if(a.dataset.view===current)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');}
+}
+function syncSkyNavigation(params){
+ const tabs=$('#sky-navigation');
+ tabs.hidden=currentView!=='planetarium';
+ if(tabs.hidden)return;
+ tabs.querySelector('[data-sky-nav="planetarium"]').href=routeHash('planetarium',params);
+}
+const plainClick=e=>e.button===0&&!e.metaKey&&!e.ctrlKey&&!e.shiftKey&&!e.altKey;
+function openHash(hash){if(location.hash!==hash)history.pushState(null,'',hash);return navigate();}
+$('#sky-navigation').addEventListener('click',event=>{
+ const a=event.target.closest('[data-sky-nav]');if(!a||!plainClick(event))return;
+ event.preventDefault();
+ if(a.dataset.skyNav==='spherex'){let state;try{state=feature?.getState?.();}catch{state=null;}openHash(skyReturnHash(state));}
+});
+// Header: with the analysis app already mounted, 천구 관찰 / SPHEREx 분석 switch its stage in place (no reload);
+// the child answers with spherex-analysis-url and syncChildRoute re-applies the highlight.
+$('.site-header nav').addEventListener('click',event=>{
+ const a=event.target.closest('a[data-view]');if(!a||!plainClick(event))return;
+ const stage=headerStage(a.dataset.view);
+ if(!stage||currentView!=='analysis'||!feature?.frame||!feature.isLoaded?.())return;
+ event.preventDefault();
+ feature.frame.contentWindow.postMessage({type:'spherex-analysis-stage',stage},location.origin);
+ $('.site-header nav').classList.remove('open');$('.menu-toggle').setAttribute('aria-expanded','false');$('.menu-toggle').setAttribute('aria-label',t('menu.open'));
+});
 function mountFrame(view,params,container){
  const frame=document.createElement('iframe');
  frame.className='application-frame '+(view==='analysis'?'analysis-frame':'asteroid-frame');
  frame.dataset.feature=view;
- frame.title=view==='analysis'?'SPHEREx 실제 관측 분석':'소행성 궤도와 SPHEREx 분석';
+ const titleKey=view==='analysis'?'frame.analysis':'frame.asteroids';frame.dataset.i18nAttr='title:'+titleKey;frame.title=t(titleKey);
  frame.allowFullscreen=true;
- let disposed=false,active=true,resolveReady;
+ let disposed=false,active=true,loaded=false,resolveReady;
  const ready=new Promise(resolve=>{resolveReady=resolve;});
  const sendPaused=()=>frame.contentWindow?.postMessage({type:view==='analysis'?'spherex-analysis-pause':'spherex-asteroid-pause',paused:!active},location.origin);
- frame.addEventListener('load',()=>{if(disposed)return;sendPaused();resolveReady();},{once:true});
+ frame.addEventListener('load',()=>{if(disposed)return;loaded=true;sendPaused();resolveReady();},{once:true});
  frame.src=childURL(view,params,document.baseURI).href;
  container.replaceChildren(frame);
- return {frame,ready,setActive(value){active=!!value;sendPaused();},getDocument(){try{return frame.contentDocument;}catch{return null;}},
+ return {frame,ready,isLoaded(){return loaded&&!disposed;},setActive(value){active=!!value;sendPaused();},getDocument(){try{return frame.contentDocument;}catch{return null;}},
   dispose(){if(disposed)return;disposed=true;active=false;sendPaused();resolveReady();frame.src='about:blank';frame.remove();}};
 }
 function adaptController(value){
@@ -151,11 +185,10 @@ function navigate(){
    for(const d of document.querySelectorAll('dialog[open]:not([data-sky-tutorial-dialog])'))d.close();
    document.body.classList.toggle('workspace-mode',currentView!=='home');
    $('#home-view').hidden=currentView!=='home';$('#workspace-view').hidden=currentView==='home';
-   $('.site-header nav').classList.remove('open');$('.menu-toggle').setAttribute('aria-expanded','false');$('.menu-toggle').setAttribute('aria-label','메뉴 열기');
-   for(const a of document.querySelectorAll('[data-view]')){if(a.dataset.view===currentView)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');}
-   syncAsteroidNavigation(next.params);
-   $('#workspace-kicker').textContent=VIEWS[currentView][0];$('#workspace-title').textContent=VIEWS[currentView][1];
-   document.title=VIEWS[currentView][1]+' · 모두를 위한 SPHEREx';
+   $('.site-header nav').classList.remove('open');$('.menu-toggle').setAttribute('aria-expanded','false');$('.menu-toggle').setAttribute('aria-label',t('menu.open'));
+   syncHeader(currentView,next.params);
+   syncAsteroidNavigation(next.params);syncSkyNavigation(next.params);
+   syncTitles();
    updateMotion();
    if(currentView==='home'){
     window.scrollTo({top:0,behavior:'instant'});
@@ -163,7 +196,7 @@ function navigate(){
     window.dispatchEvent(new CustomEvent('spherex-route-ready',{detail:{view:currentView}}));resolve(true);return;
    }
    window.scrollTo({top:0,behavior:'instant'});
-   body.innerHTML='<div class="loading-state" role="status"><strong>같은 하늘, 새로운 탐색</strong>화면을 준비하고 있습니다…</div>';
+   body.innerHTML='<div class="loading-state" role="status" data-i18n-html="loading.html"></div>';applyI18n(body);
    // Do not serialize module fetches: a later route must be able to supersede this one.
    void (async()=>{
     try{
@@ -171,13 +204,13 @@ function navigate(){
      if(currentView==='analysis'||(currentView==='asteroids'&&next.params.get('tab')!=='observations'))mounted=mountFrame(currentView,next.params,body);
      else if(currentView==='planetarium'){
       const mod=await import('./adapters/planetarium.js');if(id!==generation){resolve(false);return;}
-      body.replaceChildren();mounted=adaptController(await mod.mountPlanetarium(body,{onAnalyze:analyze,onNavigate:go,toast,params:next.params,onShare:sharePlanetarium}));
+      body.replaceChildren();mounted=adaptController(await mod.mountPlanetarium(body,{onAnalyze:analyze,onNavigate:go,toast,toastKeyed,params:next.params,onShare:sharePlanetarium}));
      }else if(currentView==='asteroids'){
       const mod=await import('./moving/index.js');if(id!==generation){resolve(false);return;}
       body.replaceChildren();mounted=adaptController(await mod.mountMoving(body,{onAnalyze:analyze,toast}));
      }else if(currentView==='experience'){
       const mod=await import('./experience.js');if(id!==generation){resolve(false);return;}
-      body.replaceChildren();mounted=await mod.mountExperience(body,{toast});
+      body.replaceChildren();mounted=await mod.mountExperience(body,{toast,toastKeyed});
      }
      if(id!==generation){mounted?.dispose?.();resolve(false);return;}
      feature=mounted;updateMotion();await mounted?.ready;
@@ -186,8 +219,8 @@ function navigate(){
     }catch(error){
      if(id!==generation){resolve(false);return;}
      feature?.dispose?.();feature=null;
-     body.innerHTML='<div class="failure-state"><h2>화면을 불러오지 못했습니다</h2><p></p><button type="button">다시 시도</button></div>';
-     body.querySelector('p').textContent=error.message;
+     body.innerHTML='<div class="failure-state"><h2 data-i18n="failure.title"></h2><p></p><button type="button" data-i18n="common.retry"></button></div>';applyI18n(body);
+     {const p=body.querySelector('p');if(error?.i18nKey){p.dataset.i18n=error.i18nKey;p.textContent=t(error.i18nKey);}else p.textContent=error.message;}
      body.querySelector('button').onclick=()=>{route='';navigate();};
      console.error(error);resolve(false);
     }
@@ -200,12 +233,13 @@ function syncChildRoute(view,query){
  const params=new URLSearchParams(query);params.delete('embed');
  const hash=routeHash(view,params);history.replaceState(null,'',hash);route=hash;
  if(view==='asteroids')syncAsteroidNavigation(params);
+ if(view==='analysis')syncHeader(view,params);
 }
 async function sharePlanetarium(query){
  if(typeof query!=='string'||query.length>8192)return;
  syncChildRoute('planetarium',query);
- try{await navigator.clipboard.writeText(location.href);toast('천구 위치와 관측 설정을 담은 링크를 복사했습니다.');}
- catch{toast('주소 표시줄의 링크에 현재 천구 설정이 저장되었습니다.');}
+ try{await navigator.clipboard.writeText(location.href);toastKeyed('share.copied');}
+ catch{toastKeyed('share.address');}
 }
 window.addEventListener('message',event=>{
  const frame=feature?.frame;
@@ -219,6 +253,26 @@ window.addEventListener('message',event=>{
   syncChildRoute('asteroids',q);
  }
 });
+function syncTitles(){
+ $('#workspace-kicker').textContent=VIEWS[currentView][0];$('#workspace-title').textContent=viewTitle(currentView,getLang());
+ document.title=documentTitle(currentView,getLang());
+}
+function syncLangToggle(lang){
+ for(const b of document.querySelectorAll('.lang-toggle [data-lang]'))b.setAttribute('aria-pressed',String(b.dataset.lang===lang));
+}
+syncLangToggle(getLang());
+document.querySelector('.lang-toggle')?.addEventListener('click',event=>{
+ const b=event.target.closest('[data-lang]');if(!b)return;
+ if(setLang(b.dataset.lang))$('#lang-live').textContent=t('lang.live');
+});
+onLangChange(lang=>{
+ // In place: no reload, no navigation; the route, scroll position and open panels stay as they are.
+ applyI18n(document,lang);syncLangToggle(lang);syncTitles();updateMotion();
+ const menu=$('.menu-toggle');menu.setAttribute('aria-label',t(menu.getAttribute('aria-expanded')==='true'?'menu.close':'menu.open'));
+ const meta=document.querySelector('meta[name="description"]');if(meta)meta.content=t('meta.description');
+ if(toastKey&&$('#app-toast').classList.contains('show'))$('#app-toast').textContent=t(toastKey);
+});
+if(getLang()!=='en'){const meta=document.querySelector('meta[name="description"]');if(meta)meta.content=t('meta.description');}
 $('.skip-link').onclick=event=>{event.preventDefault();$('#main').focus({preventScroll:true});$('#main').scrollIntoView({behavior:reduce.matches?'instant':'smooth'});};
 window.addEventListener('hashchange',navigate);
 window.addEventListener('popstate',()=>{if(route!==routeHash(parseRoute(location.hash).view,parseRoute(location.hash).params))navigate();});

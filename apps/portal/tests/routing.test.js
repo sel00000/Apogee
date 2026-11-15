@@ -41,3 +41,37 @@ test('child messages require both the exact source window and origin',()=>{
  assert.equal(trustedFrameMessage({...event,origin:'https://evil.test'},frame,'https://example.test'),false);
  assert.equal(trustedFrameMessage({...event,data:null},frame,'https://example.test'),false);
 });
+
+import {headerCurrent,headerStage,skyReturnHash} from '../routing.js';
+
+test('header highlight: 천구 관찰 covers the planetarium and the analysis sky stage',()=>{
+ assert.equal(headerCurrent('planetarium',new URLSearchParams()),'planetarium');
+ assert.equal(headerCurrent('analysis',new URLSearchParams('view=sky&target=barnard')),'planetarium');
+ assert.equal(headerCurrent('analysis',new URLSearchParams('target=barnard')),'analysis');
+ assert.equal(headerCurrent('analysis',new URLSearchParams('view=workbench')),'analysis');
+ assert.equal(headerCurrent('analysis',new URLSearchParams()),'analysis');
+ assert.equal(headerCurrent('asteroids',new URLSearchParams('view=sky')),'asteroids');
+ assert.equal(headerCurrent('experience',new URLSearchParams()),'experience');
+ assert.equal(headerCurrent('home',new URLSearchParams()),'home');
+ assert.equal(headerCurrent('nope',new URLSearchParams()),null);
+ assert.equal(headerCurrent('analysis',parseRoute('#analysis?view=sky').params),'planetarium');
+});
+
+test('header stage messages exist only for the two analysis-backed items',()=>{
+ assert.equal(headerStage('planetarium'),'sky');
+ assert.equal(headerStage('analysis'),'workbench');
+ assert.equal(headerStage('asteroids'),null);
+ assert.equal(headerStage('experience'),null);
+});
+
+test('SPHEREx 천구 address carries the sky centre only when the planetarium state has it',()=>{
+ assert.equal(skyReturnHash({query:'ra=83.82&dec=-5.39&fov=12'}),'#analysis?view=sky&sky=83.82,-5.39,12');
+ assert.equal(skyReturnHash({query:'ra=-10&dec=20&fov=5'}),'#analysis?view=sky&sky=350,20,5');
+ assert.equal(skyReturnHash({query:'lat=37.5&lon=127&fov=60&yaw=1&pitch=2'}),'#analysis?view=sky');
+ assert.equal(skyReturnHash({query:'ra=1&dec=95&fov=5'}),'#analysis?view=sky');
+ assert.equal(skyReturnHash({query:'ra=1&dec=2&fov=0'}),'#analysis?view=sky');
+ assert.equal(skyReturnHash({query:'ra=&dec=&fov='}),'#analysis?view=sky');
+ assert.equal(skyReturnHash({}),'#analysis?view=sky');
+ assert.equal(skyReturnHash(null),'#analysis?view=sky');
+ assert.equal(parseRoute(skyReturnHash({query:'ra=1&dec=2&fov=3'})).params.get('sky'),'1,2,3');
+});

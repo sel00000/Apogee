@@ -1,3 +1,4 @@
+import { t } from './i18n.js';
 // Original BLACKHOLE_BG/index.html waveform display, connected to GravityHero's
 // real quadrupole history. This draws only on the renderer's stage callback.
 export function mountHomeWaveform(panel) {
@@ -56,16 +57,16 @@ export function mountHomeWaveform(panel) {
       let text = '', number = '';
       if (info.stage === 'inspiral') {
         stage.textContent = 'INSPIRAL';
-        text = info.gas ? '원반 마찰 + 2.5PN 반작용' : '2.5PN 중력파 반작용';
-        number = `간격 ${info.rM.toFixed(1)} M`;
+        text = t(info.gas ? 'wave.inspiral.gas' : 'wave.inspiral');
+        number = t('wave.sep', { r: info.rM.toFixed(1) });
       } else if (info.stage === 'plunge') {
-        stage.textContent = 'EOB PLUNGE'; text = '2PN EOB + 선도 복사 토크'; number = `${info.rM.toFixed(1)} M`;
+        stage.textContent = 'EOB PLUNGE'; text = t('wave.plunge'); number = `${info.rM.toFixed(1)} M`;
       } else if (info.stage === 'merger') {
-        stage.textContent = 'MERGER'; text = 'NR 피팅 · 그림자 연결은 근사';
+        stage.textContent = 'MERGER'; text = t('wave.merger');
       } else {
         stage.textContent = 'RINGDOWN';
-        text = info.ev ? `QNM 피팅 · 잔해 ${(info.ev.Mf / info.ev.M).toFixed(3)} M` : 'QNM 피팅';
-        number = info.ev ? `스핀 ${info.ev.af.toFixed(2)}` : '';
+        text = info.ev ? t('wave.ring', { m: (info.ev.Mf / info.ev.M).toFixed(3) }) : t('wave.ring0');
+        number = info.ev ? t('wave.spin', { a: info.ev.af.toFixed(2) }) : '';
       }
       note.textContent = text; note.title = text; value.textContent = number;
       draw(info.slot);

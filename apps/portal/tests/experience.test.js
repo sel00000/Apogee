@@ -38,7 +38,8 @@ test('experience isolates its origin, pauses, rejects forged exits and saves bef
   let complete=false;leaving.then(()=>{complete=true;});await Promise.resolve();assert.equal(complete,false,'another iframe cannot acknowledge an exit');
   emit({type:'spherex-experience-exit-ready',requestId:request.requestId,saved:true});assert.equal(await leaving,true);
   controller.dispose();assert.equal(controller.frame.src,'about:blank');assert.equal(controller.frame.removed,true);assert.equal(listeners.size,0);
-  assert.ok(toasts.some(text=>text.includes('영상')));
+  // Default language is English (spec-i18n D1, user instruction 2026-11-15); was includes('영상').
+  assert.ok(toasts.some(text=>text.includes('video')));
  }finally{controller?.dispose();for(const [key,value] of Object.entries(prior)){if(value===undefined)delete globalThis[key];else globalThis[key]=value;}}
 });
 
@@ -59,7 +60,8 @@ test('static publication offers the attributed original experience in a separate
   const panel=container.children[0],link=panel.children.find(child=>child.tagName==='a');
   assert.equal(link.href,'https://sojourner.artificialisabel.com/');assert.equal(link.target,'_blank');assert.equal(link.rel,'noopener noreferrer');
   assert.ok(panel.children.some(child=>child.textContent.includes('artificial.isabel')));
-  assert.ok(panel.children.some(child=>child.textContent.includes('별도로 저장')));
+  // Default language is English (spec-i18n D1); was includes('별도로 저장').
+  assert.ok(panel.children.some(child=>child.textContent.includes('stored separately')));
   assert.ok(!panel.children.some(child=>child.tagName==='iframe'||child.tagName==='button'));
   controller.dispose();assert.equal(panel.removed,true);
  }finally{controller?.dispose();for(const [key,value] of Object.entries(prior)){if(value===undefined)delete globalThis[key];else globalThis[key]=value;}}

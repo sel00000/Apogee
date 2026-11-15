@@ -14,11 +14,10 @@ export function spherexChannels() {
   return out;
 }
 
-const SKY_CAPTIONS = {
-  stars: '가시광에서 먼지에 가려 검게 보이던 은하 중심이 적외선 별빛에서는 환하게 드러나요. 위아래의 작은 점들은 대부분 우리은하 밖의 다른 은하예요.',
-  dust: '빨강은 약 3.4 µm에서 빛나는 먼지(PAH), 파랑은 약 4 µm에서 빛나는 뜨거운 수소 가스예요. 가시광에서 별빛을 가리던 먼지가 여기서는 스스로 빛나요.',
-  all: '별빛과 먼지·가스를 한 장에 담은, SPHEREx가 2025년 5월부터 12월까지 찍어 만든 첫 전천 지도예요.',
-};
+import { t, onLangChange } from './i18n.js';
+
+// Caption keys for the three infrared layers (texts in i18n/en.js and i18n/ko.js).
+const SKY_CAPTIONS = { stars: 'sky.cap.stars', dust: 'sky.cap.dust', all: 'sky.cap.all' };
 
 export function mountHomeStory(root, { reducedMotion, loadModel } = {}) {
   const motion = reducedMotion || matchMedia('(prefers-reduced-motion: reduce)');
@@ -58,15 +57,21 @@ export function mountHomeStory(root, { reducedMotion, loadModel } = {}) {
   // ---- statement: words brighten one by one while it crosses the viewport
   const statement = root.querySelector('[data-words]');
   if (statement) {
-    const words = statement.textContent.trim().split(/\s+/);
-    statement.setAttribute('aria-label', statement.textContent.trim());
-    statement.textContent = '';
-    words.forEach((w, i) => {
-      const span = document.createElement('span'); span.className = 'w'; span.style.setProperty('--i', i); span.textContent = w;
-      span.setAttribute('aria-hidden', 'true');
-      statement.append(span, document.createTextNode(i < words.length - 1 ? ' ' : ''));
-    });
-    statement.style.setProperty('--n', words.length);
+    // The words are rebuilt when the language changes; --p (the scroll progress) is kept.
+    const fill = text => {
+      const words = text.trim().split(/\s+/);
+      statement.setAttribute('aria-label', text.trim());
+      statement.textContent = '';
+      words.forEach((w, i) => {
+        const span = document.createElement('span'); span.className = 'w'; span.style.setProperty('--i', i); span.textContent = w;
+        span.setAttribute('aria-hidden', 'true');
+        statement.append(span, document.createTextNode(i < words.length - 1 ? ' ' : ''));
+      });
+      statement.style.setProperty('--n', words.length);
+    };
+    const key = statement.dataset.i18nKey;
+    fill(key ? t(key) : statement.textContent);
+    if (key) cleanups.push(onLangChange(() => fill(t(key))));
     scene(statement, (r, vh) => {
       const p = motion.matches ? 1 : clamp((vh * 0.9 - r.top) / (vh * 0.62));
       statement.style.setProperty('--p', p.toFixed(4));
@@ -150,9 +155,10 @@ export function mountHomeStory(root, { reducedMotion, loadModel } = {}) {
         img.classList.toggle('on', on);
       }
       segs.forEach(b => b.setAttribute('aria-checked', String(b.dataset.layer === name)));
-      caption.textContent = SKY_CAPTIONS[name];
+      caption.textContent = t(SKY_CAPTIONS[name]);
     };
     pick('stars');
+    cleanups.push(onLangChange(() => { const on = segs.find(b => b.getAttribute('aria-checked') === 'true'); caption.textContent = t(SKY_CAPTIONS[on?.dataset.layer || 'stars']); }));
     // warm the other two layers once the section is close, so switching is instant
     const warm = new IntersectionObserver(([e]) => {
       if (!e.isIntersecting) return; warm.disconnect();
