@@ -888,8 +888,8 @@ button:disabled {
 .universe.sky-on:not(.observing) .sky-scrim {
   display: block;
   background:
-    linear-gradient(to bottom, #090e17 0, #090e17 60px, #090e17f2 105px, #090e1700 140px),
-    linear-gradient(to top, #090e17 0, #090e17 60px, #090e17f2 112px, #090e1700 150px);
+    linear-gradient(to bottom, #090e17 0, #090e17 60px, #090e17f2 96px, #090e17b3 128px, #090e1766 160px, #090e1726 192px, #090e1700 220px),
+    linear-gradient(to top, #090e17 0, #090e17 60px, #090e17f2 104px, #090e17b3 136px, #090e1766 170px, #090e1726 204px, #090e1700 236px);
 }
 /* Narrow screens: stack the controls line and the check boxes above the explanation line so longer text never runs into it (same layout in both languages). */
 @media (max-width: 800px) {

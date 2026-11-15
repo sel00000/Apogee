@@ -17,8 +17,11 @@ import {
 } from "./sky";
 /** Gaia background display stretch: screen = clamp((map - SKY_BLACK) / (1 - SKY_BLACK)) x SKY_DIM.
  * Chosen from screenshots so the thinnest orbit lines and labels stay readable over the Milky Way. */
-export const SKY_DIM = 0.45;
-export const SKY_BLACK = 0.25;
+export const SKY_DIM = 0.75;
+export const SKY_BLACK = 0.12;
+/** Faint asteroid orbit line opacity without / with the Gaia background (same colour; only raised while the sky is shown). */
+export const FAINT_ORBIT_OPACITY = 0.22;
+export const FAINT_ORBIT_OPACITY_SKY = 0.3;
 /** Mip footprint scale (>1 samples a slightly coarser mip level so the magnified map reads less grainy). */
 export const SKY_SOFTEN = 2.5;
 /** Planet maps (ESA/NASA public products copied to public/sky; see SOURCES.json). */
@@ -273,16 +276,13 @@ export class SolarScene {
         "position",
         new T.Float32BufferAttribute(vertices, 3),
       );
-      this.scene.add(
-        new T.LineSegments(
-          geometry,
-          new T.LineBasicMaterial({
-            color: kind === "planet" ? 0x6689a3 : 0x3b5c65,
-            transparent: true,
-            opacity: kind === "planet" ? 0.65 : 0.22,
-          }),
-        ),
-      );
+      const material = new T.LineBasicMaterial({
+        color: kind === "planet" ? 0x6689a3 : 0x3b5c65,
+        transparent: true,
+        opacity: kind === "planet" ? 0.65 : FAINT_ORBIT_OPACITY,
+      });
+      if (kind !== "planet") this.faintOrbitMaterials.push(material);
+      this.scene.add(new T.LineSegments(geometry, material));
     }
     const rocks = bodies.filter((b) => b.kind === "asteroid");
     for (let k = 0; k < 4; k++) {
@@ -580,8 +580,10 @@ export class SolarScene {
     if (this.skyLevel === 2 && !this.disposed)
       window.setTimeout(() => void this.loadSky(), 1500);
   }
+  private faintOrbitMaterials: T.LineBasicMaterial[] = [];
   private applySky() {
     const shown = this.skyEnabled && this.skyLevel > 0;
+    for (const m of this.faintOrbitMaterials) m.opacity = shown ? FAINT_ORBIT_OPACITY_SKY : FAINT_ORBIT_OPACITY;
     if (this.sky.visible !== shown) {
       this.sky.visible = shown;
       this.onSky(shown);
