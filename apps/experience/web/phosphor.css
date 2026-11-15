@@ -1,0 +1,58 @@
+/* Load after typography.css. Flat native text; glow is the homecoming console's
+   single recipe (0 0 6px currentColor) on lit elements only, scaled by the HUD
+   glow controls (helmet.js phosphorStyle: radius 1.4px, strength .8 = 6px, 100%).
+   Text shadows apply once per glyph; unlike a parent filter, nested labels do
+   not accumulate blur or amplify RGB channels toward white. */
+:root{
+ --hud-bloom-filter:none;
+ --phosphor-radius:1.4px;
+ --phosphor-strength:.8;
+ --phosphor-text-shadow:0 0 .35px color-mix(in srgb,currentColor 68%,transparent),0 0 1.4px color-mix(in srgb,currentColor 46.4%,transparent),0 0 4.55px color-mix(in srgb,currentColor 17.6%,transparent);
+ --hud-text-glow:var(--phosphor-text-shadow);
+ --hud-glow:0 0 calc(var(--phosphor-radius) * 30 / 7) color-mix(in srgb,currentColor min(100%,calc(var(--phosphor-strength) * 125%)),transparent);
+ /* Unlit text carries a console-black halo: invisible over space, legible over a bright planet. */
+ --hud-halo:0 0 2px rgba(5,4,10,.95),0 0 6px rgba(5,4,10,.75);
+}
+
+/* Clear the legacy panel/brand filter and glow cascade, including any cached
+   inline filter. The canvas renderer and its subtle space lens are outside this
+   DOM. The console's own components (mini map dock, RETURN HOME) keep theirs. */
+#helmet-hud,#helmet-hud *,#scan-targets,#scan-targets *{filter:none!important}
+#helmet-hud,#helmet-hud :not(#solar-dock,#solar-dock *,#return-home,#return-home *){text-shadow:var(--hud-halo)!important}
+/* Lit elements: wordmark, clock, location, tags, section headers, primary values,
+   the selected contact, SCAN, found counts, target and toasts. */
+#helmet-hud :is(.brand,.brand .wordmark,.brand-lockup .epoch,#location,.instrument-title,.contacts-heading,#star-key-mode,.discovery-totals b,.speed-number #flight-speed,.bearing-values,.bearing-values *,#drift-bearing,#contact-list button.selected,#contact-list button.selected *,#approach-phase,#scan-button,#scan-button .scan-symbol,#scan-button-text,#target-chevron,#target-name,#toast,#unlocked-map){
+ text-shadow:var(--hud-glow)!important;
+}
+/* Dialogue keeps the shared voice styling of the ending; scan labels keep their tuned halo. */
+#helmet-hud #narrative *,#scan-targets,#scan-targets *{text-shadow:var(--phosphor-text-shadow)!important}
+/* Over a bright lit disc (Uranus, Mars) the dialogue, the toast and the target label keep their glow on top and
+   carry the console-black halo beneath it: legible without a box, unchanged over dark space. */
+#helmet-hud #narrative *{text-shadow:var(--phosphor-text-shadow),var(--hud-halo)!important}
+/* The small toast, COURSE and target label take a heavier halo. #experience lifts the rule over the lit rule above,
+   whose :is() takes the specificity of its most specific entry (#contact-list button.selected *). */
+#experience #helmet-hud :is(#toast,#drift-bearing,#target-chevron,#target-name){--hud-halo-strong:0 0 2px rgba(5,4,10,.95),0 0 3px rgba(5,4,10,.95),0 0 12px rgba(5,4,10,.95);text-shadow:var(--hud-glow),var(--hud-halo-strong)!important}
+/* Keep the HUD glass clear: colour glow and glyph halos carry the text without
+   a dark fill or a broad shadow behind the instruments. */
+#helmet-hud #subtitle #subtitle-text{width:fit-content;max-width:100%;margin-inline:auto}
+#helmet-hud{perspective:none;transform:none}
+#hud-optics{display:none}
+
+/* These instruments are screen anchored. Preserve ordinary translate centring
+   on subtitles, scan controls and target markers; it is layout, not a warp.
+   The wordmark is set in variable Imbue at 350, unsqueezed. */
+#helmet-hud :is(.brand-lockup,.brand,.epoch,.header-actions,.coordinates,#star-key,#speed-panel,#radar-panel,#map-panel,.nav-help,#sources-button){
+ transform:none;
+ perspective:none;
+}
+#helmet-hud :is(.brand-lockup,.brand,.epoch,.header-actions,.coordinates,#star-key,#speed-panel,#radar-panel,#scan-panel,.nav-help){
+ mix-blend-mode:normal;
+}
+
+/* Native settings and long reference copy stay clear and easy to inspect. */
+#helmet-hud :is(#settings,#jump-lab,#sources) *{
+ text-shadow:none!important;
+}
+#helmet-hud :is(#settings,#jump-lab) :is(h2,h3,.eyebrow){
+ text-shadow:var(--phosphor-text-shadow)!important;
+}

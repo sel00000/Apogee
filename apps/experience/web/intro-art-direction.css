@@ -1,0 +1,112 @@
+/* A local observation archive, then two voices on the same signal. */
+:root{--voice-player:#ffad72;--voice-astra:#74e5dc}
+#loading{display:flex;align-items:center;justify-content:center;padding:32px;text-align:left;background:#05040a;transition:opacity .55s ease,visibility .55s}
+#loading .archive-loader{width:min(590px,100%);letter-spacing:normal}
+#loading .archive-kicker{display:block;font:11.34px/1.5 var(--mono);letter-spacing:.22em;color:#ce9672;margin:0 0 14px}
+#loading h1{font:400 25.515px/1.2 var(--mono);letter-spacing:.035em;color:#b5efe5;margin:0 0 27px}
+#loading .archive-sources{padding:17px 0;margin:0;border-top:1px solid #74e5dc29;border-bottom:1px solid #74e5dc29;list-style:none}
+#loading .archive-sources li{display:grid;grid-template-columns:112px 1fr;gap:18px;padding:5px 0;font:12.285px/1.45 var(--mono);color:#c3cec8}
+#loading .archive-sources li span{display:inline;margin:0;font:inherit;color:#698c86;font-size:10.395px;letter-spacing:.07em}
+#loading .archive-status{display:flex;align-items:center;gap:11px;margin:20px 0 0;color:#74e5dc;font:11.34px/1.5 var(--mono);letter-spacing:.04em}
+#loading .archive-status::before{content:'';display:block;flex:none;width:5px;height:9px;background:currentColor;animation:archive-cursor 1.1s steps(1,end) infinite}
+#loading #loading-state{display:inline;margin:0;font:inherit;color:inherit}
+#loading .archive-note{margin:12px 0 0;font:10.395px/1.5 var(--mono);color:#75857d;letter-spacing:.02em}
+@keyframes archive-cursor{50%{opacity:.25}}
+#subtitle p,#subtitle[data-speaker="astra"] p,#subtitle[data-speaker="memory"] p{font:400 18.9px/1.5 var(--mono);font-style:normal;letter-spacing:.015em;color:var(--voice-player)}
+#subtitle[data-speaker="astra"] p{font-family:var(--display);color:var(--voice-astra)}
+#subtitle-speaker{display:none}
+#subtitle[data-speaker="astra"] #subtitle-speaker{display:block;font:9.45px/1.4 var(--mono);letter-spacing:.22em;color:var(--voice-astra);margin-bottom:7px}
+#subtitle-next{margin-top:14px}
+.dialogue-word{display:inline-block;white-space:nowrap}
+.dialogue-accessible{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+body:not([data-hud="ready"]) .brand,body:not([data-hud="ready"]) .epoch{visibility:hidden}
+@media(max-width:700px){
+ #loading{padding:24px}
+ #loading h1{font-size:19.845px;margin-bottom:19px}
+ #loading .archive-sources li{grid-template-columns:88px 1fr;gap:10px;font-size:11.34px;padding:4px 0}
+ #loading .archive-sources li span{font-size:9.45px}
+ #loading .archive-kicker{font-size:10.395px}
+ #subtitle p,#subtitle[data-speaker="astra"] p,#subtitle[data-speaker="memory"] p{font-size:15.876px;line-height:1.5}
+}
+@media(max-height:650px){#loading h1{margin-bottom:12px}#loading .archive-sources{padding:10px 0}#loading .archive-sources li{padding:2px 0}#loading .archive-status{margin-top:12px}}
+@media(prefers-reduced-motion:reduce){#loading .archive-status::before{animation:none}#loading{transition:none}}
+
+/* Keep flight subtitles clear of the compact Bearings list. */
+@media(max-width:700px){body[data-story="exploring"] #subtitle p,body[data-story="exploring"] #subtitle[data-speaker="astra"] p{font-size:12.096px;line-height:1.5}}
+/* The source feed uses the same condensed phosphor lettering as the instruments. */
+#loading .archive-loader{width:min(660px,100%);max-height:calc(100dvh - 64px);overflow:hidden}
+#loading .archive-kicker{display:inline-block;border:1px solid var(--gold);border-radius:8px;padding:3px 14px;margin-bottom:18px;color:#ff5c55;font:600 20.79px/1.4 'Saira Condensed','Arial Narrow',sans-serif;letter-spacing:.03em;box-shadow:0 0 13px color-mix(in srgb, var(--gold) 21.961%, transparent);text-shadow:0 0 7px #ff5c5555}
+#loading h1{font:400 21.735px/1.3 'Saira Condensed','Arial Narrow',sans-serif;color:var(--gold);margin:0 0 12px}
+#archive-feed{padding:0;margin:0;list-style:none;max-height:55dvh;overflow:auto;scrollbar-width:thin;scrollbar-color:#a3791c66 transparent;color:#53bf7a;font:400 20.79px/1.4 'Saira Condensed','Arial Narrow',sans-serif;letter-spacing:.015em;text-shadow:0 0 6px #38c17044}
+#archive-feed li{min-height:1.4em;margin:2px 0}
+#archive-feed .archive-milestone{color:#6bce92;margin-top:5px}
+#archive-feed li:not(.complete)::after{content:'▍';animation:archive-cursor .7s steps(1,end) infinite}
+#archive-progress{display:block;appearance:none;height:3px;width:100%;margin:21px 0 0;border:0;background:#71491f33;accent-color:var(--gold)}
+#archive-progress::-webkit-progress-bar{background:#71491f33}#archive-progress::-webkit-progress-value{background:var(--gold);box-shadow:0 0 8px var(--gold);transition:width .15s}
+#loading .archive-status{color:var(--gold);font:400 16.065px/1.4 'Saira Condensed','Arial Narrow',sans-serif;margin-top:13px}
+#loading .archive-note{font:400 13.23px/1.4 'Saira Condensed','Arial Narrow',sans-serif;letter-spacing:.08em}
+@media(max-width:600px),(max-height:650px){#archive-feed{font-size:17.01px}#loading .archive-kicker{font-size:18.9px}#loading h1{font-size:18.9px}#archive-feed li{margin:0}}
+
+#loading.done{visibility:hidden}
+#loading #archive-feed{height:min(355px,48dvh)}
+#loading #archive-feed span{display:inline;font:inherit;color:inherit;letter-spacing:inherit;margin:0}
+
+/* Dialogue stays legible at phone sizes, with space reserved above flight controls. */
+@media(max-width:700px),(max-height:500px) and (pointer:coarse){
+ #subtitle p,#subtitle[data-speaker="astra"] p,#subtitle[data-speaker="memory"] p,
+ body[data-story="exploring"] #subtitle p,body[data-story="exploring"] #subtitle[data-speaker="astra"] p{font-size:16.8px;line-height:1.45}
+ #subtitle[data-speaker="astra"] #subtitle-speaker{font-size:11.55px;margin-bottom:5px}
+ #loading{padding:calc(20px + var(--safe-top)) calc(20px + var(--safe-right)) calc(20px + var(--safe-bottom)) calc(20px + var(--safe-left))}
+ #loading .archive-loader{display:flex;flex-direction:column;max-height:100%;overflow:hidden;min-height:0}
+ #loading #archive-feed{height:auto;min-height:0;max-height:48dvh;flex:1 1 auto;overflow-y:auto}
+ #loading .archive-kicker,#loading h1,#archive-progress,#loading .archive-status,#loading .archive-note{flex-shrink:0}
+ #loading .archive-kicker{align-self:flex-start}
+}
+@media(max-height:500px){
+ #loading .archive-kicker{font-size:16.8px;margin-bottom:8px}
+ #loading h1{font-size:16.8px;margin-bottom:8px}
+ #loading .archive-loader{max-height:calc(100dvh - 32px)}
+ #loading #archive-feed{max-height:30dvh;font-size:14.7px}
+ #archive-progress{margin-top:10px}
+ #loading .archive-status{font-size:12.6px;margin-top:8px}
+ #loading .archive-note{font-size:10.5px;margin-top:5px}
+ #subtitle p,#subtitle[data-speaker="astra"] p,#subtitle[data-speaker="memory"] p{font-size:16.8px;line-height:1.4}
+}
+/* Isabel 2026-10-03: the whole loader 30% smaller. zoom shrinks it layout-true (centred on desktop; on phones the column keeps
+   its full width and the type, gaps, feed and bar shrink inside it). #loading itself is not zoomed: its stage-bleed insets
+   (mobile.css) stay full size. The footnote, and the status on short screens, keep the HUD's 10px floor (14.3 × .7). */
+#loading .archive-loader{zoom:.7}
+#loading .archive-note{font-size:14.3px}
+@media(max-height:500px){#loading .archive-status,#loading .archive-note{font-size:14.3px}}
+/* Phones: a fixed feed box (as desktop's min(355px,48dvh)), so the block no longer climbs about 12px with each new line. */
+@media(max-width:700px),(max-height:500px) and (pointer:coarse){#loading #archive-feed{flex:0 0 auto;height:min(340px,48dvh)}}
+/* Landscape phones: while the PHONE VIEW chip is up (mobile.css, 116px down, 44px tall) the archive centres below it. */
+@media(max-height:500px) and (pointer:coarse){html:has(#desktop-notice:not([hidden])) #loading{padding-top:calc(168px + var(--safe-top))}}
+/* batch12: the wake gate (archive-loader.js wakeGate), only where the browser holds sound for a gesture. One more milestone in the
+   feed's own lettering, its cursor still blinking; the whole loader takes the tap/click (any key with a mouse). */
+#loading.waking{cursor:pointer}
+#loading #wake-gate{display:block;margin:14px 0 0;padding:0;border:0;background:none;color:#6bce92;font:400 20.79px/1.4 'Saira Condensed','Arial Narrow',sans-serif;letter-spacing:.015em;text-align:left;text-shadow:0 0 6px #38c17044;cursor:pointer}
+#loading #wake-gate::after{content:'▍';animation:archive-cursor .7s steps(1,end) infinite}
+#loading #wake-gate:focus-visible{outline:1px solid #6bce9299;outline-offset:4px}
+#loading #wake-gate:disabled::after{content:none}
+@media(max-width:600px),(max-height:650px){#loading #wake-gate{font-size:17.01px}}
+@media(max-width:700px),(max-height:500px) and (pointer:coarse){#loading #wake-gate{flex-shrink:0;min-height:44px}}
+@media(max-height:500px){#loading #wake-gate{font-size:14.7px;margin-top:8px}}
+@media(prefers-reduced-motion:reduce){#loading #wake-gate::after{animation:none}}
+
+/* Intro and homecoming share the same dialogue typography and Continue control. */
+:is(#subtitle,#home-dialogue) :is(#subtitle-text,#home-subtitle){font:400 18.9px/1.5 var(--mono);font-style:normal;letter-spacing:.015em;color:var(--voice-player);margin:0;text-wrap:balance}
+:is(#subtitle,#home-dialogue)[data-speaker=astra] :is(#subtitle-text,#home-subtitle){font-family:var(--display);color:var(--voice-astra)}
+:is(#subtitle,#home-dialogue) :is(#subtitle-speaker,#home-speaker){display:none}
+:is(#subtitle,#home-dialogue)[data-speaker=astra] :is(#subtitle-speaker,#home-speaker){display:block;font:9.45px/1.4 var(--mono);letter-spacing:.22em;color:var(--voice-astra);margin-bottom:7px}
+/* batch12: Astra is unnamed until the Traveller asks "astra? you're still here?" (narrative.js `named`): her teal face, no label.
+   (2,2,0) outranks every (2,1,0) display:block above and the phone sizes below, whatever the order. */
+#subtitle[data-speaker="astra"][data-named="false"] #subtitle-speaker{display:none}
+:is(#subtitle-next,#home-next){pointer-events:auto;margin-top:14px;padding:9px 16px;color:#aaa58f;font:9.45px var(--mono);letter-spacing:.15em;opacity:.7;background:none;border:0;border-radius:0;cursor:pointer}
+:is(#subtitle-next,#home-next):hover{opacity:1;color:var(--mint)}
+@media(max-width:700px),(max-height:500px) and (pointer:coarse){
+ :is(#subtitle,#home-dialogue) :is(#subtitle-text,#home-subtitle){font-size:16.8px;line-height:1.45}
+ :is(#subtitle,#home-dialogue)[data-speaker=astra] :is(#subtitle-speaker,#home-speaker){font-size:11.55px;margin-bottom:5px}
+ :is(#subtitle-next,#home-next){font-size:12.6px;min-width:44px;min-height:44px}
+}
+@media(max-height:500px){:is(#subtitle,#home-dialogue) :is(#subtitle-text,#home-subtitle){font-size:16.8px;line-height:1.4}}

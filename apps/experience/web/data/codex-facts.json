@@ -1,0 +1,1105 @@
+{
+ "version": 1,
+ "compiled": "2026-10-02",
+ "note": "Codex facts for the in-game codex (public/codex-ingame.js). Values are NASA/JPL catalogue figures: the NSSDC planetary fact sheets, the JPL Solar System Dynamics satellite tables and Small-Body Database, and NASA Science pages (each entry lists its sources). gravity m/s² (moons and small bodies: GM / mean radius²), dayHours = length of day, yearDays = orbital period, orbitDays/orbitKm = orbit about the parent, distanceAU = mean distance from the Sun (a moon: its planet’s), temperature.c °C.",
+ "temperatureEstimate": "Where no measured figure is listed, temperature.estimate marks a radiative-equilibrium estimate for a rapidly rotating body: T = 278.6 K × (1 − A)^¼ / √(distance in AU), with the Bond albedo A taken as 0.8 × the geometric albedo (at most 0.85), rounded to 5 °C. It is an indication, not a measurement.",
+ "sources": {
+  "nssdc": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/",
+  "jplSatellitePhysical": "https://ssd.jpl.nasa.gov/sats/phys_par/",
+  "jplSatelliteElements": "https://ssd.jpl.nasa.gov/sats/elem/",
+  "jplSatelliteDiscovery": "https://ssd.jpl.nasa.gov/sats/discovery.html",
+  "sbdb": "https://ssd.jpl.nasa.gov/tools/sbdb_lookup.html"
+ },
+ "bodies": {
+  "Sun": {
+   "type": "G2V main-sequence star",
+   "gravity": 274.0,
+   "dayHours": 609.12,
+   "dayNote": "rotation at 16° latitude",
+   "temperature": {
+    "c": 5499,
+    "note": "PHOTOSPHERE · 5,772 K EFFECTIVE"
+   },
+   "atmosphere": "Photosphere · H 91% · He 8.9%",
+   "madeOf": "Hydrogen and helium plasma",
+   "feature": "Holds 99.8% of the solar system’s mass; its core runs at about 15.7 million K.",
+   "discovered": null,
+   "sources": [
+    "https://nssdc.gsfc.nasa.gov/planetary/factsheet/sunfact.html",
+    "https://science.nasa.gov/sun/facts/"
+   ]
+  },
+  "Mercury": {
+   "type": "Terrestrial planet",
+   "gravity": 3.7,
+   "dayHours": 4222.6,
+   "yearDays": 88.0,
+   "distanceAU": 0.387,
+   "temperature": {
+    "c": 167,
+    "note": "MEAN · 590–725 K ON THE SUNWARD SIDE"
+   },
+   "atmosphere": "EXOSPHERE · Na, Mg, O, H, K",
+   "madeOf": "Iron core · rocky mantle",
+   "feature": "The smallest planet: its solar day (176 Earth days) outlasts its 88-day year.",
+   "discovered": "Known since antiquity",
+   "sources": [
+    "https://nssdc.gsfc.nasa.gov/planetary/factsheet/",
+    "https://nssdc.gsfc.nasa.gov/planetary/factsheet/mercuryfact.html"
+   ]
+  },
+  "Venus": {
+   "type": "Terrestrial planet",
+   "gravity": 8.9,
+   "dayHours": 2802.0,
+   "yearDays": 224.7,
+   "distanceAU": 0.723,
+   "temperature": {
+    "c": 464,
+    "note": "MEAN"
+   },
+   "atmosphere": "92 bar · CO₂ 96.5% · N₂ 3.5%",
+   "madeOf": "Rock · iron core",
+   "feature": "The hottest planet; it turns backwards, under clouds of sulfuric acid.",
+   "discovered": "Known since antiquity",
+   "sources": [
+    "https://nssdc.gsfc.nasa.gov/planetary/factsheet/",
+    "https://nssdc.gsfc.nasa.gov/planetary/factsheet/venusfact.html"
+   ]
+  },
+  "Earth": {
+   "type": "Terrestrial planet",
+   "gravity": 9.8,
+   "dayHours": 24.0,
+   "yearDays": 365.2,
+   "distanceAU": 1.0,
+   "temperature": {
+    "c": 15,
+    "note": "MEAN"
+   },
+   "atmosphere": "1 bar · N₂ 78% · O₂ 21% · Ar 0.9%",
+   "madeOf": "Rock · iron-nickel core · water",
+   "feature": "The only world known to keep stable oceans of liquid water on its surface.",
+   "discovered": "Home",
+   "sources": [
+    "https://nssdc.gsfc.nasa.gov/planetary/factsheet/",
+    "https://nssdc.gsfc.nasa.gov/planetary/factsheet/earthfact.html",
+    "https://science.nasa.gov/earth/facts/"
+   ]
+  },
+  "Mars": {
+   "type": "Terrestrial planet",
+   "gravity": 3.7,
+   "dayHours": 24.7,
+   "yearDays": 687.0,
+   "distanceAU": 1.524,
+   "temperature": {
+    "c": -65,
+    "note": "MEAN"
+   },
+   "atmosphere": "0.006 bar · CO₂ 95% · N₂ 2.6% · Ar 1.9%",
+   "madeOf": "Basalt · iron-rich dust · iron core",
+   "feature": "Oxidised iron in its rocks and dust makes it red; Olympus Mons is the largest volcano known.",
+   "discovered": "Known since antiquity",
+   "sources": [
+    "https://nssdc.gsfc.nasa.gov/planetary/factsheet/",
+    "https://nssdc.gsfc.nasa.gov/planetary/factsheet/marsfact.html",
+    "https://science.nasa.gov/mars/facts/"
+   ]
+  },
+  "Jupiter": {
+   "type": "Gas giant",
+   "gravity": 23.1,
+   "dayHours": 9.9,
+   "yearDays": 4331,
+   "distanceAU": 5.204,
+   "temperature": {
+    "c": -110,
+    "note": "MEAN · −108 °C AT 1 BAR"
+   },
+   "atmosphere": "H₂ 89.8% · He 10.2% · CH₄ 0.3%",
+   "madeOf": "Hydrogen and helium · metallic hydrogen deep inside",
+   "feature": "The largest planet; its Great Red Spot is a storm wider than Earth.",
+   "discovered": "Known since antiquity",
+   "sources": [
+    "https://nssdc.gsfc.nasa.gov/planetary/factsheet/",
+    "https://nssdc.gsfc.nasa.gov/planetary/factsheet/jupiterfact.html"
+   ]
+  },
+  "Saturn": {
+   "type": "Gas giant",
+   "gravity": 9.0,
+   "dayHours": 10.7,
+   "yearDays": 10747,
+   "distanceAU": 9.572,
+   "temperature": {
+    "c": -140,
+    "note": "MEAN · −139 °C AT 1 BAR"
+   },
+   "atmosphere": "H₂ 96.3% · He 3.25% · CH₄ 0.45%",
+   "madeOf": "Hydrogen and helium · rocky-icy core",
+   "feature": "Less dense than water; its broad rings are mostly water ice.",
+   "discovered": "Known since antiquity",
+   "sources": [
+    "https://nssdc.gsfc.nasa.gov/planetary/factsheet/",
+    "https://nssdc.gsfc.nasa.gov/planetary/factsheet/saturnfact.html"
+   ]
+  },
+  "Uranus": {
+   "type": "Ice giant",
+   "gravity": 8.7,
+   "dayHours": 17.2,
+   "yearDays": 30589,
+   "distanceAU": 19.165,
+   "temperature": {
+    "c": -195,
+    "note": "MEAN · −197 °C AT 1 BAR"
+   },
+   "atmosphere": "H₂ 82.5% · He 15.2% · CH₄ 2.3%",
+   "madeOf": "Water, ammonia and methane ices · hydrogen-helium envelope",
+   "feature": "Tipped 98° onto its side, it rolls around the Sun; methane gives it its blue-green.",
+   "discovered": "W. Herschel · 1781",
+   "sources": [
+    "https://nssdc.gsfc.nasa.gov/planetary/factsheet/",
+    "https://nssdc.gsfc.nasa.gov/planetary/factsheet/uranusfact.html"
+   ]
+  },
+  "Neptune": {
+   "type": "Ice giant",
+   "gravity": 11.0,
+   "dayHours": 16.1,
+   "yearDays": 59800,
+   "distanceAU": 30.181,
+   "temperature": {
+    "c": -200,
+    "note": "MEAN · −201 °C AT 1 BAR"
+   },
+   "atmosphere": "H₂ 80% · He 19% · CH₄ 1.5%",
+   "madeOf": "Water, ammonia and methane ices · hydrogen-helium envelope",
+   "feature": "Its winds reach 580 m/s, the fastest measured on any planet.",
+   "discovered": "J. G. Galle, after U. Le Verrier · 1846",
+   "sources": [
+    "https://nssdc.gsfc.nasa.gov/planetary/factsheet/",
+    "https://nssdc.gsfc.nasa.gov/planetary/factsheet/neptunefact.html"
+   ]
+  },
+  "Moon": {
+   "type": "Moon of Earth",
+   "gravity": 1.62,
+   "dayHours": 708.7,
+   "orbitDays": 27.32,
+   "distanceAU": 1.0,
+   "temperature": {
+    "c": -20,
+    "note": "MEAN · 127 °C IN SUNLIGHT, −173 °C IN DARKNESS"
+   },
+   "atmosphere": "Exosphere · He, Ne, H₂, Ar",
+   "madeOf": "Rock · small iron core",
+   "feature": "It keeps one face to Earth and drifts 3.8 cm farther away each year.",
+   "discovered": "Known since prehistory",
+   "sources": [
+    "https://nssdc.gsfc.nasa.gov/planetary/factsheet/moonfact.html",
+    "https://science.nasa.gov/moon/facts/",
+    "https://ssd.jpl.nasa.gov/sats/phys_par/"
+   ]
+  },
+  "Pluto": {
+   "type": "Dwarf planet",
+   "gravity": 0.62,
+   "dayHours": 153.3,
+   "yearDays": 90560,
+   "distanceAU": 39.48,
+   "temperature": {
+    "c": -233,
+    "note": "24–38 K (−249 TO −235 °C)",
+    "range": [
+     -249,
+     -235
+    ]
+   },
+   "atmosphere": "13 µbar · N₂ 99% · CH₄ 0.5% · CO 0.05%",
+   "madeOf": "Rock and water ice · N₂, CH₄ and CO frosts",
+   "feature": "A heart-shaped plain of nitrogen ice, Sputnik Planitia, glaciers across its face.",
+   "discovered": "C. Tombaugh · 1930",
+   "sources": [
+    "https://nssdc.gsfc.nasa.gov/planetary/factsheet/",
+    "https://nssdc.gsfc.nasa.gov/planetary/factsheet/plutofact.html"
+   ]
+  },
+  "Phobos": {
+   "type": "Moon of Mars",
+   "gravity": 0.0058,
+   "dayHours": null,
+   "daySync": true,
+   "dayNote": null,
+   "orbitDays": 0.3189,
+   "orbitKm": 9375,
+   "distanceAU": 1.524,
+   "temperature": {
+    "c": -58,
+    "note": "−4 °C AT MOST, −112 °C AT LEAST",
+    "range": [
+     -112,
+     -4
+    ]
+   },
+   "atmosphere": "None",
+   "madeOf": "Carbon-rich rock, porous",
+   "feature": "It creeps about 1.8 m closer to Mars each century; in some 50 million years it will crash or break apart.",
+   "discovered": "A. Hall · 1877",
+   "albedo": 0.07,
+   "sources": [
+    "https://ssd.jpl.nasa.gov/sats/phys_par/",
+    "https://ssd.jpl.nasa.gov/sats/elem/",
+    "https://ssd.jpl.nasa.gov/sats/discovery.html",
+    "https://nssdc.gsfc.nasa.gov/planetary/factsheet/marsfact.html",
+    "https://science.nasa.gov/mars/moons/phobos/"
+   ]
+  },
+  "Deimos": {
+   "type": "Moon of Mars",
+   "gravity": 0.0025,
+   "dayHours": null,
+   "daySync": true,
+   "dayNote": null,
+   "orbitDays": 1.2625,
+   "orbitKm": 23457,
+   "distanceAU": 1.524,
+   "temperature": {
+    "c": -50,
+    "note": "ESTIMATE",
+    "estimate": true
+   },
+   "atmosphere": "None",
+   "madeOf": "Carbon-rich rock, porous",
+   "feature": "Smaller and smoother than Phobos; it takes 30 hours to circle Mars.",
+   "discovered": "A. Hall · 1877",
+   "albedo": 0.07,
+   "sources": [
+    "https://ssd.jpl.nasa.gov/sats/phys_par/",
+    "https://ssd.jpl.nasa.gov/sats/elem/",
+    "https://ssd.jpl.nasa.gov/sats/discovery.html",
+    "https://nssdc.gsfc.nasa.gov/planetary/factsheet/marsfact.html",
+    "https://science.nasa.gov/mars/moons/deimos/"
+   ]
+  },
+  "Io": {
+   "type": "Moon of Jupiter",
+   "gravity": 1.8,
+   "dayHours": null,
+   "daySync": true,
+   "dayNote": null,
+   "orbitDays": 1.7627,
+   "orbitKm": 421800,
+   "distanceAU": 5.204,
+   "temperature": {
+    "c": -170,
+    "note": "ESTIMATE",
+    "estimate": true
+   },
+   "atmosphere": "Tenuous · SO₂",
+   "madeOf": "Silicate rock · sulfur · iron core",
+   "feature": "The most volcanic world known: tides from Jupiter and its neighbours heat its interior.",
+   "discovered": "Galileo · 1610",
+   "albedo": 0.62,
+   "sources": [
+    "https://ssd.jpl.nasa.gov/sats/phys_par/",
+    "https://ssd.jpl.nasa.gov/sats/elem/",
+    "https://ssd.jpl.nasa.gov/sats/discovery.html",
+    "https://nssdc.gsfc.nasa.gov/planetary/factsheet/joviansatfact.html",
+    "https://science.nasa.gov/jupiter/jupiter-moons/io/"
+   ]
+  },
+  "Europa": {
+   "type": "Moon of Jupiter",
+   "gravity": 1.31,
+   "dayHours": null,
+   "daySync": true,
+   "dayNote": null,
+   "orbitDays": 3.5255,
+   "orbitKm": 671100,
+   "distanceAU": 5.204,
+   "temperature": {
+    "c": -175,
+    "note": "ESTIMATE",
+    "estimate": true
+   },
+   "atmosphere": "Tenuous · O₂",
+   "madeOf": "Rock · water-ice shell over a salty ocean",
+   "feature": "Its fractured ice almost certainly floats on a global saltwater ocean.",
+   "discovered": "Galileo · 1610",
+   "albedo": 0.68,
+   "sources": [
+    "https://ssd.jpl.nasa.gov/sats/phys_par/",
+    "https://ssd.jpl.nasa.gov/sats/elem/",
+    "https://ssd.jpl.nasa.gov/sats/discovery.html",
+    "https://nssdc.gsfc.nasa.gov/planetary/factsheet/joviansatfact.html",
+    "https://science.nasa.gov/jupiter/jupiter-moons/europa/europa-facts/"
+   ]
+  },
+  "Ganymede": {
+   "type": "Moon of Jupiter",
+   "gravity": 1.43,
+   "dayHours": null,
+   "daySync": true,
+   "dayNote": null,
+   "orbitDays": 7.1556,
+   "orbitKm": 1070400,
+   "distanceAU": 5.204,
+   "temperature": {
+    "c": -148,
+    "note": "90–160 K BY DAY (−183 TO −113 °C)",
+    "range": [
+     -183,
+     -113
+    ]
+   },
+   "atmosphere": "Tenuous · O₂",
+   "madeOf": "Rock and water ice · iron core",
+   "feature": "The largest moon in the solar system, and the only one with its own magnetic field.",
+   "discovered": "Galileo · 1610",
+   "albedo": 0.44,
+   "sources": [
+    "https://ssd.jpl.nasa.gov/sats/phys_par/",
+    "https://ssd.jpl.nasa.gov/sats/elem/",
+    "https://ssd.jpl.nasa.gov/sats/discovery.html",
+    "https://nssdc.gsfc.nasa.gov/planetary/factsheet/joviansatfact.html",
+    "https://science.nasa.gov/jupiter/jupiter-moons/ganymede/facts/"
+   ]
+  },
+  "Callisto": {
+   "type": "Moon of Jupiter",
+   "gravity": 1.24,
+   "dayHours": null,
+   "daySync": true,
+   "dayNote": null,
+   "orbitDays": 16.6904,
+   "orbitKm": 1882700,
+   "distanceAU": 5.204,
+   "temperature": {
+    "c": -155,
+    "note": "ESTIMATE",
+    "estimate": true
+   },
+   "atmosphere": "Tenuous · CO₂, O₂",
+   "madeOf": "Rock and water ice, little differentiated",
+   "feature": "The most heavily cratered surface known: ancient and barely resurfaced.",
+   "discovered": "Galileo · 1610",
+   "albedo": 0.19,
+   "sources": [
+    "https://ssd.jpl.nasa.gov/sats/phys_par/",
+    "https://ssd.jpl.nasa.gov/sats/elem/",
+    "https://ssd.jpl.nasa.gov/sats/discovery.html",
+    "https://nssdc.gsfc.nasa.gov/planetary/factsheet/joviansatfact.html",
+    "https://science.nasa.gov/jupiter/jupiter-moons/callisto/facts/"
+   ]
+  },
+  "Mimas": {
+   "type": "Moon of Saturn",
+   "gravity": 0.0637,
+   "dayHours": null,
+   "daySync": true,
+   "dayNote": null,
+   "orbitDays": 0.9424,
+   "orbitKm": 186000,
+   "distanceAU": 9.572,
+   "temperature": {
+    "c": -195,
+    "note": "ESTIMATE",
+    "estimate": true
+   },
+   "atmosphere": "None",
+   "madeOf": "Water ice and a little rock",
+   "feature": "The crater Herschel spans about a third of its diameter.",
+   "discovered": "W. Herschel · 1789",
+   "albedo": 0.6,
+   "sources": [
+    "https://ssd.jpl.nasa.gov/sats/phys_par/",
+    "https://ssd.jpl.nasa.gov/sats/elem/",
+    "https://ssd.jpl.nasa.gov/sats/discovery.html",
+    "https://nssdc.gsfc.nasa.gov/planetary/factsheet/saturniansatfact.html",
+    "https://science.nasa.gov/saturn/moons/mimas/"
+   ]
+  },
+  "Enceladus": {
+   "type": "Moon of Saturn",
+   "gravity": 0.113,
+   "dayHours": null,
+   "daySync": true,
+   "dayNote": null,
+   "orbitDays": 1.3702,
+   "orbitKm": 238400,
+   "distanceAU": 9.572,
+   "temperature": {
+    "c": -201,
+    "note": "SURFACE"
+   },
+   "atmosphere": "Water-vapour plumes from the south pole",
+   "madeOf": "Water ice over a global ocean · rocky core",
+   "feature": "Jets from its south pole spray ocean water into space, feeding Saturn’s E ring.",
+   "discovered": "W. Herschel · 1789",
+   "albedo": 1.0,
+   "sources": [
+    "https://ssd.jpl.nasa.gov/sats/phys_par/",
+    "https://ssd.jpl.nasa.gov/sats/elem/",
+    "https://ssd.jpl.nasa.gov/sats/discovery.html",
+    "https://nssdc.gsfc.nasa.gov/planetary/factsheet/saturniansatfact.html",
+    "https://science.nasa.gov/saturn/moons/enceladus/"
+   ]
+  },
+  "Tethys": {
+   "type": "Moon of Saturn",
+   "gravity": 0.146,
+   "dayHours": null,
+   "daySync": true,
+   "dayNote": null,
+   "orbitDays": 1.8878,
+   "orbitKm": 295000,
+   "distanceAU": 9.572,
+   "temperature": {
+    "c": -187,
+    "note": "MEAN"
+   },
+   "atmosphere": "None",
+   "madeOf": "Almost pure water ice",
+   "feature": "The crater Odysseus and the 2,000 km valley Ithaca Chasma.",
+   "discovered": "G. D. Cassini · 1684",
+   "albedo": 0.8,
+   "sources": [
+    "https://ssd.jpl.nasa.gov/sats/phys_par/",
+    "https://ssd.jpl.nasa.gov/sats/elem/",
+    "https://ssd.jpl.nasa.gov/sats/discovery.html",
+    "https://nssdc.gsfc.nasa.gov/planetary/factsheet/saturniansatfact.html",
+    "https://science.nasa.gov/saturn/moons/tethys/"
+   ]
+  },
+  "Dione": {
+   "type": "Moon of Saturn",
+   "gravity": 0.232,
+   "dayHours": null,
+   "daySync": true,
+   "dayNote": null,
+   "orbitDays": 2.7369,
+   "orbitKm": 377700,
+   "distanceAU": 9.572,
+   "temperature": {
+    "c": -186,
+    "note": "MEAN"
+   },
+   "atmosphere": "Trace O₂",
+   "madeOf": "Water ice and rock",
+   "feature": "Its pale streaks turned out to be cliffs of bright exposed ice.",
+   "discovered": "G. D. Cassini · 1684",
+   "albedo": 0.7,
+   "sources": [
+    "https://ssd.jpl.nasa.gov/sats/phys_par/",
+    "https://ssd.jpl.nasa.gov/sats/elem/",
+    "https://ssd.jpl.nasa.gov/sats/discovery.html",
+    "https://nssdc.gsfc.nasa.gov/planetary/factsheet/saturniansatfact.html",
+    "https://science.nasa.gov/saturn/moons/dione/"
+   ]
+  },
+  "Rhea": {
+   "type": "Moon of Saturn",
+   "gravity": 0.264,
+   "dayHours": null,
+   "daySync": true,
+   "dayNote": null,
+   "orbitDays": 4.5175,
+   "orbitKm": 527200,
+   "distanceAU": 9.572,
+   "temperature": {
+    "c": -197,
+    "note": "−174 °C IN SUNLIGHT, −220 °C IN SHADE",
+    "range": [
+     -220,
+     -174
+    ]
+   },
+   "atmosphere": "Tenuous · O₂, CO₂",
+   "madeOf": "Water ice and rock",
+   "feature": "Saturn’s second-largest moon, with ancient, crowded craters.",
+   "discovered": "G. D. Cassini · 1672",
+   "albedo": 0.7,
+   "sources": [
+    "https://ssd.jpl.nasa.gov/sats/phys_par/",
+    "https://ssd.jpl.nasa.gov/sats/elem/",
+    "https://ssd.jpl.nasa.gov/sats/discovery.html",
+    "https://nssdc.gsfc.nasa.gov/planetary/factsheet/saturniansatfact.html",
+    "https://science.nasa.gov/saturn/moons/rhea/"
+   ]
+  },
+  "Titan": {
+   "type": "Moon of Saturn",
+   "gravity": 1.35,
+   "dayHours": null,
+   "daySync": true,
+   "dayNote": null,
+   "orbitDays": 15.9454,
+   "orbitKm": 1221900,
+   "distanceAU": 9.572,
+   "temperature": {
+    "c": -179,
+    "note": "SURFACE"
+   },
+   "atmosphere": "1.5 bar · N₂ ~95% · CH₄ ~5%",
+   "madeOf": "Water ice and rock · hydrocarbon sands and seas",
+   "feature": "The only moon with a dense atmosphere, and the only world besides Earth with rivers, lakes and seas, of methane and ethane.",
+   "discovered": "C. Huygens · 1655",
+   "albedo": 0.22,
+   "sources": [
+    "https://ssd.jpl.nasa.gov/sats/phys_par/",
+    "https://ssd.jpl.nasa.gov/sats/elem/",
+    "https://ssd.jpl.nasa.gov/sats/discovery.html",
+    "https://nssdc.gsfc.nasa.gov/planetary/factsheet/saturniansatfact.html",
+    "https://science.nasa.gov/saturn/moons/titan/facts/"
+   ]
+  },
+  "Hyperion": {
+   "type": "Moon of Saturn",
+   "gravity": 0.0203,
+   "dayHours": null,
+   "daySync": false,
+   "dayNote": "chaotic tumble",
+   "orbitDays": 21.2767,
+   "orbitKm": 1481500,
+   "distanceAU": 9.572,
+   "temperature": {
+    "c": -180,
+    "note": "MEAN"
+   },
+   "atmosphere": "None",
+   "madeOf": "Porous water ice",
+   "feature": "Sponge-like and irregular, it tumbles chaotically.",
+   "discovered": "W. C. Bond, G. P. Bond, W. Lassell · 1848",
+   "albedo": 0.3,
+   "sources": [
+    "https://ssd.jpl.nasa.gov/sats/phys_par/",
+    "https://ssd.jpl.nasa.gov/sats/elem/",
+    "https://ssd.jpl.nasa.gov/sats/discovery.html",
+    "https://nssdc.gsfc.nasa.gov/planetary/factsheet/saturniansatfact.html",
+    "https://science.nasa.gov/saturn/moons/hyperion/"
+   ]
+  },
+  "Iapetus": {
+   "type": "Moon of Saturn",
+   "gravity": 0.224,
+   "dayHours": null,
+   "daySync": true,
+   "dayNote": null,
+   "orbitDays": 79.331,
+   "orbitKm": 3561700,
+   "distanceAU": 9.572,
+   "temperature": {
+    "c": -158,
+    "note": "~130 K AT NOON ON THE DARK SIDE, ~100 K ON THE BRIGHT",
+    "range": [
+     -173,
+     -143
+    ]
+   },
+   "atmosphere": "None",
+   "madeOf": "Water ice under a coat of dark dust",
+   "feature": "One hemisphere coal-dark, the other bright as snow, with a ridge along its equator.",
+   "discovered": "G. D. Cassini · 1671",
+   "albedo": 0.275,
+   "sources": [
+    "https://ssd.jpl.nasa.gov/sats/phys_par/",
+    "https://ssd.jpl.nasa.gov/sats/elem/",
+    "https://ssd.jpl.nasa.gov/sats/discovery.html",
+    "https://nssdc.gsfc.nasa.gov/planetary/factsheet/saturniansatfact.html",
+    "https://photojournal.jpl.nasa.gov/catalog/PIA07005"
+   ]
+  },
+  "Ariel": {
+   "type": "Moon of Uranus",
+   "gravity": 0.249,
+   "dayHours": null,
+   "daySync": true,
+   "dayNote": null,
+   "orbitDays": 2.5204,
+   "orbitKm": 190929,
+   "distanceAU": 19.165,
+   "temperature": {
+    "c": -215,
+    "note": "ESTIMATE",
+    "estimate": true
+   },
+   "atmosphere": "None",
+   "madeOf": "Water ice and rock",
+   "feature": "The brightest and youngest-looking of Uranus’s large moons, cut by rift valleys.",
+   "discovered": "W. Lassell · 1851",
+   "albedo": 0.39,
+   "sources": [
+    "https://ssd.jpl.nasa.gov/sats/phys_par/",
+    "https://ssd.jpl.nasa.gov/sats/elem/",
+    "https://ssd.jpl.nasa.gov/sats/discovery.html",
+    "https://nssdc.gsfc.nasa.gov/planetary/factsheet/uraniansatfact.html",
+    "https://science.nasa.gov/uranus/moons/ariel/"
+   ]
+  },
+  "Umbriel": {
+   "type": "Moon of Uranus",
+   "gravity": 0.249,
+   "dayHours": null,
+   "daySync": true,
+   "dayNote": null,
+   "orbitDays": 4.1442,
+   "orbitKm": 265986,
+   "distanceAU": 19.165,
+   "temperature": {
+    "c": -210,
+    "note": "ESTIMATE",
+    "estimate": true
+   },
+   "atmosphere": "None",
+   "madeOf": "Water ice and rock",
+   "feature": "The darkest of Uranus’s large moons, marked by the bright ring of Wunda crater.",
+   "discovered": "W. Lassell · 1851",
+   "albedo": 0.21,
+   "sources": [
+    "https://ssd.jpl.nasa.gov/sats/phys_par/",
+    "https://ssd.jpl.nasa.gov/sats/elem/",
+    "https://ssd.jpl.nasa.gov/sats/discovery.html",
+    "https://nssdc.gsfc.nasa.gov/planetary/factsheet/uraniansatfact.html",
+    "https://science.nasa.gov/uranus/moons/umbriel/"
+   ]
+  },
+  "Titania": {
+   "type": "Moon of Uranus",
+   "gravity": 0.365,
+   "dayHours": null,
+   "daySync": true,
+   "dayNote": null,
+   "orbitDays": 8.7059,
+   "orbitKm": 436298,
+   "distanceAU": 19.165,
+   "temperature": {
+    "c": -215,
+    "note": "ESTIMATE",
+    "estimate": true
+   },
+   "atmosphere": "None",
+   "madeOf": "Water ice and rock",
+   "feature": "Uranus’s largest moon, split by canyons more than 1,000 km long.",
+   "discovered": "W. Herschel · 1787",
+   "albedo": 0.27,
+   "sources": [
+    "https://ssd.jpl.nasa.gov/sats/phys_par/",
+    "https://ssd.jpl.nasa.gov/sats/elem/",
+    "https://ssd.jpl.nasa.gov/sats/discovery.html",
+    "https://nssdc.gsfc.nasa.gov/planetary/factsheet/uraniansatfact.html",
+    "https://science.nasa.gov/uranus/moons/titania/"
+   ]
+  },
+  "Oberon": {
+   "type": "Moon of Uranus",
+   "gravity": 0.354,
+   "dayHours": null,
+   "daySync": true,
+   "dayNote": null,
+   "orbitDays": 13.4632,
+   "orbitKm": 583511,
+   "distanceAU": 19.165,
+   "temperature": {
+    "c": -215,
+    "note": "ESTIMATE",
+    "estimate": true
+   },
+   "atmosphere": "None",
+   "madeOf": "Water ice and rock",
+   "feature": "The outermost large moon of Uranus: old, dark and heavily cratered.",
+   "discovered": "W. Herschel · 1787",
+   "albedo": 0.23,
+   "sources": [
+    "https://ssd.jpl.nasa.gov/sats/phys_par/",
+    "https://ssd.jpl.nasa.gov/sats/elem/",
+    "https://ssd.jpl.nasa.gov/sats/discovery.html",
+    "https://nssdc.gsfc.nasa.gov/planetary/factsheet/uraniansatfact.html",
+    "https://science.nasa.gov/uranus/moons/oberon/"
+   ]
+  },
+  "Miranda": {
+   "type": "Moon of Uranus",
+   "gravity": 0.0773,
+   "dayHours": null,
+   "daySync": true,
+   "dayNote": null,
+   "orbitDays": 1.4135,
+   "orbitKm": 129846,
+   "distanceAU": 19.165,
+   "temperature": {
+    "c": -215,
+    "note": "ESTIMATE",
+    "estimate": true
+   },
+   "atmosphere": "None",
+   "madeOf": "Water ice and rock",
+   "feature": "A patchwork world whose cliff Verona Rupes drops about 20 km.",
+   "discovered": "G. Kuiper · 1948",
+   "albedo": 0.32,
+   "sources": [
+    "https://ssd.jpl.nasa.gov/sats/phys_par/",
+    "https://ssd.jpl.nasa.gov/sats/elem/",
+    "https://ssd.jpl.nasa.gov/sats/discovery.html",
+    "https://nssdc.gsfc.nasa.gov/planetary/factsheet/uraniansatfact.html",
+    "https://science.nasa.gov/uranus/moons/miranda/"
+   ]
+  },
+  "Triton": {
+   "type": "Moon of Neptune",
+   "gravity": 0.781,
+   "dayHours": null,
+   "daySync": true,
+   "dayNote": null,
+   "orbitDays": 5.877,
+   "orbitKm": 354800,
+   "distanceAU": 30.181,
+   "temperature": {
+    "c": -235,
+    "note": "SURFACE (VOYAGER 2)"
+   },
+   "atmosphere": "14 µbar · N₂, trace CH₄",
+   "madeOf": "Rock and water ice under nitrogen frost",
+   "feature": "It orbits backwards, likely a captured Kuiper-belt world, and vents nitrogen plumes.",
+   "discovered": "W. Lassell · 1846",
+   "albedo": 0.72,
+   "sources": [
+    "https://ssd.jpl.nasa.gov/sats/phys_par/",
+    "https://ssd.jpl.nasa.gov/sats/elem/",
+    "https://ssd.jpl.nasa.gov/sats/discovery.html",
+    "https://nssdc.gsfc.nasa.gov/planetary/factsheet/neptuniansatfact.html",
+    "https://science.nasa.gov/neptune/moons/triton/"
+   ]
+  },
+  "Charon": {
+   "type": "Moon of Pluto",
+   "gravity": 0.289,
+   "dayHours": null,
+   "daySync": true,
+   "dayNote": null,
+   "orbitDays": 6.3872,
+   "orbitKm": 19596,
+   "distanceAU": 39.48,
+   "temperature": {
+    "c": -235,
+    "note": "ESTIMATE",
+    "estimate": true
+   },
+   "atmosphere": "None",
+   "madeOf": "Water ice and rock",
+   "feature": "Half Pluto’s size: the two keep the same faces turned to each other.",
+   "discovered": "J. W. Christy · 1978",
+   "albedo": 0.42,
+   "sources": [
+    "https://ssd.jpl.nasa.gov/sats/phys_par/",
+    "https://ssd.jpl.nasa.gov/sats/elem/",
+    "https://ssd.jpl.nasa.gov/sats/discovery.html",
+    "https://nssdc.gsfc.nasa.gov/planetary/factsheet/plutofact.html",
+    "https://nssdc.gsfc.nasa.gov/planetary/factsheet/plutofact.html"
+   ]
+  },
+  "Ceres": {
+   "type": "Dwarf planet",
+   "gravity": 0.284,
+   "dayHours": 9.07417,
+   "yearDays": 1680,
+   "distanceAU": 2.77,
+   "temperature": {
+    "c": -110,
+    "note": "ESTIMATE",
+    "estimate": true
+   },
+   "atmosphere": "Very thin · water vapour",
+   "madeOf": "Rock, water ice and hydrated salts",
+   "feature": "The largest body in the asteroid belt; bright salts glint in Occator crater.",
+   "discovered": "G. Piazzi · 1801",
+   "albedo": 0.09,
+   "sources": [
+    "https://ssd.jpl.nasa.gov/tools/sbdb_lookup.html#/?sstr=1",
+    "https://science.nasa.gov/dwarf-planets/ceres/facts/"
+   ]
+  },
+  "Vesta": {
+   "type": "Asteroid · V-type",
+   "gravity": 0.253,
+   "dayHours": 5.3421,
+   "yearDays": 1330,
+   "distanceAU": 2.36,
+   "temperature": {
+    "c": -110,
+    "note": "ESTIMATE",
+    "estimate": true
+   },
+   "atmosphere": "None",
+   "madeOf": "Basaltic crust · iron core",
+   "feature": "The Rheasilvia impact basin is 500 km wide, almost the asteroid’s own width.",
+   "discovered": "H. W. Olbers · 1807",
+   "albedo": 0.4228,
+   "sources": [
+    "https://ssd.jpl.nasa.gov/tools/sbdb_lookup.html#/?sstr=4",
+    "https://science.nasa.gov/solar-system/asteroids/4-vesta/"
+   ]
+  },
+  "Pallas": {
+   "type": "Asteroid · B-type",
+   "gravity": 0.207,
+   "dayHours": 7.8132,
+   "yearDays": 1680,
+   "distanceAU": 2.77,
+   "temperature": {
+    "c": -110,
+    "note": "ESTIMATE",
+    "estimate": true
+   },
+   "atmosphere": "None",
+   "madeOf": "Silicate rock",
+   "feature": "The third-largest asteroid rides a steeply tilted orbit, 34.9° to the ecliptic.",
+   "discovered": "H. W. Olbers · 1802",
+   "albedo": 0.155,
+   "sources": [
+    "https://ssd.jpl.nasa.gov/tools/sbdb_lookup.html#/?sstr=2"
+   ]
+  },
+  "Hygiea": {
+   "type": "Asteroid · C-type",
+   "gravity": 0.169,
+   "dayHours": 13.828,
+   "yearDays": 2040,
+   "distanceAU": 3.15,
+   "temperature": {
+    "c": -120,
+    "note": "ESTIMATE",
+    "estimate": true
+   },
+   "atmosphere": "None",
+   "madeOf": "Carbon-rich rock",
+   "feature": "Nearly round: a candidate dwarf planet in the outer asteroid belt.",
+   "discovered": "A. de Gasparis · 1849",
+   "albedo": 0.0717,
+   "sources": [
+    "https://ssd.jpl.nasa.gov/tools/sbdb_lookup.html#/?sstr=10"
+   ]
+  },
+  "Psyche": {
+   "type": "Asteroid · M-type",
+   "gravity": 0.13,
+   "dayHours": 4.196,
+   "yearDays": 1830,
+   "distanceAU": 2.93,
+   "temperature": {
+    "c": -115,
+    "note": "ESTIMATE",
+    "estimate": true
+   },
+   "atmosphere": "None",
+   "madeOf": "Metal-rich rock",
+   "feature": "Possibly the exposed core of a shattered planetesimal; NASA’s Psyche arrives in 2029.",
+   "discovered": "A. de Gasparis · 1852",
+   "albedo": 0.1203,
+   "sources": [
+    "https://ssd.jpl.nasa.gov/tools/sbdb_lookup.html#/?sstr=16"
+   ]
+  },
+  "Eros": {
+   "type": "Asteroid · S-type",
+   "gravity": 0.0063,
+   "dayHours": 5.27,
+   "yearDays": 643,
+   "distanceAU": 1.46,
+   "temperature": {
+    "c": -55,
+    "note": "ESTIMATE",
+    "estimate": true
+   },
+   "atmosphere": "None",
+   "madeOf": "Stony silicate",
+   "feature": "The first asteroid orbited, and landed on, by NEAR Shoemaker (2000–2001).",
+   "discovered": "G. Witt · 1898",
+   "albedo": 0.25,
+   "sources": [
+    "https://ssd.jpl.nasa.gov/tools/sbdb_lookup.html#/?sstr=433"
+   ]
+  },
+  "Gaspra": {
+   "type": "Asteroid · S-type",
+   "gravity": null,
+   "dayHours": 7.042,
+   "yearDays": 1200,
+   "distanceAU": 2.21,
+   "temperature": {
+    "c": -95,
+    "note": "ESTIMATE",
+    "estimate": true
+   },
+   "atmosphere": "None",
+   "madeOf": "Stony silicate",
+   "feature": "The first asteroid seen up close, by Galileo in 1991; its rotation takes just over seven hours.",
+   "discovered": "G. Neujmin · 1916",
+   "albedo": 0.246,
+   "sources": [
+    "https://ssd.jpl.nasa.gov/tools/sbdb_lookup.html#/?sstr=951",
+    "https://science.nasa.gov/photojournal/gaspra-first-image/"
+   ]
+  },
+  "Ida": {
+   "type": "Asteroid · S-type",
+   "gravity": 0.0107,
+   "dayHours": 4.634,
+   "yearDays": 1770,
+   "distanceAU": 2.86,
+   "temperature": {
+    "c": -120,
+    "note": "ESTIMATE",
+    "estimate": true
+   },
+   "atmosphere": "None",
+   "madeOf": "Stony silicate",
+   "feature": "Galileo found it has a moon of its own, Dactyl (1993).",
+   "discovered": "J. Palisa · 1884",
+   "albedo": 0.262,
+   "sources": [
+    "https://ssd.jpl.nasa.gov/tools/sbdb_lookup.html#/?sstr=243"
+   ]
+  },
+  "Bennu": {
+   "type": "Asteroid · B-type",
+   "gravity": 8.34e-05,
+   "dayHours": 4.296,
+   "yearDays": 437,
+   "distanceAU": 1.13,
+   "temperature": {
+    "c": -15,
+    "note": "ESTIMATE",
+    "estimate": true
+   },
+   "atmosphere": "None",
+   "madeOf": "Carbon-rich rubble pile",
+   "feature": "OSIRIS-REx touched its loose surface and brought a sample to Earth in 2023.",
+   "discovered": "LINEAR · 1999",
+   "albedo": 0.044,
+   "sources": [
+    "https://ssd.jpl.nasa.gov/tools/sbdb_lookup.html#/?sstr=101955"
+   ]
+  },
+  "Ryugu": {
+   "type": "Asteroid · Cb-type",
+   "gravity": 0.000149,
+   "dayHours": 7.6326,
+   "yearDays": 475,
+   "distanceAU": 1.19,
+   "temperature": {
+    "c": -20,
+    "note": "ESTIMATE",
+    "estimate": true
+   },
+   "atmosphere": "None",
+   "madeOf": "Carbon-rich rubble pile",
+   "feature": "Hayabusa2 brought samples of it to Earth in 2020.",
+   "discovered": "LINEAR · 1999",
+   "albedo": 0.045,
+   "sources": [
+    "https://ssd.jpl.nasa.gov/tools/sbdb_lookup.html#/?sstr=162173"
+   ]
+  }
+ },
+ "craft": {
+  "-125544": {
+   "launched": "1998-11-20",
+   "launchNote": "first module, Zarya",
+   "status": "Crewed without a break since 2 November 2000",
+   "orbit": "About 400 km above Earth, 16 orbits a day",
+   "sources": [
+    "https://www.nasa.gov/international-space-station/"
+   ]
+  },
+  "-61": {
+   "launched": "2011-08-05",
+   "status": "Reached Jupiter 4 July 2016; its extended mission ran to September 2025",
+   "orbit": "Polar orbit of Jupiter",
+   "sources": [
+    "https://science.nasa.gov/mission/juno/"
+   ]
+  },
+  "-74": {
+   "launched": "2005-08-12",
+   "status": "At Mars since 10 March 2006: mapping and relaying for the rovers",
+   "orbit": "Low polar orbit of Mars",
+   "sources": [
+    "https://science.nasa.gov/mission/mars-reconnaissance-orbiter/"
+   ]
+  },
+  "-53": {
+   "launched": "2001-04-07",
+   "status": "At Mars since 24 October 2001: the longest-serving spacecraft at another planet",
+   "orbit": "Polar orbit of Mars",
+   "sources": [
+    "https://science.nasa.gov/mission/mars-odyssey/"
+   ]
+  },
+  "-170": {
+   "launched": "2021-12-25",
+   "status": "Observing from Sun–Earth L2 since 2022",
+   "orbit": "Halo orbit around L2, 1.5 million km from Earth",
+   "sources": [
+    "https://science.nasa.gov/mission/webb/"
+   ]
+  },
+  "-28": {
+   "launched": "2023-04-14",
+   "status": "In cruise via Venus and Earth flybys; Jupiter arrival planned for July 2031",
+   "orbit": "Heliocentric cruise",
+   "sources": [
+    "https://www.esa.int/Science_Exploration/Space_Science/Juice"
+   ]
+  },
+  "-255": {
+   "launched": "2023-10-13",
+   "status": "In cruise, with a Mars gravity assist in 2026; arrival at (16) Psyche planned for August 2029",
+   "orbit": "Heliocentric cruise",
+   "sources": [
+    "https://science.nasa.gov/mission/psyche/"
+   ]
+  },
+  "-203": {
+   "launched": "2007-09-27",
+   "status": "Orbited Vesta (2011–2012) and Ceres (from 2015); silent in Ceres orbit since its fuel ran out on 1 November 2018",
+   "orbit": "Retired in orbit of Ceres",
+   "sources": [
+    "https://science.nasa.gov/mission/dawn/"
+   ]
+  },
+  "-234": {
+   "launched": "2006-10-26",
+   "status": "Watching the Sun from its own orbit, ahead of Earth",
+   "orbit": "Heliocentric, near 1 AU",
+   "sources": [
+    "https://science.nasa.gov/mission/stereo/"
+   ]
+  },
+  "-98": {
+   "launched": "2006-01-19",
+   "status": "Flew past Pluto on 14 July 2015 and Arrokoth on 1 January 2019; now in the Kuiper belt",
+   "orbit": "Escaping the Sun",
+   "sources": [
+    "https://science.nasa.gov/mission/new-horizons/"
+   ]
+  },
+  "-31": {
+   "launched": "1977-09-05",
+   "status": "Flew past Jupiter and Saturn; in interstellar space since August 2012",
+   "orbit": "Escaping the Sun",
+   "sources": [
+    "https://science.nasa.gov/mission/voyager/voyager-1/"
+   ]
+  },
+  "-32": {
+   "launched": "1977-08-20",
+   "status": "The only visitor to Uranus (1986) and Neptune (1989); in interstellar space since November 2018",
+   "orbit": "Escaping the Sun",
+   "sources": [
+    "https://science.nasa.gov/mission/voyager/voyager-2/"
+   ]
+  }
+ }
+}

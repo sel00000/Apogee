@@ -1,0 +1,69 @@
+/** Real SPHEREx fixed-sky blink and retained project asteroid spectra.
+ * New integration UI; existing TrueBlink data retains original provenance.
+ */
+const ROOT = new URL('./', import.meta.url);
+const URL_FOR = path => new URL(path, ROOT).href;
+const fmt = (x,n=3) => Number.isFinite(x) ? x.toFixed(n) : '미제공';
+const esc = s => String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+export function mountMoving(container, {onAnalyze=()=>{}}={}) {
+  const controller=new AbortController(), signal=controller.signal;
+  let disposed=false,suspended=false,resumePlaying=false,tab='motion',target='vesta',meta=null,frames=[],index=0,timer=null,spectrum=null,serial=0,spectrumSerial=0,period=800;
+  const pendingImages=new Set();
+  const link=document.createElement('link');link.rel='stylesheet';link.href=URL_FOR('style.css');document.head.append(link);
+  container.innerHTML=`<section class="moving-page" aria-labelledby="moving-title">
+    <header class="moving-intro"><div><p class="moving-eyebrow">MOVING OBJECTS</p><h1 id="moving-title">하늘을 가로지르는 작은 세계</h1><p>같은 하늘을 다른 시각에 찍으면, 움직이는 천체가 드러납니다.</p></div><a href="https://irsa.ipac.caltech.edu/applications/MOST/" target="_blank" rel="noreferrer">IRSA 원본 검색 ↗</a></header>
+    <nav class="moving-tabs" aria-label="소행성 탐구"><button data-tab="motion" class="selected" aria-pressed="true">관측 영상으로 움직임 보기</button><button data-tab="spectrum" aria-pressed="false">기존 소행성 분광자료</button></nav>
+    <div class="moving-body"></div>
+  </section>`;
+  const page=container.querySelector('.moving-page'),body=page.querySelector('.moving-body');
+  const on=(el,type,fn)=>el.addEventListener(type,fn,{signal});
+  const stop=()=>{clearInterval(timer);timer=null;const p=body.querySelector('[data-play]');if(p){p.textContent='재생';p.setAttribute('aria-pressed','false');}};
+  const play=()=>{if(disposed||suspended||!meta||timer)return;timer=setInterval(()=>show(index+1),period);const p=body.querySelector('[data-play]');if(p){p.textContent='일시 정지';p.setAttribute('aria-pressed','true');}};
+  const fail=error=>{stop();if(disposed||error?.name==='AbortError')return;body.innerHTML=`<div class="moving-error" role="alert"><h2>관측자료를 열지 못했습니다</h2><p>대체 영상이나 가상의 움직임을 표시하지 않습니다.</p><p>${esc(error.message||error)}</p><button data-retry>다시 불러오기</button></div>`;on(body.querySelector('[data-retry]'),'click',()=>render());};
+  const load=async path=>{const r=await fetch(URL_FOR(path),{signal});if(!r.ok)throw Error(`관측 파일 HTTP ${r.status}`);return r.json();};
+  function motionShell(){body.innerHTML=`<div class="moving-toolbar"><div class="moving-targets" role="group" aria-label="이동 천체"><button data-object="vesta" class="${target==='vesta'?'selected':''}">4 Vesta <span>베스타 · 소행성</span></button><button data-object="atlas" class="${target==='atlas'?'selected':''}">3I/ATLAS <span>성간 혜성</span></button></div><span class="moving-badge">SPHEREx 실제 관측 · DR1</span></div>
+      <div class="moving-grid"><article class="moving-image-panel"><div class="moving-panel-title"><div><span class="moving-dot"></span> <strong data-object-name>불러오는 중…</strong><span data-field></span></div><label><input type="checkbox" data-mark checked> 예측 위치</label></div><div class="moving-viewport" tabindex="0" aria-label="SPHEREx 관측 영상, 좌우 방향키로 시각 전환"><div class="moving-image-wrap"><img class="moving-image" alt="SPHEREx 실제 관측 영상"><svg class="moving-overlay" aria-hidden="true"><circle class="moving-marker" r="9"/><path d="M12 0V19M0 9H19" class="moving-north"/></svg><span class="moving-orientation">N ↑<br>E ←</span><span class="moving-image-time"></span></div><div class="moving-loading" role="status">같은 천구 좌표 격자에 정렬한 관측을 읽고 있습니다…</div></div>
+      <div class="moving-playbar"><button data-prev disabled aria-label="이전 관측">←</button><button data-play disabled aria-pressed="false">재생</button><button data-next disabled aria-label="다음 관측">→</button><label class="moving-speed">재생 간격<select data-speed aria-label="재생 간격"><option value="1200">느리게</option><option value="800" selected>보통</option><option value="400">빠르게</option></select></label><output data-count></output></div><div class="moving-timeline"></div><p class="moving-caption">같은 하늘 격자 · 북쪽 위 · 동쪽 왼쪽 · 공통 명암 범위. 빈 영역은 관측 범위 또는 품질 마스크입니다.</p></article>
+      <aside class="moving-side"><div class="moving-facts"><p class="moving-eyebrow">THIS OBSERVATION</p><h2 data-date>관측 시각</h2><dl><div><dt>UTC</dt><dd data-utc>—</dd></div><div><dt>검출기</dt><dd data-detector>—</dd></div><div><dt>이 위치의 파장 λ</dt><dd data-wave>—</dd></div><div><dt>예측 적경 RA</dt><dd data-ra>—</dd></div><div><dt>예측 적위 Dec</dt><dd data-dec>—</dd></div></dl><p class="moving-small">원은 MOST가 반환한 시각의 궤도 예측 위치입니다. 측정한 중심이나 검출 판정이 아닙니다. 파장은 이 예측 위치의 FITS WCS 근삿값입니다. 예측 시각과 노출 중간 시각은 약 58초 차이가 있어 별도로 보존했습니다.</p><button class="moving-primary" data-analyze disabled>이 위치를 분석 작업실에서 열기 ↗</button><p class="moving-small">분석 작업실은 선택한 고정 하늘 좌표를 검색합니다. 이동 천체의 궤도를 따라 과거 관측을 추적하지는 않습니다.</p></div>
+      <div class="moving-track"><div class="moving-track-title"><h3>관측 사이의 이동</h3><span class="moving-badge">계산·모델</span></div><svg data-track viewBox="0 0 280 165" role="img" aria-label="MOST가 예측한 관측 시각별 천구 위치"></svg><p class="moving-small">실제 관측 시각의 궤도 예측점을 연결한 도식입니다. 선 사이의 연속 위치를 측정한 것은 아닙니다.</p></div>
+      <details class="moving-provenance"><summary>자료 출처와 읽는 방법</summary><p>D6도 노출 내 위치에 따라 좁은 파장 범위가 달라집니다. 모습 변화만으로 밝기 변화를 결론내리지 마세요. 혜성의 낮은 신호대잡음, 마스크와 배경 별이 해석에 영향을 줍니다.</p><a data-raw download>현재 FITS 추출본 다운로드</a><a data-source target="_blank" rel="noreferrer">공식 IRSA FITS ↗</a><a href="${URL_FOR('README.md')}" target="_blank">처리·검증 기록 ↗</a></details></aside></div>`;
+    for(const b of body.querySelectorAll('[data-object]'))on(b,'click',()=>{target=b.dataset.object;render();});
+    on(body.querySelector('[data-prev]'),'click',()=>{stop();show(index-1);});on(body.querySelector('[data-next]'),'click',()=>{stop();show(index+1);});
+    on(body.querySelector('[data-play]'),'click',()=>{if(timer)stop();else play();});
+    on(body.querySelector('[data-speed]'),'change',e=>{period=Number(e.target.value);if(timer){stop();body.querySelector('[data-play]').click();}});
+    on(body.querySelector('[data-mark]'),'change',e=>{body.querySelector('.moving-marker').style.display=e.target.checked?'':'none';});
+    on(body.querySelector('.moving-viewport'),'keydown',e=>{if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();stop();show(index+(e.key==='ArrowLeft'?-1:1));}});
+    on(body.querySelector('[data-analyze]'),'click',()=>{stop();const f=meta.frames[index];onAnalyze({ra:f.predicted_ra,dec:f.predicted_dec,label:meta.name,moving:true,epoch:f.prediction_mjd,observationMjd:f.mjd_mid});});
+  }
+  function show(i){if(!meta||disposed)return;index=(i+frames.length)%frames.length;const f=meta.frames[index];const image=body.querySelector('.moving-image');if(!image)return;
+    image.src=frames[index].src;image.alt=`${meta.name} SPHEREx ${f.date_utc} UTC 관측`;body.querySelector('.moving-image-time').textContent=f.date_utc.slice(0,19).replace('T',' ')+' UTC';
+    body.querySelector('[data-count]').textContent=`${index+1} / ${frames.length}`;body.querySelector('[data-date]').textContent=f.date_utc.slice(0,10);body.querySelector('[data-utc]').textContent=f.date_utc.slice(11,19);body.querySelector('[data-detector]').textContent=f.detector+' · 4.42–5.00 μm';body.querySelector('[data-wave]').textContent=fmt(f.predicted_wavelength_um,3)+' μm · Δλ '+fmt(f.predicted_bandwidth_um,3);body.querySelector('[data-ra]').textContent=fmt(f.predicted_ra,5)+'°';body.querySelector('[data-dec]').textContent=fmt(f.predicted_dec,5)+'°';
+    const marker=body.querySelector('.moving-marker');marker.setAttribute('cx',f.marker_x);marker.setAttribute('cy',f.marker_y);body.querySelector('[data-raw]').href=URL_FOR('data/'+f.raw_file);body.querySelector('[data-source]').href=f.source_url;
+    for(const b of body.querySelectorAll('[data-epoch]')){const active=Number(b.dataset.epoch)===index;b.classList.toggle('selected',active);b.setAttribute('aria-current',active?'step':'false');}
+    const rs=meta.frames.map(x=>x.predicted_ra),ds=meta.frames.map(x=>x.predicted_dec),rmin=Math.min(...rs),rmax=Math.max(...rs),dmin=Math.min(...ds),dmax=Math.max(...ds);
+    const xy=f=>[250-(f.predicted_ra-rmin)/Math.max(rmax-rmin,1e-9)*220,135-(f.predicted_dec-dmin)/Math.max(dmax-dmin,1e-9)*105];
+    body.querySelector('[data-track]').innerHTML=`<path d="M30 14V139H260" fill="none" stroke="#30404d"/><polyline points="${meta.frames.map(f=>xy(f).join(',')).join(' ')}" fill="none" stroke="#758b9a" stroke-width="1.3"/>${meta.frames.map((f,j)=>{const [x,y]=xy(f);return `<circle cx="${x}" cy="${y}" r="${j===index?5:3}" fill="${j===index?'#dfb785':'#6a7c8b'}"/><text x="${x+7}" y="${y-7}">${j+1}</text>`;}).join('')}<text x="185" y="160">RA 증가 ←</text><text x="5" y="12">Dec ↑</text>`;
+  }
+  async function renderMotion(request){motionShell();const loaded=await load(`data/${target}.json`);if(disposed||request!==serial)return;
+    const loadedFrames=await Promise.all(loaded.frames.map(f=>new Promise((resolve,reject)=>{const img=new Image();const pending={img,resolve};pendingImages.add(pending);img.onload=()=>{pendingImages.delete(pending);resolve(img);};img.onerror=()=>{pendingImages.delete(pending);reject(Error('관측 PNG를 읽지 못했습니다'));};img.src=URL_FOR('data/'+f.file);})));
+    if(disposed||request!==serial)return;meta=loaded;frames=loadedFrames;
+    body.querySelector('[data-object-name]').textContent=meta.name;
+    if(target==='atlas')body.querySelector('.moving-caption').textContent='3I/ATLAS · 약 6분간의 원본 노출. 예측 이동은 약 1.8픽셀이며 신호가 희미합니다. 중앙의 점을 혜성 검출로 확정하지 마세요. 같은 격자·공통 명암입니다.';body.querySelector('[data-field]').textContent=`고정 시야 ${fmt(meta.grid.width_arcmin,1)}′`;
+    body.querySelector('.moving-overlay').setAttribute('viewBox',`0 0 ${meta.grid.size} ${meta.grid.size}`);body.querySelector('.moving-loading').hidden=true;for(const el of body.querySelectorAll('[data-play],[data-prev],[data-next],[data-analyze]'))el.disabled=false;
+    body.querySelector('.moving-timeline').innerHTML=meta.frames.map((f,i)=>`<button data-epoch="${i}" aria-label="${f.date_utc} UTC 관측 ${i+1}"><i></i><span>${f.date_utc.slice(5,10)}</span><small>${f.date_utc.slice(11,16)}</small></button>`).join('');
+    for(const b of body.querySelectorAll('[data-epoch]'))on(b,'click',()=>{stop();show(Number(b.dataset.epoch));});index=0;show(0);
+  }
+  async function renderSpectrum(request){body.innerHTML=`<div class="moving-spectrum"><div class="moving-toolbar"><label>소행성 <select data-spectrum-target><option value="hygiea">10 Hygiea</option><option value="dembowska">349 Dembowska</option><option value="eros">433 Eros</option><option value="kollaa">1929 Kollaa</option></select></label><span class="moving-badge">SPHEREx 실측 · 기존 TrueBlink 자료</span></div><div class="moving-spectrum-content" role="status">분광 측정값을 읽고 있습니다…</div></div>`;
+    async function draw(id){const drawRequest=++spectrumSerial;const data=await load('data/'+id+'.json');if(disposed||request!==serial||drawRequest!==spectrumSerial||tab!=='spectrum')return;spectrum=data;const pts=data.points.filter(p=>p.kept&&Number.isFinite(p.flux_mJy)&&p.flux_mJy>0);const min=Math.log10(Math.min(...pts.map(p=>p.flux_mJy))),max=Math.log10(Math.max(...pts.map(p=>p.flux_mJy)));const X=v=>70+(v-.7)/4.4*790,Y=v=>315-(Math.log10(v)-min)/(max-min)*270;
+      body.querySelector('.moving-spectrum-content').innerHTML=`<div class="moving-spectrum-heading"><div><p class="moving-eyebrow">MEASURED SPECTRUM</p><h2>${esc(data.number+' '+data.name)}</h2></div><p>${data.provenance.nKept} 유효 측정 · ${data.provenance.nExposures} 노출<br>${esc(data.provenance.firstDate)} — ${esc(data.provenance.lastDate)}</p></div><svg viewBox="0 0 900 365" class="moving-spectrum-chart" role="img" aria-label="파장별 SPHEREx 플럭스, 세로축 로그 눈금">${[0,1,2,3,4].map(i=>`<path d="M70 ${315-i*67.5}H860" stroke="#25303a"/><text x="12" y="${319-i*67.5}">${fmt(10**(min+(max-min)*i/4),1)}</text>`).join('')}<path d="M70 30V315H860" fill="none" stroke="#53606a"/>${[1,2,3,4,5].map(v=>`<text x="${X(v)-3}" y="342">${v}</text>`).join('')}${pts.map(p=>`<circle cx="${X(p.wavelength_um)}" cy="${Y(p.flux_mJy)}" r="2.4" fill="#dfb785" fill-opacity=".72"><title>${p.wavelength_um} μm · ${p.flux_mJy} ± ${p.err_mJy} mJy · ${p.obs_id}</title></circle>`).join('')}<text x="70" y="18">Flux (mJy · log)</text><text x="756" y="360">파장 (μm)</text></svg><div class="moving-spectrum-notes"><p><strong>각 점은 실제 노출의 측정값입니다.</strong> 여러 날짜와 파장·관측 기하가 섞여 있습니다. 점을 이어 단일 시각의 스펙트럼으로 오해하지 않도록 했습니다.</p><p>${esc(data.provenance.method)}</p><a href="${URL_FOR('data/'+id+'.json')}" download>측정값과 출처 JSON 다운로드 ↓</a></div>`;
+    }
+    on(body.querySelector('[data-spectrum-target]'),'change',e=>draw(e.target.value).catch(fail));await draw('hygiea');
+  }
+  async function render(){stop();meta=null;const request=++serial;try{if(tab==='motion')await renderMotion(request);else await renderSpectrum(request);}catch(e){if(request===serial)fail(e);}}
+  for(const b of page.querySelectorAll('[data-tab]'))on(b,'click',()=>{tab=b.dataset.tab;for(const other of page.querySelectorAll('[data-tab]')){other.classList.toggle('selected',other===b);other.setAttribute('aria-pressed',String(other===b));}render();});
+  on(document,'visibilitychange',()=>{if(document.hidden)stop();});
+  const ready=render();return {ready,getDocument:()=>document,
+    setActive(active){if(!active&&!suspended){resumePlaying=!!timer;suspended=true;stop();}else if(active&&suspended){suspended=false;if(resumePlaying)play();resumePlaying=false;}},
+    dispose(){if(disposed)return;disposed=true;stop();controller.abort();for(const {img,resolve} of pendingImages){img.onload=null;img.onerror=null;img.src='';resolve(null);}pendingImages.clear();link.remove();container.replaceChildren();},
+  };
+}

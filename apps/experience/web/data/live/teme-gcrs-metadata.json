@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "fromFrame": "TEME",
+  "toFrame": "GCRS",
+  "axes": "ICRF-aligned",
+  "origin": "Earth center; no translation",
+  "timeScale": "UTC",
+  "validFromUTC": "2025-01-01T00:00:00Z",
+  "validToUTC": "2037-01-01T00:00:00Z",
+  "stepSeconds": 21600,
+  "sampleCount": 17533,
+  "layout": "row-major 3x3 matrices; little-endian float32",
+  "dataFile": "teme-gcrs-2025-2036.f32",
+  "sha256": "30aa1036cecd04afc8fbca31a922f8a7366f02f5cbb08911fdfa53ca00dbdb83",
+  "bytes": 631188,
+  "method": "transpose(skyfield.sgp4lib.TEME.rotation_at(t)); elementwise linear interpolation followed by Gram-Schmidt row orthonormalization",
+  "generatorVersions": {
+    "skyfield": "1.53",
+    "sgp4": "2.24",
+    "numpy": "2.0.2",
+    "jplephem": "2.23",
+    "certifi": "2026.2.25"
+  },
+  "packagedTimeDataSHA256": {
+    "iers.npz": "b263dad4a3e5c6da30f9461271abfca56218fecc0a458960a0bb2ad0d672d652",
+    "nutation.npz": "db231254da3bcbef24faa994eadb80f378d39460aa407026c156e6627c30f11a",
+    "delta_t.npz": "2d12bd3e789543b78a1f53c8b76ed7fecffdf7e5149cfb6a0aed21a8b3db5ff6"
+  },
+  "reference": "https://pypi.org/project/skyfield/1.53/",
+  "limitations": [
+    "A geometric frame orientation, not measured satellite telemetry or an orbit solution.",
+    "GCRS axes align with ICRF; this asset does not perform Earth translation or relativistic GCRS/BCRS origin transformations.",
+    "Uses Skyfield 1.53 packaged leap-second/delta-T predictions; regenerate if those time models change or after 2036.",
+    "Transform states and Earth heliocentric position at the same UTC instant. Never extrapolate outside the table.",
+    "This rotation does not include apparent light-time, aberration, refraction or Earth-surface polar-motion corrections."
+  ],
+  "sourceFile": "Skyfield-1.53-sgp4lib.py",
+  "sourceFileSHA256": "385c73a4437ca96a926330ddc3166de295015601c3014c95abf44743f138e5e8"
+}

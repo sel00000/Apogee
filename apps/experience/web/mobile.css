@@ -1,0 +1,294 @@
+/* Phones: Isabel's portrait mock-up (docs/round6/mobile-mockup.png). Load after phosphor.css; every rule sits in a phone
+   query, so desktop and tablet layouts are untouched. Layout only: top line DRIVE tag · location · BEARINGS tag, the two
+   instruments under their tags, the clock on the left edge, SCAN centred low, and the wordmark, counters and star key at
+   the foot with SOUND beside them. Touch flight (touch-flight.js) replaces the move pad: swipe to look, hold to thrust.
+   #experience lifts these rules over the older phone passes in style.css; --m-map is the post-game map's band (0 in flight). */
+#desktop-notice{display:none}
+@media(max-width:700px) and (min-height:501px){
+ body{--m-side:calc(14px + var(--safe-left));--m-side-r:calc(14px + var(--safe-right));--m-top:calc(14px + var(--safe-top));--m-foot:calc(10px + var(--safe-bottom));--m-col:min(38vw,176px);--m-map:0px}
+ #experience #helmet-hud header.hud{display:block;position:fixed;inset:0 auto auto 0;width:0;height:0;margin:0;padding:0}
+ /* Top line: the location between the two tags, on their centre line. */
+ #experience #helmet-hud header.hud .coordinates{position:fixed;top:var(--m-top);left:50%;width:0;height:19px;display:flex;align-items:center;justify-content:center;padding:0;margin:0}
+ #experience #helmet-hud header.hud #location{max-width:calc(100vw - 2 * (var(--m-side) + 92px));font-size:10.5px;line-height:19px;letter-spacing:.08em}
+ /* Foot: wordmark, counters, then the star key on one line; the clock stands on the left edge. */
+ #experience #helmet-hud header.hud .brand-lockup{position:fixed;left:var(--m-side);right:var(--m-side-r);bottom:calc(var(--m-foot) + var(--m-map));display:flex;flex-direction:column;align-items:flex-start;gap:0;pointer-events:none}
+ #experience #helmet-hud header.hud .brand{--type-base-size:28px;margin:0}
+ #experience #helmet-hud header.hud .discovery-totals{--type-base-size:9.5px;flex-wrap:nowrap;gap:0 9px;margin-top:6px}
+ /* The key in two lines (Isabel 2026-10-03), as on desktop: the title with O·B and A·F, then G, K and M, at a readable
+    9px (line 1 is 236px, inside 320px). */
+ #experience #helmet-hud header.hud .brand-lockup #star-key{--type-base-size:9px;position:static;inset:auto;display:grid;grid-template-columns:repeat(3,max-content);gap:2px 8px;margin:4px 0 0;letter-spacing:0;white-space:nowrap}
+ #experience #helmet-hud header.hud #spectral-legend{display:contents}
+ #experience #helmet-hud header.hud #spectral-legend>span{gap:3px}
+ #experience #helmet-hud header.hud #spectral-legend i{width:5px;height:5px}
+ #experience #helmet-hud header.hud .brand-lockup .epoch{position:fixed;left:calc(8px + var(--safe-left));top:calc((100% - var(--m-map)) / 2);margin:0;padding:0;transform:translateY(-50%);writing-mode:vertical-rl;font-size:10px;letter-spacing:.12em;line-height:1;white-space:nowrap}
+ #experience #helmet-hud header.hud .brand-lockup .epoch span{display:inline;margin:0;margin-inline-start:12px}
+ /* SOUND sits bottom-right beside the wordmark; the developer window stays a desktop tool. */
+ #experience #helmet-hud header.hud .header-actions{display:contents}
+ #experience #helmet-hud #open-settings{display:none}
+ #experience #helmet-hud #open-codex span{display:inline}
+ #experience #helmet-hud #sound-toggle{position:fixed;right:var(--m-side-r);bottom:calc(var(--m-foot) + var(--m-map) + 34px);min-height:32px;padding:0 0 0 12px;font-size:10.5px;letter-spacing:.06em;pointer-events:auto}
+ /* The stack reads VIEW CONSOLE / RECORDS / SOUND (Isabel 2026-10-03): RECORDS stands over SOUND on the same right edge,
+    VIEW CONSOLE over RECORDS once the ending has placed it, so RECORDS never moves. The stack rose 12px with the two-line
+    star key (SOUND stays level with the wordmark, its counters line clear below) and packs at a 32px pitch, so VIEW
+    CONSOLE's line stays under the toast (+122) and the subtitle (+128). */
+ #experience #helmet-hud #return-home{position:fixed;right:var(--m-side-r);bottom:calc(var(--m-foot) + var(--m-map) + 98px);min-height:32px;font-size:10.5px;pointer-events:auto}
+ #experience #helmet-hud #open-codex{position:fixed;right:var(--m-side-r);bottom:calc(var(--m-foot) + var(--m-map) + 66px);min-height:32px;padding:0 0 0 12px;font-size:10.5px;letter-spacing:.06em;pointer-events:auto}
+ /* 01 / DRIVE (left) and 02 / BEARINGS (right) hang from the top line. */
+ #experience #helmet-hud #speed-panel{left:var(--m-side);right:auto;top:var(--m-top);width:var(--m-col);max-height:none}
+ #experience #helmet-hud #radar-panel{right:var(--m-side-r);left:auto;top:var(--m-top);width:var(--m-col);max-height:none;overflow:visible}
+ #experience #helmet-hud :is(#speed-panel,#radar-panel) .instrument-title{--type-base-size:10px;padding:2px 7px;line-height:13px}
+ #experience #helmet-hud #speed-panel .speed-number{--type-base-size:30px;margin:12px 0 7px;gap:5px;line-height:1}
+ #experience #helmet-hud #speed-panel .speed-number small{--type-base-size:10px}
+ #experience #helmet-hud #speed-panel .segmented{height:9px;gap:2px}
+ #experience #helmet-hud #speed-panel .meter-label{--type-base-size:9.5px;margin-top:4px;line-height:1.3}
+ #experience #helmet-hud #speed-panel .thrust-track{display:block;margin-top:9px}
+ #experience #helmet-hud #speed-panel #speed-limit{font-size:inherit}
+ #experience #helmet-hud #speed-panel #radial-motion{--type-base-size:9.5px;display:block;margin:9px 0 2px}
+ #experience #helmet-hud #speed-panel #time-compression{--type-base-size:9.5px;display:block;max-width:none;margin:0}
+ #experience #helmet-hud #radar-panel .bearing-readouts{display:block;margin-top:10px}
+ #experience #helmet-hud #radar-panel .bearing-inline{gap:6px}
+ #experience #helmet-hud #radar-panel .bearing-label{--type-base-size:9.5px}
+ #experience #helmet-hud #radar-panel .bearing-values{--type-base-size:18px;margin:0}
+ #experience #helmet-hud #radar-panel .scope-wrap{display:block;height:96px;margin-top:6px}
+ #experience #helmet-hud #radar-panel .frame-caption{--type-base-size:8px;display:block;margin:2px 0 0}
+ #experience #helmet-hud #radar-panel #bearing-contacts{margin-top:8px;padding-top:6px}
+ #experience #helmet-hud #radar-panel .contacts-heading{--type-base-size:10.5px;margin:0 0 2px}
+ #experience #helmet-hud #radar-panel .contacts-empty{--type-base-size:10px}
+ #experience #helmet-hud #radar-panel #approach-phase{--type-base-size:11px}
+ #experience #helmet-hud #radar-panel #approach-time{--type-base-size:10px}
+ /* SCAN, centred over the foot; its hint below the button, level with the wordmark's cap line (a narrow mouse window's; a touch
+    phone shows only AUTOPILOT's, below). batch12: 15% less padding (18 → 15.3px a side, 9 → 7.65px above and below its 16px
+    symbol, so 36 → 33.3px tall and 112 → 106.6px at least); it keeps its foot (+66) and loses height from the top. */
+ #experience #helmet-hud #scan-panel{left:50%;right:auto;bottom:calc(var(--m-foot) + var(--m-map) + 66px);transform:translateX(-50%)}
+ #experience #helmet-hud #scan-button{--type-base-size:12px;min-width:106.6px;min-height:33.3px;padding:0 15.3px;gap:9px;letter-spacing:.2em}
+ #experience #helmet-hud #scan-button small{--type-base-size:9px;top:calc(100% + 5px);letter-spacing:.04em}
+ #experience #helmet-hud #unlocked-map{left:var(--m-side);bottom:calc(var(--m-foot) + var(--m-map) + 86px);min-height:32px;font-size:11px}
+ /* Flight is by touch (touch-flight.js): no move pad, and on touch screens no key hints. */
+ #experience #helmet-hud #mobile-nav{display:none}
+ /* Dialogue and notices sit above SCAN. */
+ #experience #helmet-hud #subtitle,body[data-story] #experience #helmet-hud #subtitle{bottom:calc(var(--m-foot) + var(--m-map) + 128px);width:calc(100% - 40px - var(--safe-left) - var(--safe-right))}
+ #experience #helmet-hud .status-toast{bottom:calc(var(--m-foot) + var(--m-map) + 122px);width:calc(100% - 48px)}
+ #experience #helmet-hud #skip-opening{top:calc(var(--m-top) + 30px);right:var(--m-side-r)}
+}
+/* 320px: the two-line key lifts the wordmark into SCAN's corner, so SCAN narrows to its content (94.6px, 10.2px sides: batch12's
+   15% off 100px and 12px; at most 132px: LOOKING DEEPER… wraps as it already did) and rises 4px, 1px under VIEW CONSOLE: its
+   frame clears the wordmark's last R, and every state keeps 15px from RECORDS (LOOKING DEEPER… had 1px). */
+@media(max-width:700px) and (min-height:501px) and (max-width:340px){
+ #experience #helmet-hud #scan-panel{bottom:calc(var(--m-foot) + var(--m-map) + 70px)}
+ #experience #helmet-hud #scan-button{min-width:94.6px;max-width:132px;padding:0 10.2px}
+ /* The post-game counters (1/8 · 0/22 · 0/11 · 0/7) need 310px at 9.5px; at 9px with 6px gaps they fit the 292px line. */
+ #experience #helmet-hud header.hud .discovery-totals{--type-base-size:9px;gap:0 6px}
+}
+/* Phones, both ways up: the three nearest contacts (cockpit.js), no stars; the rest behind +N MORE on the CONTACTS line,
+   which scrolls when open (its own scroll: it never pulls the page). */
+@media(max-width:700px),(max-height:500px) and (pointer:coarse){
+ #experience #helmet-hud #contact-list{max-height:none;overflow:visible;margin:0 -6px}
+ #experience #helmet-hud #contact-list button{--type-base-size:10.5px;height:28px;min-height:28px;padding:0 6px;gap:6px}
+ #experience #helmet-hud #contact-list button small{--type-base-size:9.5px}
+ #experience #helmet-hud #contact-list button.contact-extra{display:none}
+ #experience #helmet-hud #contact-list.more{max-height:calc(5 * 28px);overflow-y:auto;overscroll-behavior:contain}
+ #experience #helmet-hud #contact-list.more button.contact-extra{display:flex}
+ /* BEARINGS reads LOOK, then CONTACTS with +N MORE (− FEWER) at the heading's right end; no COURSE row on phones. */
+ #experience #helmet-hud #radar-panel .drift-inline{display:none}
+ #experience #helmet-hud #bearing-contacts{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:baseline;column-gap:8px}
+ #experience #helmet-hud #bearing-contacts>.contacts-heading{grid-area:1/1}
+ #experience #helmet-hud #bearing-contacts>#contact-list{grid-area:2/1/auto/-1}
+ #experience #helmet-hud #contacts-more,#experience #helmet-hud #contacts-more:hover{grid-area:1/2;display:block;width:auto;min-height:0;margin:-9px 0 -2px;padding:9px 0 2px 12px;border:0;background:none;text-align:right;color:var(--hc-orange);font:400 10px/1 var(--type-hud-family);letter-spacing:.06em;pointer-events:auto}
+ #experience #helmet-hud #contacts-more[hidden]{display:none}
+ /* A press-and-hold on the view is thrust: no text selection or iOS callout on it. */
+ #experience #space{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+}
+/* Short phones (375×667, as drawn): a shorter scope keeps CONTACTS clear of the planet in the middle of the frame. */
+@media(max-width:700px) and (min-height:501px) and (max-height:740px){
+ #experience #helmet-hud #radar-panel .scope-wrap{display:block;height:82px}
+ #experience #helmet-hud #speed-panel .speed-number{--type-base-size:27px;margin:10px 0 6px}
+}
+/* Touch phones, both ways up: a swipe or a hold that starts on DRIVE or BEARINGS still flies (their buttons and the open
+   contact list stay live); no pull-to-refresh or double-tap zoom mid-flight; no key hints. */
+@media(max-width:700px) and (pointer:coarse),(max-height:500px) and (pointer:coarse){
+ html,body{overscroll-behavior:none}
+ #experience #helmet-hud :is(#speed-panel,#radar-panel){pointer-events:none}
+ #experience #helmet-hud #contact-list.more{pointer-events:auto}
+ #experience #helmet-hud button,#desktop-notice button{touch-action:manipulation}
+ #experience #helmet-hud footer.hud{display:none}
+ /* SCAN's sub-label (NEARBY SKY · F, STARS & CONSTELLATIONS · F) is a key hint: gone on touch (batch12). AUTOPILOT keeps its
+    TO <NAME> / TAP TO TAKE THE HELM. */
+ #experience #helmet-hud #scan-button:not(.autopilot) small{display:none}
+ /* SCAN as AUTOPILOT (phone-autopilot.js): lit while Astra's offer stands; in flight its sweep runs until the helm is yours. */
+ #experience #helmet-hud #scan-button.autopilot{box-shadow:0 0 8px color-mix(in srgb,var(--red) 42%,transparent)}
+ #experience #helmet-hud #scan-button.autopilot.flying .scan-sweep{opacity:1}
+ #experience #helmet-hud #scan-button.autopilot.flying .scan-sweep::after{animation-play-state:running}
+}
+/* Landscape phones (every width, iPhone SE's 667×375 too) keep their side columns; touch flight replaces the move pad
+   and, as in portrait, the developer window stays a desktop tool. BEARINGS hangs from just under the header actions (the
+   right column has nothing above it), so its three contacts and +N MORE end above SCAN; opened, the list scrolls in
+   the same three rows. */
+@media(max-height:500px) and (pointer:coarse){
+ #experience #helmet-hud #mobile-nav,#experience #helmet-hud #open-settings{display:none}
+ #experience #helmet-hud #open-codex span{display:inline}
+ #experience #helmet-hud #radar-panel{top:calc(64px + var(--safe-top));right:calc(18px + var(--safe-right));width:176px;max-height:none;overflow:visible}
+ #experience #helmet-hud #contact-list.more{max-height:calc(3 * 28px)}
+ /* No room under the contacts for the approach readout (it ran into SCAN; the panel used to scroll it out of sight):
+    the target guide carries the range. */
+ #experience #helmet-hud #radar-panel #approach-panel{display:none}
+ /* CANCEL AUTOPILOT sat on the open chart's foot, under its canvas (seen, not tappable): it takes the toggle row's free
+    right end instead, as on desktop, clear of the planets a tap picks. */
+ #experience #helmet-hud #solar-dock #autopilot-cancel{grid-area:2/3;align-self:center;justify-self:end}
+}
+/* Small landscape phones (≤700px wide): style.css's narrow (portrait) rules reach them and its landscape deck
+   (min-width:701px) does not, so the deck is restated here: wordmark, date and counters top-left with the location
+   centred and the actions right, DRIVE under the wordmark, SCAN bottom-right, the line between the columns. */
+@media(max-width:700px) and (max-height:500px) and (pointer:coarse){
+ #experience #helmet-hud header.hud{top:calc(10px + var(--safe-top));grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:24px}
+ #experience #helmet-hud header.hud .brand{--type-base-size:36px}
+ #experience #helmet-hud header.hud .brand-lockup .epoch{grid-column:auto;grid-row:auto;margin-top:4px}
+ #experience #helmet-hud header.hud .brand-lockup .epoch span{display:none}
+ #experience #helmet-hud header.hud .discovery-totals{gap:4px 12px;margin-top:2px}
+ #experience #helmet-hud header.hud .brand-lockup #star-key{display:none}
+ #experience #helmet-hud header.hud .coordinates{grid-column:2;grid-row:1;padding-top:1px}
+ /* The location's budget as on wider landscape phones (style.css): centred clear of SOUND and RECORDS in flight; in free
+    roam centred in the gap between the wordmark and VIEW CONSOLE · RECORDS · SOUND (209px at 667, not 49). */
+ #experience #helmet-hud header.hud #location{max-width:calc(100vw - 396px - var(--safe-left) - var(--safe-right))}
+ #experience #helmet-hud header.hud:has(#return-home:not([hidden])) #location{position:relative;left:-80px;max-width:calc(100vw - 458px - var(--safe-left) - var(--safe-right))}
+ #experience #helmet-hud header.hud .header-actions{display:flex;grid-column:3;grid-row:1;gap:16px}
+ #experience #helmet-hud header.hud #return-home{grid-column:auto;grid-row:auto}
+ #experience #helmet-hud #speed-panel{top:calc(118px + var(--safe-top));left:calc(18px + var(--safe-left));width:155px}
+ #experience #helmet-hud #speed-panel :is(.thrust-track,.thrust-track+.meter-label),#experience #helmet-hud #radial-motion{display:none}
+ #experience #helmet-hud #radar-panel .bearing-readouts{margin-top:12px}
+ #experience #helmet-hud #scan-panel{left:auto;right:calc(18px + var(--safe-right));bottom:calc(25px + var(--safe-bottom));transform:none}
+ #experience #helmet-hud #scan-button{min-width:140px}
+ #experience #helmet-hud #unlocked-map{left:calc(184px + var(--safe-left));bottom:calc(78px + var(--safe-bottom))}
+ #experience #helmet-hud #subtitle,body[data-story] #experience #helmet-hud #subtitle{bottom:calc(85px + var(--safe-bottom));width:calc(100% - var(--safe-left) - var(--safe-right) - 390px)}
+ #experience #helmet-hud #skip-opening{top:calc(64px + var(--safe-top));right:calc(205px + var(--safe-right))}
+ #experience #helmet-hud .status-toast{bottom:calc(68px + var(--safe-bottom));width:calc(100% - 390px)}
+ /* Free roam: the open map takes DRIVE's column and the line sits between the map and BEARINGS. */
+ body.free-roam:has(#solar-dock[data-expanded="true"]:not([hidden])) #experience #helmet-hud #speed-panel{visibility:hidden}
+ body.free-roam:has(#solar-dock[data-expanded="true"]:not([hidden])) #experience #helmet-hud #subtitle{left:calc(294px + var(--safe-left));right:calc(206px + var(--safe-right));width:auto;transform:none}
+ body.free-roam:has(#solar-dock[data-expanded="true"]:not([hidden])) #experience #helmet-hud #radar-panel :is(.bearing-readouts,.contacts-heading){display:block}
+ /* The line has its own place beside the map, so the map stays up while it is spoken (the portrait fade is not for here). */
+ body.free-roam:has(#subtitle:not([hidden])) #experience #helmet-hud #solar-dock :is(#minimap-chart,#autopilot-cancel:not([hidden])){opacity:1;visibility:visible;pointer-events:auto}
+}
+
+/* Post-game on a portrait phone: the map takes the bottom third, the galaxy the top two thirds (app.js renders the view
+   into that band, unsquashed). Its minimise button gives the galaxy the whole screen; SOLAR MAP brings the split back.
+   The map runs edge to edge (no black border); its controls keep the HUD's gutter and the safe area. */
+@media(max-width:700px) and (min-height:501px){
+ body.free-roam:has(#solar-dock[data-expanded="true"]:not([hidden])){--m-map:calc(100dvh / 3)}
+ #experience #helmet-hud #solar-dock{left:0;right:0;bottom:0;width:auto;max-width:none;height:var(--m-map);display:block;padding:0;background:var(--bg,#05040a);border-top:1px solid var(--gold);box-sizing:border-box}
+ #experience #helmet-hud #solar-dock::before{content:none}
+ #experience #helmet-hud #solar-dock #solar-minimap{display:block;width:100%;height:100%}
+ #experience #helmet-hud #solar-dock #minimap-content{display:block;height:100%}
+ #experience #helmet-hud #solar-dock #minimap-chart{height:100%;margin:0;background:none;opacity:1;visibility:visible;pointer-events:auto}
+ #experience #helmet-hud #solar-dock .minimap-heading{position:absolute;top:8px;right:var(--m-side-r);z-index:2;display:flex;gap:6px}
+ #experience #helmet-hud #solar-dock :is(#minimap-toggle,#minimap-reset){width:32px;height:32px;min-width:32px;min-height:32px;border:1px solid var(--line);background:rgba(5,4,10,.8);color:var(--red)}
+ /* Minimise: a bar glyph while the map is open; collapsed, the chip reads SOLAR MAP with the map glyph. */
+ #experience #helmet-hud #solar-dock[data-expanded="true"] #minimap-toggle svg{display:none}
+ #experience #helmet-hud #solar-dock[data-expanded="true"] #minimap-toggle::before{content:'';width:12px;height:1px;background:currentColor;box-shadow:0 0 4px currentColor}
+ #experience #helmet-hud #solar-dock #autopilot-cancel{position:absolute;left:var(--m-side);bottom:calc(8px + var(--safe-bottom));min-height:32px;opacity:1;visibility:visible;pointer-events:auto}
+ #experience #helmet-hud #solar-dock .hc-dock-hint{position:absolute;left:var(--m-side);top:12px;display:block;margin:0;font-size:0;color:var(--muted)}
+ #experience #helmet-hud #solar-dock .hc-dock-hint::after{content:'▸ TAP A PLANET · AUTOPILOT';font-size:10px}
+ /* Folded, the SOLAR MAP chip stands over the two-line star key, clear of the wordmark (as #unlocked-map in flight). */
+ #experience #helmet-hud #solar-dock[data-expanded="false"]{left:var(--m-side);right:auto;bottom:calc(var(--m-foot) + 86px);height:auto;padding:0;background:none;border:0}
+ #experience #helmet-hud #solar-dock[data-expanded="false"] .hc-dock-hint{display:none}
+ #experience #helmet-hud #solar-dock[data-expanded="false"] .minimap-heading{position:static;display:flex}
+ #experience #helmet-hud #solar-dock[data-expanded="false"] #minimap-toggle{width:auto;padding:0 10px;gap:7px;display:inline-flex;align-items:center;border-color:var(--gold);color:var(--red);font:700 11px/1 var(--type-hud-family);letter-spacing:.06em}
+ #experience #helmet-hud #solar-dock[data-expanded="false"] #minimap-toggle::after{content:'SOLAR MAP'}
+ /* The map stays up while a line is spoken: the line has the band above it. */
+ body.free-roam #experience #helmet-hud #solar-dock :is(#minimap-chart,#autopilot-cancel:not([hidden])),body.free-roam:has(#subtitle:not([hidden])) #experience #helmet-hud #solar-dock :is(#minimap-chart,#autopilot-cancel:not([hidden])){opacity:1;visibility:visible;pointer-events:auto}
+ body.free-roam:has(#solar-dock[data-expanded="true"]:not([hidden])) #experience #helmet-hud #star-key{display:none}
+ /* The crosshair marks the view's centre: the middle of the band, not of the screen. */
+ body.free-roam:has(#solar-dock[data-expanded="true"]:not([hidden])) #experience .crosshair{top:calc((100dvh - var(--m-map)) / 2)}
+ /* The band is two thirds of the screen: BEARINGS drops its scope (the map below is the bigger chart) and keeps its
+    readouts and contacts, so the view's centre stays clear. */
+ body.free-roam:has(#solar-dock[data-expanded="true"]:not([hidden])) #experience #helmet-hud #radar-panel :is(.scope-wrap,.frame-caption){display:none}
+}
+/* A short phone's band above the map is ~445px: BEARINGS keeps its readouts and contacts, headed, and the edge clock
+   (which would sit on DRIVE's lower rows) steps out until the map is minimised. */
+@media(max-width:700px) and (min-height:501px) and (max-height:740px){
+ body.free-roam:has(#solar-dock[data-expanded="true"]:not([hidden])) #experience #helmet-hud #radar-panel :is(.bearing-readouts,.contacts-heading){display:block}
+ body.free-roam:has(#solar-dock[data-expanded="true"]:not([hidden])) #experience #helmet-hud header.hud .brand-lockup .epoch{display:none}
+}
+/* A narrow window with a mouse gets the phone layout (by shape) and its own verb. */
+@media(max-width:700px) and (min-height:501px) and (pointer:fine){#experience #helmet-hud #solar-dock .hc-dock-hint::after{content:'▸ CLICK A PLANET · AUTOPILOT'}}
+
+/* "For the full experience, visit on a desktop": a small console chip on phones while the archive loads; dismissed once,
+   remembered (mobile.js). It never takes the opening's input: only its own close button is live. */
+@media(max-width:700px) and (pointer:coarse),(max-height:500px) and (pointer:coarse){
+ #desktop-notice:not([hidden]){position:fixed;z-index:30;left:50%;top:calc(92px + var(--safe-top,0px));transform:translateX(-50%);display:flex;align-items:center;gap:10px;width:max-content;max-width:calc(100vw - 32px);padding:6px 6px 6px 12px;border:1px solid var(--gold,#F26500);border-radius:5px;background:rgba(5,4,10,.86);color:var(--mint,#47FFA9);font:400 11px/1.35 'TeX Gyre Heros Cn','Saira Condensed','Arial Narrow',sans-serif;letter-spacing:.06em;text-transform:uppercase;pointer-events:none;transition:opacity .5s ease}
+ #desktop-notice b{color:var(--red,#FF4747);font-weight:700}
+ #desktop-notice button{display:grid;place-items:center;min-width:32px;min-height:32px;padding:0;border:0;background:none;color:var(--red,#FF4747);font:400 16px/1 'TeX Gyre Heros Cn','Arial Narrow',sans-serif;pointer-events:auto;cursor:pointer}
+ #desktop-notice.fade{opacity:0}
+}
+/* Landscape: below SKIP OPENING (64px down, 44px tall), so the × never sits on its touch target. */
+@media(max-height:500px) and (pointer:coarse){#desktop-notice:not([hidden]){top:calc(116px + var(--safe-top,0px))}}
+@media(prefers-reduced-motion:reduce){#desktop-notice{transition:none}}
+/* iPhone Safari (mobile.js stageBleed, only while html.stage-bleed): the 3D stage overhangs the layout viewport by
+   --bleed-t/--bleed-b and the document gets a runway of that size, scrolled to --bleed-t, so the sky runs on under the
+   status bar and the toolbar (WebKit clips page pixels to the document). Only #experience and #space stay full-screen (fixed
+   under ?bleed-mode=fixed, document content by default: stage-flow below), and they are over 1.05× the viewport tall, which
+   Safari's edge sampling skips; every other full-screen
+   layer is absolute in the same box, so Safari lays no solid colour over the bars and the HUD does not move. */
+@media(max-width:700px) and (min-height:501px){
+ html.stage-bleed body{min-height:calc(100dvh + var(--bleed-t) + var(--bleed-b))}
+ html.stage-bleed #experience{top:calc(-1 * var(--bleed-t));bottom:calc(-1 * var(--bleed-b));height:auto}
+ html.stage-bleed #experience>#space{top:calc(-1 * var(--bleed-t))}
+ /* batch12, the default ('flow', html.stage-flow, mobile.js bleedMode): iOS 26 Safari cuts a fixed layer off at its bars, so the
+    stage is document content instead. The root scrolls (no scrollbar; mobile.js pins it at --bleed-t), #experience is absolute at the
+    document's top, as tall as the runway, and #space absolute at its top: the scroll that put the fixed stage at −t puts this one
+    there, so the canvas, the HUD box and every HUD rect stay as they were. z-index:0 keeps it the stacking context the fixed box was.
+    A one-finger drag that starts on a button or the console never pans the runway (a pinch still zooms; the pin leaves a zoomed page
+    alone); scrollers inside (the contact list, the archive) keep their own scroll. ?bleed-mode=fixed keeps the three rules above.
+    Review fixes: the stage (and the runway) is --stage-h tall, innerHeight + t + b written by mobile.js with the canvas's own numbers
+    (the fixed box was laid out between the bars, innerHeight; 100dvh is only the fallback); the body takes no one-finger pan either
+    (the notice's ×, any body-level overlay); and sideways the stage clips as the viewport clipped the fixed box, so a HUD overhang
+    never widens the document and zooms the page. */
+ html.stage-bleed.stage-flow{overflow-x:hidden;overflow-y:scroll;overscroll-behavior:none;scrollbar-width:none}
+ html.stage-bleed.stage-flow::-webkit-scrollbar{display:none}
+ html.stage-bleed.stage-flow body{overflow:visible;min-height:var(--stage-h,calc(100dvh + var(--bleed-t) + var(--bleed-b)));touch-action:pinch-zoom}
+ html.stage-bleed.stage-flow #experience{position:absolute;z-index:0;left:0;right:0;top:0;bottom:auto;height:var(--stage-h,calc(100dvh + var(--bleed-t) + var(--bleed-b)));touch-action:pinch-zoom;overflow-x:clip}
+ html.stage-bleed.stage-flow #experience>#space{position:absolute;left:0;top:0}
+ html.stage-bleed #experience>:is(#helmet-hud,#sky-trace,#scan-feedback,#scan-targets){position:absolute;top:var(--bleed-t);bottom:auto;height:calc(100% - var(--bleed-t) - var(--bleed-b))}
+ /* The line layers span the whole stage (sky-survey.js and scan-feedback.js draw --bleed-t down, in layout px), so a
+    constellation trace or a scan frame runs on under the glass; the scan labels keep the layout viewport. */
+ html.stage-bleed #experience>:is(#sky-trace,#scan-feedback){top:0;height:100%}
+ html.stage-bleed #experience #helmet-hud :is(#labels,#narrative){position:absolute}
+ /* The scanlines and the loading screen run on under the bars too: no seam under the glass. */
+ html.stage-bleed #experience #helmet-hud :is(#scanlines,#loading){position:absolute;top:calc(-1 * var(--bleed-t));bottom:calc(-1 * var(--bleed-b));height:auto}
+ /* The ending's dialog is in the top layer, absolute against the document: the runway puts the view at --bleed-t. */
+ html.stage-bleed #homecoming{position:absolute;top:var(--bleed-t)}
+ /* The STAY console under the bars: its CRT grain and scanlines run on over the page's console black, so the glass shows
+    the console's own texture, not a flat band. The dialog lets that one layer overhang (the grid and its frame stay
+    inside); over the view the grain, scanlines and vignette keep their place, so the console itself does not change.
+    The overhang is touch only (real bleed is iOS Safari's): ?bleed= in a narrow mouse window shows the split (it follows
+    the window's shape, homecoming.css) inside the dialog's clip. The layer is never fixed under the class. Sideways the dialog
+    still clips: the grain's −8px inset and the tags riding the Earth leave would widen the document (402 → 406) and zoom
+    the page. */
+ html.stage-bleed #homecoming .hc-crt{position:absolute}
+ @media(pointer:coarse){
+  html.stage-bleed #homecoming:is([data-layout=dashboard],[data-leave=earth]){overflow:visible;overflow-x:clip}
+  html.stage-bleed #homecoming .hc-crt{top:calc(-1 * var(--bleed-t));bottom:calc(-1 * var(--bleed-b))}
+  html.stage-bleed #homecoming .hc-crt .hc-noise{background-position:0 var(--bleed-t)}
+  html.stage-bleed #homecoming .hc-crt .hc-scan{background-position:0 calc(-1 * var(--bleed-b))}
+  html.stage-bleed #homecoming .hc-crt .hc-vignette{inset:var(--bleed-t) 0 var(--bleed-b)}
+ }
+ /* The story's full-screen map (the repair and route beats, VENTURE/STAY's galaxy, VENTURE's hand-off) runs on under both
+    bars: its canvas is the stage's size, fixed like #space (out of the dialog's clip; over 1.05× the viewport, which Safari's
+    edge sampling skips), and --map-bleed-t/-b keep its framing, labels and picks on the layout viewport while the ecliptic,
+    the galactic plane, orbits and stars carry on under the glass. The end card's map (dashboard) stays in its cell. */
+ html.stage-bleed #homecoming:is([data-layout=map],[data-layout=galaxy],[data-layout=flight]) #home-map-slot .solar-map-canvas{position:fixed;left:0;top:calc(-1 * var(--bleed-t));width:100%;height:calc(100% + var(--bleed-t) + var(--bleed-b));--map-bleed-t:var(--bleed-t);--map-bleed-b:var(--bleed-b)}
+ /* Flow (batch12's default): the story map is not fixed either, or Safari would cut it off at its bars too. In these three scenes the
+    map view fills the dialog, so absolute in it the same numbers give the same box; the view, its cell and the dialog let it overhang
+    up and down only (sideways the dialog still clips: no wider document). Their other children all sit inside the view. */
+ html.stage-bleed.stage-flow #homecoming:is([data-layout=map],[data-layout=galaxy],[data-layout=flight]){overflow:visible;overflow-x:clip}
+ html.stage-bleed.stage-flow #homecoming:is([data-layout=map],[data-layout=galaxy],[data-layout=flight]) :is(#home-map-cell,#home-map-view){overflow:visible}
+ html.stage-bleed.stage-flow #homecoming:is([data-layout=map],[data-layout=galaxy],[data-layout=flight]) #home-map-slot .solar-map-canvas{position:absolute}
+ /* Free roam: the map runs on under the toolbar. Its canvas fills the whole dock and --map-bleed-b tells solar-map.js how
+    much is under the glass: orbits, route and stars draw on there, while the Sun keeps the visible third's centre and the
+    labels, YOU, picks and CANCEL AUTOPILOT stay above the glass. */
+ html.stage-bleed #experience #helmet-hud #solar-dock{position:absolute}
+ html.stage-bleed body.free-roam #experience #helmet-hud #solar-dock[data-expanded="true"]:not([hidden]){bottom:calc(-1 * var(--bleed-b));height:calc(var(--m-map) + var(--bleed-b))}
+ html.stage-bleed body.free-roam #experience #helmet-hud #solar-dock[data-expanded="true"]:not([hidden]) .solar-map-canvas{--map-bleed-b:var(--bleed-b)}
+ html.stage-bleed body.free-roam #experience #helmet-hud #solar-dock[data-expanded="true"] #autopilot-cancel{bottom:calc(8px + var(--safe-bottom) + var(--bleed-b))}
+ /* An open contact list never hands its scroll on to the runway. */
+ html.stage-bleed #experience #helmet-hud #contact-list.more{overscroll-behavior:contain}
+}

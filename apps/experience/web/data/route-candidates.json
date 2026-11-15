@@ -1,0 +1,453 @@
+{
+  "defaultDate": "2080-06-12",
+  "frame": "ICRF",
+  "origin": "Sun centre (500@10)",
+  "positionUnits": "km",
+  "timeScale": "TDB",
+  "search": {
+    "range": "1900-01-01 through 2100-12-31",
+    "cadenceDays": 1,
+    "method": "JPL approximate Keplerian elements for coarse search; shortlist positions verified with NASA/JPL Horizons geometric state vectors. Route scores describe straight legs in the frozen game, not physical orbital-transfer trajectories.",
+    "sources": [
+      "https://ssd.jpl.nasa.gov/planets/approx_pos.html",
+      "https://ssd-api.jpl.nasa.gov/doc/horizons.html"
+    ]
+  },
+  "candidates": [
+    {
+      "date": "2080-06-12",
+      "epoch": "2080-06-12T00:00:00",
+      "julianDateTDB": 2480927.5,
+      "label": "Recommended \u00b7 measured milestones",
+      "recommended": true,
+      "routeIds": [
+        "699",
+        "599",
+        "951;",
+        "499",
+        "399"
+      ],
+      "routeNames": [
+        "Saturn",
+        "Jupiter",
+        "Gaspra",
+        "Mars",
+        "Earth"
+      ],
+      "asteroidId": "951;",
+      "bodies": [
+        {
+          "id": "10",
+          "name": "Sun",
+          "kind": "star",
+          "positionKm": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "id": "699",
+          "name": "Saturn",
+          "kind": "planet",
+          "positionKm": [
+            948127438.1731713,
+            -1046217161.386915,
+            -473180036.7426307
+          ]
+        },
+        {
+          "id": "599",
+          "name": "Jupiter",
+          "kind": "planet",
+          "positionKm": [
+            496106654.0118455,
+            -524662209.1166993,
+            -236917711.3743971
+          ]
+        },
+        {
+          "id": "499",
+          "name": "Mars",
+          "kind": "planet",
+          "positionKm": [
+            -27711128.82274643,
+            -198787567.3297005,
+            -90439668.11648406
+          ]
+        },
+        {
+          "id": "399",
+          "name": "Earth",
+          "kind": "planet",
+          "positionKm": [
+            -24137878.84253071,
+            -137610998.224177,
+            -59631701.77357429
+          ]
+        },
+        {
+          "id": "299",
+          "name": "Venus",
+          "kind": "planet",
+          "positionKm": [
+            -11434184.79233862,
+            97303147.78597906,
+            44523783.50676754
+          ]
+        },
+        {
+          "id": "199",
+          "name": "Mercury",
+          "kind": "planet",
+          "positionKm": [
+            -16939961.54004942,
+            -60446826.40954924,
+            -30543330.42544101
+          ]
+        },
+        {
+          "id": "799",
+          "name": "Uranus",
+          "kind": "planet",
+          "positionKm": [
+            1573872136.206582,
+            -2285372738.429801,
+            -1023141646.679861
+          ]
+        },
+        {
+          "id": "899",
+          "name": "Neptune",
+          "kind": "planet",
+          "positionKm": [
+            -2350448708.464019,
+            3518270459.887394,
+            1498549311.633791
+          ]
+        },
+        {
+          "id": "951;",
+          "name": "Gaspra",
+          "kind": "asteroid",
+          "positionKm": [
+            29537263.90131015,
+            -313496604.8702743,
+            -125650251.4062829
+          ]
+        }
+      ],
+      "legsAU": [
+        4.876369624811956,
+        3.503248913135466,
+        0.8887064164375038,
+        0.4584901495681271
+      ],
+      "turnsDeg": [
+        24.7043561916232,
+        38.07247578112824,
+        29.992835955823914
+      ],
+      "totalAU": 9.726815103953053,
+      "directSaturnEarthAU": 9.3150800424962,
+      "venus": {
+        "distanceFromEarthAU": 1.719828847070564,
+        "angleFromOnwardBearingDeg": 2.8187153445744877,
+        "distanceAlongOnwardBearingAU": 1.717748073536992,
+        "missDistanceAU": 0.08457434052960582,
+        "earthVenusSunClearanceAU": 0.11197442642411748
+      },
+      "note": "Smooth inward route through a real main-belt asteroid. Modest turns at Jupiter, Gaspra and Mars; Venus lies near the onward bearing beyond Earth."
+    },
+    {
+      "date": "1982-05-05",
+      "epoch": "1982-05-05T00:00:00",
+      "julianDateTDB": 2445094.5,
+      "label": "Ceres crossing",
+      "recommended": false,
+      "routeIds": [
+        "699",
+        "599",
+        "1;",
+        "499",
+        "399"
+      ],
+      "routeNames": [
+        "Saturn",
+        "Jupiter",
+        "Ceres",
+        "Mars",
+        "Earth"
+      ],
+      "asteroidId": "1;",
+      "bodies": [
+        {
+          "id": "10",
+          "name": "Sun",
+          "kind": "star",
+          "positionKm": [
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "id": "699",
+          "name": "Saturn",
+          "kind": "planet",
+          "positionKm": [
+            -1358664649.4559648,
+            -478891677.8643015,
+            -139377286.30497673
+          ]
+        },
+        {
+          "id": "599",
+          "name": "Jupiter",
+          "kind": "planet",
+          "positionKm": [
+            -654371643.2513697,
+            -449127794.3935516,
+            -176569811.74997655
+          ]
+        },
+        {
+          "id": "499",
+          "name": "Mars",
+          "kind": "planet",
+          "positionKm": [
+            -214859322.4612908,
+            -99709649.05363356,
+            -39914866.126337975
+          ]
+        },
+        {
+          "id": "399",
+          "name": "Earth",
+          "kind": "planet",
+          "positionKm": [
+            -107726412.23963904,
+            -96909023.44015059,
+            -42020503.7605914
+          ]
+        },
+        {
+          "id": "299",
+          "name": "Venus",
+          "kind": "planet",
+          "positionKm": [
+            33093089.451004107,
+            -93799458.75673237,
+            -44288349.664390005
+          ]
+        },
+        {
+          "id": "199",
+          "name": "Mercury",
+          "kind": "planet",
+          "positionKm": [
+            -48944908.21303818,
+            16470343.108018005,
+            13876118.736305255
+          ]
+        },
+        {
+          "id": "799",
+          "name": "Uranus",
+          "kind": "planet",
+          "positionKm": [
+            -1297894543.6599112,
+            -2303938773.9643764,
+            -990648615.859101
+          ]
+        },
+        {
+          "id": "899",
+          "name": "Neptune",
+          "kind": "planet",
+          "positionKm": [
+            -342701331.369012,
+            -4182213623.7215595,
+            -1703289951.69896
+          ]
+        },
+        {
+          "id": "1;",
+          "name": "Ceres",
+          "kind": "dwarf planet",
+          "positionKm": [
+            -265322849.81246853,
+            -291389690.2559487,
+            -82788148.60382915
+          ]
+        }
+      ],
+      "legsAU": [
+        4.718664260121186,
+        2.8754237210329205,
+        1.3556026932168834,
+        0.7165221897123724
+      ],
+      "turnsDeg": [
+        24.994696406764653,
+        51.84796151419758,
+        74.38039408967641
+      ],
+      "totalAU": 9.666212864083363,
+      "directSaturnEarthAU": 8.767354133152976,
+      "venus": {
+        "distanceFromEarthAU": 0.9416717310130324,
+        "angleFromOnwardBearingDeg": 0.3087061079668242,
+        "distanceAlongOnwardBearingAU": 0.9416580627393315,
+        "missDistanceAU": 0.005073644359819027,
+        "earthVenusSunClearanceAU": 0.6962435140685761
+      },
+      "note": "A compact route past Ceres. The last turn at Mars is sharper, but continuing beyond Earth points almost directly toward Venus."
+    },
+    {
+      "date": "2020-05-08",
+      "epoch": "2020-05-08T00:00:00",
+      "julianDateTDB": 2458977.5,
+      "label": "Modern alternative",
+      "recommended": false,
+      "routeIds": [
+        "699",
+        "599",
+        "1;",
+        "499",
+        "399"
+      ],
+      "routeNames": [
+        "Saturn",
+        "Jupiter",
+        "Ceres",
+        "Mars",
+        "Earth"
+      ],
+      "asteroidId": "1;",
+      "bodies": [
+        {
+          "id": "10",
+          "name": "Sun",
+          "kind": "star",
+          "positionKm": [
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "id": "699",
+          "name": "Saturn",
+          "kind": "planet",
+          "positionKm": [
+            659737712.1150538,
+            -1233800346.3431733,
+            -538032567.5456679
+          ]
+        },
+        {
+          "id": "599",
+          "name": "Jupiter",
+          "kind": "planet",
+          "positionKm": [
+            218718465.22227657,
+            -681435366.3262018,
+            -297406183.9951462
+          ]
+        },
+        {
+          "id": "499",
+          "name": "Mars",
+          "kind": "planet",
+          "positionKm": [
+            44446999.313698344,
+            -190026367.50592604,
+            -88359451.67722534
+          ]
+        },
+        {
+          "id": "399",
+          "name": "Earth",
+          "kind": "planet",
+          "positionKm": [
+            -101822223.94704483,
+            -102289533.29188406,
+            -44342304.56561262
+          ]
+        },
+        {
+          "id": "299",
+          "name": "Venus",
+          "kind": "planet",
+          "positionKm": [
+            -92906851.26678988,
+            -52296368.466221765,
+            -17652319.919626072
+          ]
+        },
+        {
+          "id": "199",
+          "name": "Mercury",
+          "kind": "planet",
+          "positionKm": [
+            20558944.52411431,
+            37368383.03333096,
+            17830847.90271303
+          ]
+        },
+        {
+          "id": "799",
+          "name": "Uranus",
+          "kind": "planet",
+          "positionKm": [
+            2382882283.1537786,
+            1624377240.4189982,
+            677736855.0003785
+          ]
+        },
+        {
+          "id": "899",
+          "name": "Neptune",
+          "kind": "planet",
+          "positionKm": [
+            4386800873.96548,
+            -786675135.2960569,
+            -431220540.9744959
+          ]
+        },
+        {
+          "id": "1;",
+          "name": "Ceres",
+          "kind": "dwarf planet",
+          "positionKm": [
+            307200676.16891795,
+            -261370414.6340711,
+            -185797440.86749262
+          ]
+        }
+      ],
+      "legsAU": [
+        4.991135970149797,
+        2.9649755517494416,
+        1.933032227139813,
+        1.1775113576372114
+      ],
+      "turnsDeg": [
+        48.404610594294546,
+        82.11551427606399,
+        15.938715775232414
+      ],
+      "totalAU": 11.066655106676263,
+      "directSaturnEarthAU": 9.696155105001438,
+      "venus": {
+        "distanceFromEarthAU": 0.38348537062804283,
+        "angleFromOnwardBearingDeg": 65.08644073053934,
+        "distanceAlongOnwardBearingAU": 0.16154338765882056,
+        "missDistanceAU": 0.3477998898640415,
+        "earthVenusSunClearanceAU": 0.7223746499547901
+      },
+      "note": "A longer Ceres detour with a substantial turn through the belt. Venus is an optional wrong turn rather than a straight Earth overshoot."
+    }
+  ]
+}

@@ -1,0 +1,96 @@
+{
+  "speaker": "astra",
+  "verifiedOn": "2026-09-24",
+  "usageNotes": [
+    "Use after identification, not as the label for an unresolved contact.",
+    "These are catalogue facts; none requires a crater, plume, ocean or atmosphere to be resolved by the current renderer.",
+    "The lines are independent of observer distance and route progress. Add arrival, receding, braking or missed-approach dialogue only from measured telemetry.",
+    "Do not turn these discoveries into a required checklist. Optional navigation sentences offer a bearing or permission to linger.",
+    "Hyperion's chaotic rotation is a real-world fact, not a claim that the frozen snapshot simulates its tumble.",
+    "Avoid the older Mimas page's frozen-solid interior claim; newer research questions it. The large Herschel crater is the stable fact used here.",
+    "Source URLs are for Flight notes or research credits; they need not appear in the subtitle itself. All subtitle wording is original.",
+    "Europa’s port and travel history are fictional worldbuilding performed by Astra, not present-day scientific claims. The fact field and citation describe the real moon separately."
+  ],
+  "lines": {
+    "Mimas": {
+      "text": "that's Mimas, with the enormous Herschel impact crater. let's give it a little more room than the last visitor did.",
+      "fact": "Herschel crater spans roughly one third of Mimas's diameter.",
+      "source": "https://science.nasa.gov/saturn/moons/mimas/"
+    },
+    "Enceladus": {
+      "text": "Enceladus has an ocean beneath its ice. and jets that carry some of it into space. we can linger longer if you'd like.",
+      "fact": "Enceladus has a subsurface global saltwater ocean that supplies water-vapour and ice jets.",
+      "source": "https://science.nasa.gov/saturn/moons/enceladus/"
+    },
+    "Tethys": {
+      "text": "Tethys has a crater called Odysseus. and a great valley called Ithaca. someone else was thinking about a way home.",
+      "fact": "Odysseus is a large impact crater; Ithaca Chasma is an approximately 2,000 km valley.",
+      "source": "https://science.nasa.gov/saturn/moons/tethys/"
+    },
+    "Dione": {
+      "text": "Dione's pale streaks turned out to be cliffs of exposed ice. i'll keep its bearing while you choose our next move.",
+      "fact": "Cassini resolved the previously described wispy terrain into bright ice walls and fracture cliffs.",
+      "source": "https://science.nasa.gov/saturn/moons/dione/"
+    },
+    "Rhea": {
+      "text": "Rhea is Saturn's second largest moon. with an ancient surface crowded with craters. a turbulent marriage, perhaps.",
+      "fact": "Rhea is Saturn's second-largest moon and has heavily cratered, old icy terrain.",
+      "source": "https://science.nasa.gov/saturn/moons/rhea/"
+    },
+    "Titan": {
+      "text": "Titan has weather, rivers, and lakes beneath that haze. although the lakes are methane and ethane. familiar ideas, rather different arrangements.",
+      "fact": "Titan has a substantial hazy atmosphere and surface rivers, lakes and seas of liquid hydrocarbons.",
+      "source": "https://science.nasa.gov/saturn/moons/titan/facts/"
+    },
+    "Hyperion": {
+      "text": "Hyperion is full of deep craters. and its rotation tumbles unpredictably. we don't have to take navigational advice from it.",
+      "fact": "Hyperion is irregular, deeply cratered and rotates chaotically.",
+      "source": "https://science.nasa.gov/saturn/moons/hyperion/"
+    },
+    "Iapetus": {
+      "text": "Iapetus has a dark hemisphere, a bright one. and a mountain ridge along its middle. even out here, a world can be quite particular about its appearance.",
+      "fact": "Iapetus has strongly contrasting hemispheres and a prominent equatorial mountain ridge.",
+      "source": "https://science.nasa.gov/saturn/moons/iapetus/"
+    },
+    "Io": {
+      "text": "Io has hundreds of volcanoes. Jupiter's pull helps keep its interior hot. she's wandered far enough. let's make this a gentle visit.",
+      "fact": "Io is highly volcanically active; tidal forcing involving Jupiter and neighboring moons heats its interior.",
+      "source": "https://science.nasa.gov/jupiter/jupiter-moons/io/"
+    },
+    "Europa": {
+      "text": "Europa. its subsurface oceans have made it an ideal port for travel in and out of the solar system. we would've exited here, had you not dismissed my fuel warnings.",
+      "fact": "Europa's icy surface is fractured, and strong evidence supports an underlying saltwater ocean.",
+      "source": "https://science.nasa.gov/jupiter/jupiter-moons/europa/europa-facts/"
+    },
+    "Ganymede": {
+      "text": "Ganymede is the largest moon in the system. it generates its own magnetic field. a rather substantial landmark.",
+      "fact": "Ganymede is the solar system's largest moon and the only moon known to generate its own magnetic field.",
+      "source": "https://science.nasa.gov/jupiter/jupiter-moons/ganymede/facts/"
+    },
+    "Callisto": {
+      "text": "Callisto has kept scars of impact for billions of years. our little flyby needn't add to the collection.",
+      "fact": "Callisto's ancient rocky and icy surface is heavily cratered and has undergone little resurfacing.",
+      "source": "https://science.nasa.gov/jupiter/jupiter-moons/callisto/facts/"
+    },
+    "Gaspra": {
+      "text": "that's Gaspra, a cratered little asteroid that turns once in about seven hours. small enough to miss if we hurry.",
+      "fact": "Galileo images show numerous craters; Gaspra's rotation period is just over seven hours.",
+      "source": "https://science.nasa.gov/photojournal/gaspra-first-image/"
+    },
+    "Mars": {
+      "text": "that's Mars, iron rusting in the dust, god of war. let's keep this visit peaceful, unlike last time.",
+      "fact": "Oxidized iron in rocks and dust gives Mars its reddish appearance.",
+      "source": "https://science.nasa.gov/mars/facts/"
+    },
+    "Earth": {
+      "text": "we found Earth. oceans. oxygen. every fire, every crossing, every road you know. it's time to go home.",
+      "fact": "Earth has stable liquid-water oceans on its surface.",
+      "source": "https://science.nasa.gov/earth/facts/"
+    },
+    "Venus": {
+      "text": "that's Venus, beneath the clouds of sulfuric acid. we'll light her lamp when we get home.",
+      "fact": "Venus's dense atmosphere contains sulfuric-acid clouds.",
+      "source": "https://science.nasa.gov/venus/venus-facts/"
+    }
+  }
+}

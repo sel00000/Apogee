@@ -1,0 +1,421 @@
+/* SOJOURNER homecoming: the ending as a Sentry console (docs/homecoming-console.md).
+   One grid ("map earth" / "info earth"); scenes only move its registered track sizes.
+   Performance: the tracks live on .hc-grid and do not inherit (only the grid, its hairlines and its '+' glyphs restyle while they
+   move, not the whole console); homecoming.js eases them per frame and derives the Earth window from the same numbers (no layout read). */
+@property --hc-map{syntax:'<percentage>';inherits:false;initial-value:0%}
+@property --hc-top{syntax:'<percentage>';inherits:false;initial-value:100%}
+@property --hc-row{syntax:'<percentage>';inherits:false;initial-value:100%}
+@property --hc-gutter{syntax:'<length>';inherits:false;initial-value:0px}
+/* Per-frame map-cell values (pull-back fade, sky mix): registered so a change restyles the cell alone. */
+@property --hc-mapin{syntax:'<number>';inherits:false;initial-value:1}
+@property --hc-sky{syntax:'<number>';inherits:false;initial-value:0}
+#homecoming,#solar-dock,#return-home{
+ --hc-bg:#05040A;--hc-ink:#FF4747;--hc-stroke:#F26500;--hc-mint:#47FFA9;--hc-orange:#ff6a1f;--hc-green:#54ff8a;--hc-red:#ff3b2f;--hc-cyan:#39d6c8;--hc-blue:#5f7bff;--hc-moon:#cfd6e6;--hc-gold:#f0b32a;--hc-gold-bright:#ffd76b;--hc-dim:#6b551f;--hc-line:#7a5a14;
+ --hc-ui:'TeX Gyre Heros Cn','Saira Condensed','Arial Narrow',sans-serif;--hc-display:'Imbue',serif;--hc-clock:'Share Tech Mono',ui-monospace,monospace;--hc-glow:0 0 6px currentColor;--hc-ease:cubic-bezier(.4,0,.2,1)
+}
+
+/* ── Dialog shell ─────────────────────────────────────────────────────────── */
+#homecoming{position:fixed;inset:0;width:100vw;height:100dvh;max-width:none;max-height:none;margin:0;padding:0;border:0;border-radius:0;overflow:hidden;background:transparent;box-shadow:none;color:var(--hc-ink);text-align:left;font:12px/1.25 var(--hc-ui);-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;pointer-events:auto;scrollbar-width:thin;scrollbar-color:#2a2008 #0a0805}
+#homecoming::backdrop{background:transparent;backdrop-filter:none}
+/* Track timing (STAY .9 s cubic-bezier(.2,.8,.2,1), gutter on --hc-ease; BACK TO THE STARS evenly over the hand-off; story scenes cut)
+   is homecoming.js's TRACK_EASE; the rules and glyphs get the grid's animated values written on themselves (applyTracks), never by
+   `inherit`: Safari resolved that to a stale value (WebKit bug 325900) and the STAY console lost its rules (batch12). */
+:where(#homecoming) :is(p,h2,h3,h4,dl,dd){margin:0}
+#homecoming [hidden],#solar-dock[hidden],#solar-minimap[hidden],#minimap-content[hidden],#autopilot-cancel[hidden],#return-home[hidden]{display:none!important}
+#homecoming :is(button,a,input):focus-visible,#solar-dock button:focus-visible,#return-home:focus-visible{outline:1px solid var(--hc-mint);outline-offset:2px}
+#homecoming button:disabled{opacity:.5;cursor:wait}
+#homecoming *::-webkit-scrollbar{width:8px;height:8px}#homecoming *::-webkit-scrollbar-track{background:#0a0805}#homecoming *::-webkit-scrollbar-thumb{background:#2a2008;border:1px solid #3a2c0a}
+#home-projection{position:absolute;inset:0;margin:0;padding:0;border:0;background:transparent}
+/* The Earth cell stays transparent: the clipped game canvas is its picture. Everything else is console black,
+   including the gutter (painted by the grid's spread shadow so the gutter can animate to 0). */
+.hc-grid{position:absolute;inset:var(--hc-gutter);display:grid;grid-template-columns:var(--hc-map) minmax(0,1fr);grid-template-rows:var(--hc-top) minmax(0,1fr);grid-template-areas:"map earth" "info earth";box-shadow:0 0 0 var(--hc-gutter) var(--hc-bg)}
+.hc-cell{position:relative;min-width:0;min-height:0;overflow:hidden;background:var(--hc-bg)}
+#home-earth-panel{grid-area:earth;background:transparent;container-type:inline-size}
+#home-earth-panel>.home-window-overlay{z-index:1}
+#home-map-cell{grid-area:map;display:flex;flex-direction:column;overflow:clip;overflow-clip-margin:7px;opacity:var(--hc-mapin,1);background:rgb(5 4 10 / calc(1 - min(1, var(--hc-sky, 0) * 3)))}
+/* REST hands the real sky back to the Earth window at once: the dashboard's map is always console black. */
+#homecoming[data-layout=dashboard] #home-map-cell{background:var(--hc-bg)}
+#home-map-view{position:relative;flex:1;min-height:0;overflow:hidden}
+.hc-info{grid-area:info;display:grid;grid-template-columns:54% 46%;min-width:0;min-height:0;overflow:hidden}
+#homecoming[data-layout=earth] #home-map-cell,#homecoming:is([data-layout=galaxy],[data-layout=flight]) #home-earth-panel{pointer-events:none}
+
+/* Hairlines, junction glyphs and the drawn-on outer frame follow the same track variables. */
+.hc-rule{position:absolute;z-index:5;background:var(--hc-line);pointer-events:none;opacity:0;transition:opacity 0s}
+.hc-rule[data-at=v]{top:0;bottom:0;width:1px;left:calc(var(--hc-map) - 1px)}
+.hc-rule[data-at=h]{left:0;width:var(--hc-map);height:1px;top:calc(var(--hc-top) - 1px)}
+.hc-rule[data-at=a]{top:var(--hc-top);bottom:0;width:1px;left:calc(var(--hc-map)*.54 - 1px)}
+.hc-plus{position:absolute;z-index:6;width:0;height:0;pointer-events:none;user-select:none;opacity:1;transition:opacity 0s}
+.hc-plus::before,.hc-scrub::before,.hc-scrub::after{content:'+';position:absolute;left:0;top:0;transform:translate(-50%,-50%);font:400 13px/1 var(--hc-ui);color:var(--hc-ink);text-shadow:var(--hc-glow)}
+.hc-plus[data-at=tl]{left:.5px;top:.5px}.hc-plus[data-at=tr]{left:calc(100% - .5px);top:.5px}.hc-plus[data-at=bl]{left:.5px;top:calc(100% - .5px)}.hc-plus[data-at=br]{left:calc(100% - .5px);top:calc(100% - .5px)}
+.hc-plus[data-at=vt]{left:calc(var(--hc-map) - .5px);top:.5px}.hc-plus[data-at=vb]{left:calc(var(--hc-map) - .5px);top:calc(100% - .5px)}
+.hc-plus[data-at=hl]{left:.5px;top:calc(var(--hc-top) - .5px)}.hc-plus[data-at=hm]{left:calc(var(--hc-map) - .5px);top:calc(var(--hc-top) - .5px)}
+.hc-plus[data-at=ah]{left:calc(var(--hc-map)*.54 - .5px);top:calc(var(--hc-top) - .5px)}.hc-plus[data-at=ab]{left:calc(var(--hc-map)*.54 - .5px);top:calc(100% - .5px)}
+.hc-plus:is([data-at=vt],[data-at=vb],[data-at=hl],[data-at=hm],[data-at=ah],[data-at=ab]){opacity:0}
+#homecoming[data-layout=dashboard] :is(.hc-rule,.hc-plus){opacity:1}
+/* STAY: the hairlines arrive with the junction glyphs, after the frame has started to draw. */
+#homecoming[data-layout=dashboard] .hc-rule{transition-delay:.4s}
+.hc-frame{position:absolute;inset:0;z-index:5;width:100%;height:100%;overflow:visible;pointer-events:none}
+.hc-frame rect{x:.5px;y:.5px;width:calc(100% - 1px);height:calc(100% - 1px);fill:none;stroke:var(--hc-line);stroke-width:1px;stroke-dasharray:1;stroke-dashoffset:1}
+#homecoming .hc-frame.hc-on{animation:none}
+.hc-frame.hc-on rect{stroke-dashoffset:0;animation:hc-draw .52s var(--hc-ease)}
+#homecoming.hc-leaving .hc-frame rect{stroke-dashoffset:1;transition:stroke-dashoffset var(--hc-leave,1.2s) var(--hc-ease)}
+@keyframes hc-draw{from{stroke-dashoffset:1}}
+
+/* Power-on: console chrome stays dark until its beat, then cuts on with a steps(2) blink. */
+#homecoming [data-hc]:not(.hc-on){visibility:hidden}
+#homecoming [data-hc].hc-on{animation:hc-blink .12s linear 2}
+@keyframes hc-blink{0%,49.9%{visibility:hidden}50%,100%{visibility:visible}}
+/* Interactive panels stay focusable while dark: the archive and log scanline-wipe in, the card blinks. */
+#homecoming .hc-wipe{position:relative;height:100%;clip-path:inset(0 0 100% 0);transition:clip-path .38s linear}
+#homecoming .hc-wipe[data-hc]:not(.hc-on){visibility:visible}
+#homecoming .hc-wipe.hc-on{clip-path:inset(0);animation:none}
+.hc-wipe::after{content:'';position:absolute;left:0;right:0;top:0;height:2px;z-index:5;background:var(--hc-mint);box-shadow:0 0 6px var(--hc-mint);opacity:0;pointer-events:none;transform:translateY(-100%)}
+.hc-wipe.hc-on::after{animation:hc-bar .38s linear}
+@keyframes hc-bar{from{top:0;opacity:.8}99%{top:100%;opacity:.8}to{top:100%;opacity:0}}
+#homecoming.hc-snap,#homecoming.hc-snap *{transition:none!important;animation:none!important}
+
+/* ── Components ───────────────────────────────────────────────────────────── */
+.hc-tag{position:absolute;left:8px;top:8px;z-index:4;display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--hc-stroke);border-radius:5px;padding:2px 9px;font:700 12px/1.1 var(--hc-ui);letter-spacing:normal;color:var(--hc-ink);text-shadow:var(--hc-glow);background:rgba(5,4,10,.7);white-space:nowrap;pointer-events:none}
+.hc-nav{font-weight:700;color:var(--hc-green);text-shadow:var(--hc-glow)}.hc-nav:not(.hc-on){display:none}
+.hc-kicker{font:400 11px/1.5 var(--hc-ui);letter-spacing:.1em;color:var(--hc-orange)}
+.hc-g,.hc-ok,.hc-gr{color:var(--hc-green)}.hc-ok{text-shadow:var(--hc-glow)}.hc-s{color:var(--hc-stroke)}.hc-st{color:#8a93b5}.hc-mo{color:var(--hc-moon)}.hc-rd{color:var(--hc-red)}
+/* Masthead: the condensed display serif, right-aligned, as Sentry's hud-title. */
+.hc-mast{position:absolute;right:8px;top:8px;z-index:3;display:flex;flex-direction:column;align-items:flex-end;text-align:right;pointer-events:none}
+#homecoming .hc-hero{display:inline-block;margin:0;font:350 clamp(30px,8.6cqi,66px)/.88 var(--hc-display);letter-spacing:.01em;color:var(--hc-mint);text-shadow:var(--hc-glow);transform:none;white-space:nowrap}
+#homecoming :is(.hc-hero,.hc-elong) em{font-style:normal}
+.hc-mast p{margin-top:2px;font:12px/1.25 var(--hc-ui);color:var(--hc-dim);font-variant-numeric:tabular-nums}.hc-mast p:first-of-type{margin-top:9px}
+/* Phone twins, shown only by the portrait split below: SOJOURNER over the map, and Earth's tap caption. */
+#homecoming :is(.hc-mast-map,.hc-tap){display:none}
+/* The credit under SOJOURNER (credit.js): phones only, the portrait split's map masthead or the landscape Earth cell's; the desktop
+   console has none (the header's own credit, under SOUND ON, carries it in flight). */
+#homecoming .hc-credit{display:none}
+/* Where it shows (phones), each link's hit area grows to 44px tall: out into the passive text on the left and to the backing's edge
+   on the right, meeting its neighbour mid-gap. The 16px icons and their art stay put. */
+#homecoming .hc-credit a::after{inset:-14px -4px}#homecoming .hc-credit a:first-of-type::after{left:-12px}#homecoming .hc-credit a:last-of-type::after{right:-10px}
+/* Readout box: Sentry's glass NEAREST APPROACH inset. */
+.hc-readout{position:absolute;left:8px;top:44px;z-index:3;width:236px;display:flex;flex-direction:column;gap:4px;border:1px solid var(--hc-line);background:rgba(5,4,10,.62);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);padding:8px 10px;font:12px/1.25 var(--hc-ui);color:var(--hc-dim);font-variant-numeric:tabular-nums;pointer-events:none}
+#homecoming .hc-readout h3{font:inherit;color:var(--hc-orange);text-shadow:var(--hc-glow)}
+.hc-name{color:var(--hc-mint);text-shadow:var(--hc-glow);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#homecoming .hc-readout dl{display:flex;flex-direction:column;gap:4px;margin-top:2px;font-size:inherit}
+#homecoming .hc-readout dl div{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin:0}
+#homecoming .hc-readout dt{color:var(--hc-dim)}#homecoming .hc-readout dd{margin:0;color:var(--hc-ink);white-space:nowrap}
+#homecoming .hc-readout dd.hc-s{color:var(--hc-stroke)}#homecoming .hc-readout dd.hc-gr{color:var(--hc-green)}#homecoming .hc-readout dd.hc-st{color:#8a93b5}
+.hc-stamp{margin-top:2px!important;color:var(--hc-dim)}
+/* The VIEWPORT's subject (polish9; homecoming.js viewportText): Earth keeps every row and the orbital key; another world or a craft
+   reads range, altitude and light; deep space the Sun and the nearest body, its masthead line unlit. */
+#home-earth-panel:not([data-subject]) #home-arrival [data-for]:not([data-for~=earth]),#home-earth-panel[data-subject=body] #home-arrival [data-for]:not([data-for~=body]),#home-earth-panel[data-subject=deep] #home-arrival [data-for]:not([data-for~=deep]),#home-earth-panel[data-subject] .hc-key{display:none}
+#home-earth-panel[data-subject=deep] .hc-ok{color:var(--hc-dim);text-shadow:none}
+/* A world's parent can fill the cell behind the readout (Mars behind Phobos, a craft low over its planet): a denser glass keeps it legible. */
+#home-earth-panel[data-subject=body] .hc-readout{background:rgba(5,4,10,.82)}
+/* A demoted (narrow) Earth window keeps the masthead up top; its readout drops to the foot, clear of the disc. */
+@container (max-width:520px){#home-arrival{top:auto;bottom:80px}}
+/* Key strip and hint line along the foot of a cell. */
+.hc-key{position:absolute;left:8px;right:8px;bottom:28px;z-index:3;display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;padding:0 2px;font:12px/1.25 var(--hc-ui);pointer-events:none}
+.hc-key>b{font-weight:400;color:var(--hc-orange);text-shadow:var(--hc-glow)}
+.hc-key span{display:inline-flex;align-items:center;gap:6px;color:var(--c)}
+.hc-key i{flex:none;width:7px;height:7px;border-radius:50%;background:var(--c);box-shadow:0 0 5px var(--c)}
+.hc-key i.hc-crew{width:8px;height:8px;border-radius:0;background:none;border:1px solid var(--c);transform:rotate(45deg)}
+.hc-key small{font-size:inherit;color:var(--hc-dim);font-variant-numeric:tabular-nums}
+.hc-hint{position:absolute;left:8px;right:8px;bottom:8px;z-index:3;font:10px/1.5 var(--hc-ui);letter-spacing:.025em;color:var(--hc-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
+/* Scrubber strip: ▶, MISSION TIME + clock, the pentagon-thumb route slider. */
+.hc-scrub{position:relative;z-index:3;flex:none;display:flex;align-items:center;gap:12px;padding:8px 12px;border-top:1px solid var(--hc-line);background:var(--hc-bg)}
+/* Only the dashboard has a scrubber: in the story (and facing the galaxy) the map canvas is the whole picture. */
+#homecoming:not([data-layout=dashboard]) .hc-scrub{display:none}
+.hc-scrub::before{left:0;top:-.5px}.hc-scrub::after{left:auto;right:0;top:-.5px;transform:translate(50%,-50%)}
+#home-play{flex:none;display:grid;place-items:center;width:36px;height:28px;padding:0;border:1.5px solid var(--hc-stroke);border-radius:4px;background:transparent;color:var(--hc-ink);font:700 12px/1 var(--hc-ui);text-shadow:var(--hc-glow);cursor:pointer;transition:background-color .15s var(--hc-ease)}
+.hc-time{flex:1;min-width:0}
+.hc-time>div{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:4px}
+.hc-time b{font:700 12px/1.25 var(--hc-ui);color:var(--hc-dim)}
+#home-clock{font:14px/1.5 var(--hc-clock);color:var(--hc-mint);text-shadow:var(--hc-glow);white-space:nowrap}
+#home-range{-webkit-appearance:none;appearance:none;display:block;width:100%;height:22px;margin:0;padding:0;background:transparent;cursor:pointer}
+#home-range::-webkit-slider-runnable-track{height:2px;background:linear-gradient(90deg,var(--hc-stroke),var(--hc-ink))}
+#home-range::-moz-range-track{height:2px;background:var(--hc-stroke)}
+#home-range::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:14px;height:22px;margin-top:-10px;border:0;background:var(--hc-mint);box-shadow:0 0 8px var(--hc-ink);clip-path:polygon(50% 0,100% 25%,100% 100%,0 100%,0 25%)}
+#home-range::-moz-range-thumb{width:14px;height:22px;border:0;border-radius:0;background:var(--hc-mint);clip-path:polygon(50% 0,100% 25%,100% 100%,0 100%,0 25%)}
+/* Buttons: 1.5 px orange stroke, 4 px radius, gold wash on hover; primary is mint. */
+#homecoming :is(#home-save,#home-resume,#home-download,#home-export-cancel,#home-reset,#home-preview-close),#return-home{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:28px;margin:0;padding:5px 10px;border:1.5px solid var(--hc-stroke);border-radius:4px;background:transparent;color:var(--hc-ink);font:700 12px/1.1 var(--hc-ui);letter-spacing:.025em;text-decoration:none;text-shadow:var(--hc-glow);cursor:pointer;transition:background-color .15s var(--hc-ease)}
+#homecoming :is(#home-save,#home-resume,#home-download,#home-export-cancel,#home-reset,#home-preview-close,#home-play,.home-actions button):hover,#return-home:hover,#solar-dock :is(#minimap-toggle,#minimap-reset,#autopilot-cancel):hover{background:rgba(240,179,42,.1)}
+#homecoming #home-save{flex-direction:column;align-items:flex-start;gap:3px;border-color:var(--hc-mint);color:var(--hc-mint);background:rgba(5,4,10,.72);box-shadow:0 0 8px color-mix(in srgb,var(--hc-mint) 42%,transparent)}
+#homecoming #home-save span{font:400 10px/1.2 var(--hc-ui);letter-spacing:.025em;color:var(--hc-dim);text-shadow:none}
+/* The preview's ✕ keeps its semantics (tests, Esc closes a preview) but is never drawn. */
+#homecoming #home-preview-close{display:none!important}
+/* BACK TO THE STARS: the Earth cell's bottom-right corner; the key strip and hint line stop short of it. */
+#home-earth-panel{--hc-resume:150px}
+#homecoming #home-resume{position:absolute;right:8px;bottom:8px;z-index:4;background:rgba(5,4,10,.72)}
+#home-earth-panel>:is(.hc-key,.hc-hint){right:calc(var(--hc-resume) + 20px)}
+/* ── Map cell ────────────────────────────────────────────────────────────── */
+#home-map-slot{position:absolute;inset:0}
+#home-map-slot #solar-minimap,#home-map-slot #minimap-content,#home-map-slot #minimap-chart{position:relative;inset:auto;width:100%;height:100%;margin:0;padding:0;border:0;border-radius:0;box-shadow:none;background:transparent}
+#home-map-slot .minimap-heading,#home-map-slot #autopilot-cancel{display:none}
+/* ── Archive + flight log ────────────────────────────────────────────────── */
+.hc-body{height:100%;overflow:auto;padding:38px 12px 10px}
+#home-archive .hc-body{display:flex;flex-direction:column;align-items:flex-start}
+#homecoming .hc-elong{display:inline-block;margin:2px 0 4px;font:350 clamp(24px,2.3vw,34px)/.88 var(--hc-display);letter-spacing:.01em;color:var(--hc-mint);text-shadow:var(--hc-glow);transform:none;white-space:nowrap}
+#homecoming .hc-rows{align-self:stretch;margin:6px 0 0;font-size:12px}
+#homecoming .hc-rows>div{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:0;padding:3px 0}
+#homecoming .hc-rows dt{font:12px/1.25 var(--hc-ui);letter-spacing:.025em;color:var(--hc-dim)}
+#homecoming .hc-rows dd{margin:0;font:14px/1.5 var(--hc-ui);color:var(--hc-mint);text-shadow:var(--hc-glow);font-variant-numeric:tabular-nums;white-space:nowrap}
+#homecoming .hc-body hr{align-self:stretch;height:0;margin:8px 0;border:0;border-top:1px solid var(--hc-line)}
+#homecoming #home-stops{margin:0 0 10px;font:12px/1.25 var(--hc-ui);color:var(--hc-green);text-shadow:var(--hc-glow);overflow-wrap:anywhere}
+#home-share{align-self:stretch;flex:none;margin:0}
+/* A portrait thumbnail sits beside its actions so it never pushes DOWNLOAD
+   beneath the archive. The archive body still scrolls in short viewports. */
+#home-share:has(> :is(#home-film-preview,#home-film):not([hidden])){display:grid;grid-template-columns:67.5px minmax(0,1fr);grid-template-rows:auto auto 1fr;column-gap:10px;align-items:start}
+#home-film-preview,#home-film{grid-column:1;grid-row:1/4;width:67.5px;height:120px;aspect-ratio:9/16;margin:0;border:1px solid var(--hc-line);background:#030408}
+#home-film{display:block;object-fit:contain}
+#home-film-preview{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:8px;padding:5px;text-align:center;background:radial-gradient(ellipse at 65% 25%,#13251f 0,transparent 60%),#030408}
+#home-film-preview strong{font:350 13px/1 var(--hc-display);letter-spacing:.03em;color:var(--hc-mint)}
+#home-film-preview span{font:8px/1.4 var(--hc-ui);letter-spacing:.025em;color:var(--hc-mint)}
+#home-film-preview small{font:7px/1.3 var(--hc-ui);letter-spacing:.025em;color:var(--hc-dim)}
+#home-share>.home-export-controls{grid-column:2;grid-row:1}
+#home-share>#home-export-progress{grid-column:2;grid-row:2}
+#home-share>#home-export-status{grid-column:2;grid-row:3}
+.home-export-controls{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+#home-export-progress{-webkit-appearance:none;appearance:none;display:block;width:100%;height:2px;margin:8px 0 0;border:0;background:rgba(122,90,20,.4);accent-color:var(--hc-ink)}
+#home-export-progress::-webkit-progress-bar{background:rgba(122,90,20,.4)}
+#home-export-progress::-webkit-progress-value{background:linear-gradient(90deg,var(--hc-stroke),var(--hc-ink))}
+#home-export-progress::-moz-progress-bar{background:var(--hc-ink)}
+#homecoming #home-export-status{margin-top:6px;font:10px/1.4 var(--hc-ui);letter-spacing:.025em;color:var(--hc-dim)}
+/* Silent until an export speaks (polish9): the live region stays rendered (so it is announced), with no gap under EXPORT. */
+#homecoming #home-export-status:empty{margin-top:0}
+#home-log .hc-body{display:flex;flex-direction:column;font:12px/1.25 var(--hc-ui);padding-left:8px;padding-right:8px}
+#homecoming #home-log h3{font:inherit;color:var(--hc-orange);text-shadow:var(--hc-glow);margin-bottom:2px}
+.hc-src{color:var(--hc-green)}
+#home-feed{flex:0 1 auto;min-height:3.75em;overflow-y:auto;margin-top:0;padding:6px 4px 0 0;-webkit-mask-image:linear-gradient(transparent,#000 6px);mask-image:linear-gradient(transparent,#000 6px)}
+#home-feed p{color:var(--hc-green);opacity:.9}
+.hc-stream{flex:none;margin-top:8px;padding-top:4px}
+#homecoming .hc-stream h4{font:inherit;color:var(--hc-orange);margin-bottom:2px}
+.hc-stream table{width:100%;border-collapse:collapse;font:inherit;font-variant-numeric:tabular-nums}
+.hc-stream :is(th,td){padding:0;text-align:left;font-weight:400;white-space:nowrap}
+.hc-stream th{color:var(--hc-dim)}.hc-stream td{color:var(--hc-green)}
+.hc-stream :is(th,td):nth-child(3){text-align:right;padding-right:14px}.hc-stream :is(th,td):last-child{text-align:right}
+
+/* ── Subtitles (bottom centre) and the two choices just above them ──────────── */
+.hc-stage{position:absolute;z-index:7;left:50%;bottom:calc(clamp(36px,7dvh,76px) + env(safe-area-inset-bottom,0px));transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:12px;width:min(650px,calc(100% - 32px));text-align:center;pointer-events:none}
+.hc-stage>*{pointer-events:auto}
+#home-dialogue{margin:0;text-shadow:var(--phosphor-text-shadow,0 0 4px currentColor),0 1px 10px #000,0 0 24px #000}
+/* Centred right above Astra's line (Isabel 2026-10-03): the first item of the stage's column, so a line that wraps lifts the
+   pair with it and the two never meet; 20px clear of ASTRA (the column's 12px gap and 8px). The stage keeps it above Safari's
+   toolbar (the dialog sits on the layout viewport under html.stage-bleed). */
+#homecoming .home-actions{display:flex;flex-direction:row;align-items:center;justify-content:center;gap:12px;margin:0 0 8px;padding:0}
+/* Focusable (Enter chooses) but not clickable until they blink on. */
+#homecoming .home-actions:not(.hc-on){opacity:0;pointer-events:none}
+/* An opacity blink (not visibility): the focused choice must stay focusable while it blinks on (skips, Esc). */
+#homecoming .home-actions.hc-on{animation:hc-blink-o .12s linear 2}
+@keyframes hc-blink-o{0%,49.9%{opacity:0}50%,100%{opacity:1}}
+#homecoming .home-actions button{display:inline-flex;align-items:center;justify-content:center;min-width:112px;min-height:36px;margin:0;padding:8px 18px;border:1.5px solid var(--hc-stroke);border-radius:4px;background:rgba(5,4,10,.72);color:var(--hc-ink);font:700 12px/1.1 var(--hc-ui);letter-spacing:.025em;text-shadow:var(--hc-glow);white-space:nowrap;cursor:pointer;transition:background-color .15s var(--hc-ease)}
+#homecoming .home-actions #home-yes{border-color:var(--hc-mint);color:var(--hc-mint);box-shadow:0 0 8px color-mix(in srgb,var(--hc-mint) 42%,transparent)}
+#homecoming .home-actions #home-yes:hover{background:rgba(71,255,169,.1)}
+
+/* ── CRT post stack (Sentry index.html), above everything in the console ─── */
+/* Console only: the story is a clean picture. Performance (measured in Chrome): the stack is one static layer with plain alpha.
+   .hc-crt is its own stacking context, so Sentry's screen/overlay/multiply blends only ever met the empty layer beneath them:
+   the backdrop-filter bloom drew nothing (pixel-identical without it, even at brightness(3)) and the blends equal normal alpha,
+   yet together they cost ~3 extra full-screen compositing passes a frame. The grain holds still: re-rolling it every 275 ms
+   read as flicker over the console. */
+.hc-crt{position:fixed;inset:0;z-index:20;pointer-events:none;overflow:hidden;transition:opacity var(--hc-leave,1.2s) linear}
+#homecoming:not([data-layout=dashboard],[data-leave=earth]) .hc-crt{display:none}
+#homecoming[data-layout=dashboard]:not(.hc-snap) .hc-crt{animation:hc-crt-on .6s linear}
+@keyframes hc-crt-on{from{opacity:0}}
+.hc-crt i{position:absolute;inset:0;pointer-events:none}
+.hc-crt .hc-noise{inset:-8px;opacity:.085;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-size:160px 160px}
+.hc-vignette{background:radial-gradient(120% 120% at 50% 45%,transparent 55%,rgba(0,0,0,.65) 100%)}
+.hc-scan{background:repeating-linear-gradient(0deg,rgba(0,0,0,0) 0px,rgba(0,0,0,0) 2px,rgba(0,0,0,.16) 3px,rgba(0,0,0,.16) 4px);opacity:.7}
+#homecoming.hc-leaving .hc-crt{opacity:0}
+/* BACK TO THE STARS: chrome, annotations, the map and the archive fall away while the Earth panel takes the screen. */
+#homecoming[data-leave=earth] :is(#home-map-cell,.hc-info,.hc-rule,[data-hc],.home-window-overlay){opacity:0!important;transition:opacity calc(var(--hc-leave,1.1s)*.4) linear}
+@keyframes hc-flick{0%,100%{opacity:.7}50%{opacity:.62}}
+@media(prefers-reduced-motion:no-preference){.hc-crt .hc-scan{animation:hc-flick 4s steps(2) infinite}}
+
+/* ── Free roam: the Sentry mini map dock and VIEW CONSOLE ──────────────────── */
+/* No tag or frame: the map is a plain dark rectangle, crisp-edged inside the dock's corner marks, over one control row on the HUD's left
+   column (toggle · reset · hint · autopilot cancel), a 28px line that shares the bottom row's centre line with the nav
+   help. #solar-minimap spans the dock as a subgrid, so its box (a scan-label blocker) is still the whole dock; collapsed,
+   the row stays where it was and the toggle never moves. */
+#solar-dock{position:fixed;left:calc(40px + var(--safe-left,0px));bottom:calc(20px + var(--safe-bottom,0px));width:clamp(290px,27vw,420px);z-index:6;display:grid;grid-template-columns:auto minmax(0,1fr) auto;grid-template-rows:auto auto;gap:6px 12px;align-items:center;pointer-events:auto;font:12px/1.25 var(--hc-ui);color:var(--hc-ink)}
+#solar-dock .hc-dock-hint{grid-area:2/2;min-width:0;margin:0;font:10px/1.5 var(--hc-ui);letter-spacing:.025em;color:var(--hc-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
+#solar-minimap,#solar-dock #solar-minimap{position:relative;inset:auto;width:100%;margin:0;padding:0;border:0;border-radius:0;box-shadow:none;background:transparent;color:var(--hc-ink)}
+#solar-dock #solar-minimap{grid-area:1/1/3/4;width:auto;display:grid;grid-template-columns:subgrid;grid-template-rows:subgrid;align-items:center}
+#solar-dock #minimap-content{display:contents}
+#minimap-chart{height:230px;width:100%;position:relative}
+#solar-dock #minimap-chart{grid-area:1/1/2/4;height:clamp(120px,calc(100vh - 410px),230px);background:rgb(5 4 10 / .66)}
+#solar-dock #minimap-chart:has(>.solar-map-canvas:focus-visible){outline:1px solid var(--hc-mint);outline-offset:2px}
+.solar-map-canvas{display:block;width:100%;height:100%;background:transparent;touch-action:none;cursor:grab;outline-offset:-2px}
+.solar-map-canvas:active{cursor:grabbing}.solar-map-canvas:focus-visible{outline:1px solid var(--hc-mint,#47FFA9)}
+#solar-dock .minimap-heading{grid-area:2/1;display:flex;gap:4px}
+#solar-dock :is(#minimap-toggle,#minimap-reset){display:grid;place-content:center;place-items:center;width:28px;height:28px;min-width:28px;min-height:28px;margin:0;padding:0;border:0;border-radius:4px;background:rgba(5,4,10,.72);color:var(--hc-ink);font:400 12px/1 var(--hc-ui);letter-spacing:0;box-shadow:none;cursor:pointer;transition:background-color .15s var(--hc-ease)}
+#solar-dock :is(#minimap-toggle,#minimap-reset) svg{display:block;width:12px;height:12px;overflow:visible;pointer-events:none}
+#solar-dock #autopilot-cancel{grid-area:2/3;display:block;width:auto;min-height:28px;margin:0;padding:5px 10px;border:1px solid var(--hc-red);border-radius:4px;background:rgba(5,4,10,.72);color:var(--hc-red);font:700 12px/1.1 var(--hc-ui);letter-spacing:.025em;text-shadow:var(--hc-glow);white-space:nowrap;box-shadow:0 0 8px color-mix(in srgb,var(--hc-red) 42%,transparent);cursor:pointer}
+#solar-dock[data-expanded=false]{width:auto;gap:0}
+#solar-dock[data-expanded=false] :is(.hc-dock-hint,#minimap-reset){display:none}
+/* VIEW CONSOLE (#return-home: the id is RETURN HOME's, kept for the HUD's CSS and tests) sits first in the header actions row
+   beside DEV TOOLS, RECORDS and SOUND, as plain lit text. */
+#return-home{position:static;order:-1;z-index:auto;min-height:28px;padding:0;border:0;background:none;box-shadow:none;color:var(--hc-ink);font:700 12px/1.1 var(--hc-ui);letter-spacing:.025em;text-shadow:var(--hc-glow);white-space:nowrap;pointer-events:auto}
+#return-home:hover{background:none;color:var(--hc-mint)}
+/* The free-roam map shares the instruments' corner marks; the lower pair sits on the control row. */
+#solar-dock::before{content:'';position:absolute;inset:-18px -16px 8.5px;background:var(--hud-plus-marks);pointer-events:none}
+#solar-dock .hc-dock-hint{justify-self:end;text-align:right}
+/* Hide every flight instrument and visor rim while the console is up; blink the HUD back after CONTINUE. */
+body.home-arrival :is(#helmet-hud>header,#helmet-hud>footer,#coordinates,#speed-panel,#scan-panel,#radar-panel,#narrative,#star-key,#nav-help,#cockpit,.coordinates,#mobile-nav,.crosshair,#target-guide,#labels,#scanlines,#hud-frame,#return-home,#toast){visibility:hidden!important;pointer-events:none!important}
+body.hc-hud-return #helmet-hud{animation:hc-hud-in .45s var(--hc-ease,ease) both}
+@keyframes hc-hud-in{from{opacity:0}to{opacity:1}}
+/* The arrival keeps the flight's own picture (no cut), so the instruments fade out over .5 s (HUD_LEAVE) instead of vanishing in one frame.
+   Only the passive instruments: the controls (SCAN, VIEW CONSOLE, which appears on this frame) and toasts still go at once. */
+body.home-arrival.hc-hud-leave :is(#helmet-hud>header,#helmet-hud>footer,#coordinates,#speed-panel,#radar-panel,#narrative,#star-key,#nav-help,#cockpit,.coordinates,#mobile-nav,.crosshair,#target-guide,#labels,#scanlines,#hud-frame){visibility:visible!important}
+body.home-arrival.hc-hud-leave #helmet-hud{animation:hc-hud-out .5s cubic-bezier(.4,0,.6,1) both}
+@keyframes hc-hud-out{from{opacity:1}to{opacity:0}}
+@media(pointer:coarse){#homecoming :is(#home-save,#home-resume,#home-download,#home-export-cancel,#home-reset,#home-preview-close,#home-play),#return-home,#solar-dock :is(#minimap-toggle,#minimap-reset,#autopilot-cancel){min-width:44px;min-height:44px}}
+
+/* ── Short desktop windows: keep the archive inside the viewport ──────────── */
+@media(max-height:850px) and (min-width:701px){
+ #homecoming .hc-elong{font-size:clamp(22px,2vw,28px)}
+ #homecoming .hc-rows>div{padding:1px 0}#homecoming .hc-rows dd{font-size:14px;line-height:1.3}
+ #homecoming .hc-body hr{margin:5px 0}#homecoming #home-stops{margin-bottom:6px}
+ .hc-body{padding-top:36px;padding-bottom:8px}
+}
+
+/* ── One column (narrow or short windows): one cell at a time in the story; STAY's dashboard scrolls as this stack
+   only on short screens (landscape phones, windows ≤500px tall): portrait gets the split below. ── */
+@media(max-width:700px),(max-height:500px){
+ #solar-dock::before{content:none}
+ /* On a scrolling phone stack BACK TO THE STARS stays in the screen's bottom-right corner. */
+ #home-earth-panel{container-type:normal}
+ #homecoming #home-resume{position:fixed;right:calc(16px + var(--safe-right,0px));bottom:calc(16px + var(--safe-bottom,0px));z-index:9}
+ #homecoming .hc-grid{grid-template-columns:100%;grid-template-rows:var(--hc-row) minmax(0,1fr) 0;grid-template-areas:"earth" "map" "info"}
+ #homecoming :is(.hc-rule,.hc-plus:not([data-at=tl],[data-at=tr],[data-at=bl],[data-at=br]),.hc-readout){display:none}
+ #homecoming .hc-mast{left:8px;top:36px;right:8px}
+ .hc-stage{width:calc(100% - 32px)}
+ #homecoming .home-actions button{min-width:0;flex:1 1 0}
+ #homecoming .home-actions{width:min(320px,100%)}
+ .hc-hint{font-size:10px}
+ /* The Earth cell is short on phones: the key strip sits on the foot beside BACK TO THE STARS; the source line goes. */
+ #homecoming #home-earth-panel>.hc-key{bottom:8px;gap:2px 10px;font-size:11px}
+ #homecoming #home-earth-panel>.hc-hint{display:none}
+ /* The archive scrolls as a stack: Earth, map, then archive and log. */
+ #homecoming[data-layout=dashboard]{overflow-y:auto}
+ #homecoming[data-layout=dashboard] .hc-grid{position:relative;inset:auto;margin:var(--hc-gutter);min-height:calc(100% - 2*var(--hc-gutter));grid-template-rows:44dvh 46dvh auto}
+ #homecoming[data-layout=dashboard] :is(#home-map-cell,.hc-info,#home-log){border-top:1px solid var(--hc-line)}
+ #homecoming[data-layout=dashboard] .hc-info{grid-template-columns:100%;overflow:visible}
+ #homecoming[data-layout=dashboard] :is(.hc-wipe,.hc-body){height:auto}
+ #homecoming[data-layout=dashboard] #home-feed{flex:none;max-height:none;overflow:visible}
+ #homecoming[data-layout=dashboard] .hc-crt{position:fixed}
+ #homecoming[data-layout=dashboard] .hc-mast p{display:none}
+ #solar-dock{left:calc(18px + var(--safe-left));bottom:calc(116px + var(--safe-bottom));width:calc(100vw - 36px - var(--safe-left) - var(--safe-right));max-width:340px}
+ /* Expanded on a phone the map is an overlay: a denser fill, and its lower edge lifted clear of SCAN (the toggle row stays put). */
+ #solar-dock #minimap-chart{height:160px;margin-bottom:24px;background:rgb(5 4 10 / .82)}
+ /* SCAN (right 22px, 136px wide) holds the right of the phone's control row: the hint stops 12px short of it and the
+    autopilot cancel rises to the map's bottom-left corner, just above the toggle. */
+ #solar-dock .hc-dock-hint{display:none}
+ #solar-dock #autopilot-cancel{grid-area:1/1/2/4;align-self:end;justify-self:start}
+ #solar-dock :is(#minimap-chart,#autopilot-cancel){transition:opacity .25s ease,visibility 0s linear 0s}
+}
+/* ── Portrait (phones, and narrow windows of any pointer: polish9): Sentry's phone console, one screen ──
+   The route across the top half (map, then MISSION TIME), the VIEWPORT | archive below (homecoming.js SPLIT_QUERY: --hc-map is the
+   archive's column, --hc-row the bottom row). [data-leave=earth] keeps this grid while a tap on the viewport grows its cell to the
+   screen. A desktop window narrowed past 700px gets it too, and follows the resize live (HomeConsole.split). */
+@media(max-width:700px) and (min-height:501px){
+ #homecoming:is([data-layout=dashboard],[data-leave=earth]){overflow:hidden}
+ #homecoming:is([data-layout=dashboard],[data-leave=earth]) .hc-grid{position:absolute;inset:var(--hc-gutter);margin:0;min-height:0;grid-template-columns:minmax(0,1fr) var(--hc-map);grid-template-rows:minmax(0,1fr) var(--hc-row);grid-template-areas:"map map" "earth info"}
+ #homecoming:is([data-layout=dashboard],[data-leave=earth]) :is(#home-map-cell,.hc-info,#home-log){border-top:0}
+ /* Sentry's hairlines and '+' junctions: under the scrubber, and between Earth and the archive (--hc-row on each, homecoming.js). */
+ #homecoming:is([data-layout=dashboard],[data-leave=earth]) .hc-rule{display:block}
+ #homecoming:is([data-layout=dashboard],[data-leave=earth]) .hc-rule[data-at=h]{left:0;width:100%;top:calc(100% - var(--hc-row))}
+ #homecoming:is([data-layout=dashboard],[data-leave=earth]) .hc-rule[data-at=v]{top:calc(100% - var(--hc-row));bottom:0;left:calc(100% - var(--hc-map) - 1px)}
+ #homecoming:is([data-layout=dashboard],[data-leave=earth]) :is(.hc-rule[data-at=a],.hc-plus[data-at=ah],.hc-plus[data-at=ab]){display:none}
+ #homecoming:is([data-layout=dashboard],[data-leave=earth]) .hc-plus:is([data-at=hl],[data-at=hm],[data-at=vt],[data-at=vb]){display:block}
+ #homecoming:is([data-layout=dashboard],[data-leave=earth]) .hc-plus:is([data-at=hl],[data-at=hm],[data-at=vt]){top:calc(100% - var(--hc-row) - .5px)}
+ #homecoming:is([data-layout=dashboard],[data-leave=earth]) .hc-plus[data-at=hm]{left:calc(100% - .5px)}
+ #homecoming:is([data-layout=dashboard],[data-leave=earth]) .hc-plus:is([data-at=vt],[data-at=vb]){left:calc(100% - var(--hc-map) - .5px)}
+ /* SOJOURNER: the console's top right (Sentry's hud-title), on the map tag's line; the Earth cell keeps only its tag. The
+    orbiting map's labels pass under it in console black, as under the tag's own backing on the left. */
+ #homecoming:is([data-layout=dashboard],[data-leave=earth]) #home-earth-panel>:is(.hc-mast,.hc-key){display:none}
+ #homecoming:is([data-layout=dashboard],[data-leave=earth]) #home-map-view>.hc-mast-map{display:flex;top:4px;right:4px;left:auto;padding:4px 4px 2px 8px;border-radius:10px;background:rgb(5 4 10 / .78);box-shadow:0 0 10px 6px rgb(5 4 10 / .78)}
+ #homecoming:is([data-layout=dashboard],[data-leave=earth]) .hc-mast-map .hc-hero{font-size:clamp(24px,7.4vw,32px)}
+ /* The credit (credit.js) under SOJOURNER, right-aligned on its backing; its links take taps inside the passive masthead. */
+ #homecoming:is([data-layout=dashboard],[data-leave=earth]) .hc-mast-map>.hc-credit{display:flex;align-items:center;gap:8px;margin-top:3px;font:400 10px/1.4 var(--hc-ui);letter-spacing:.025em;color:var(--hc-dim);white-space:nowrap}
+ /* The console's map sits under its chrome (the tag, SOJOURNER and its credit, the hint): in the slot #solar-minimap would otherwise
+    keep the free-roam dock's z-index:6, drawing orbits over that chrome and taking the credit's taps. */
+ #homecoming:is([data-layout=dashboard],[data-leave=earth]) #home-map-slot #solar-minimap{z-index:auto}
+ /* The Earth cell is the way back to flight (homecoming.js earthTap): BACK TO THE STARS is only its caption, at the foot. */
+ #homecoming[data-layout=dashboard] #home-earth-panel{cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+ #homecoming:is([data-layout=dashboard],[data-leave=earth]) #home-resume,#homecoming:is([data-layout=dashboard],[data-leave=earth]) #home-resume:hover{position:absolute;left:0;right:auto;top:auto;bottom:0;z-index:4;min-width:0;min-height:44px;align-items:flex-end;justify-content:flex-start;padding:0 8px 8px;border:0;border-radius:0;background:none;box-shadow:none;color:var(--hc-orange);font:400 11px/1.25 var(--hc-ui);letter-spacing:.06em;text-shadow:var(--hc-glow)}
+ #homecoming:is([data-layout=dashboard],[data-leave=earth]) #home-resume:focus-visible{outline-offset:-2px}
+ #homecoming:is([data-layout=dashboard],[data-leave=earth]) #home-resume .hc-wide{display:none}
+ #homecoming:is([data-layout=dashboard],[data-leave=earth]) #home-resume .hc-tap{display:inline}
+ /* Another subject can fill the cell to its foot (a craft low over its planet): there the caption reads on a feathered dark backing,
+    each line of a long name its own. Earth's window (no data-subject) is never crowded there and keeps none. */
+ #homecoming:is([data-layout=dashboard],[data-leave=earth]) #home-earth-panel[data-subject=body] #home-resume :is(.hc-tap,.hc-wide){margin:0 -4px;padding:1px 4px;border-radius:6px;background:rgb(5 4 10 / .78);box-shadow:0 0 8px 4px rgb(5 4 10 / .78);-webkit-box-decoration-break:clone;box-decoration-break:clone}
+ /* FLIGHT ARCHIVE: one column of stats over the export controls; the kicker and the raw log stay on desktop. It scrolls
+    inside its own cell only if it must (a long route). */
+ #homecoming:is([data-layout=dashboard],[data-leave=earth]) .hc-info{display:block;overflow:hidden}
+ #homecoming:is([data-layout=dashboard],[data-leave=earth]) :is(#home-log,.hc-kicker){display:none}
+ #homecoming:is([data-layout=dashboard],[data-leave=earth]) #home-archive{height:100%}
+ #homecoming:is([data-layout=dashboard],[data-leave=earth]) #home-archive :is(.hc-wipe,.hc-body){height:100%}
+ #homecoming:is([data-layout=dashboard],[data-leave=earth]) #home-archive .hc-body{overflow-y:auto;overscroll-behavior:contain;padding:36px 10px 10px}
+ #homecoming:is([data-layout=dashboard],[data-leave=earth]) .hc-elong{white-space:normal;font-size:24px;line-height:.9;margin:0 0 4px}
+ #homecoming:is([data-layout=dashboard],[data-leave=earth]) .hc-rows{margin:2px 0 0}
+ #homecoming:is([data-layout=dashboard],[data-leave=earth]) .hc-rows>div{flex-direction:column;align-items:flex-start;gap:1px;padding:3px 0}
+ #homecoming:is([data-layout=dashboard],[data-leave=earth]) .hc-rows dt{font-size:10px}
+ #homecoming:is([data-layout=dashboard],[data-leave=earth]) .hc-rows dd{font-size:14px;line-height:1.25}
+ #homecoming:is([data-layout=dashboard],[data-leave=earth]) .hc-body hr{margin:6px 0}
+ #homecoming:is([data-layout=dashboard],[data-leave=earth]) #home-stops{margin-bottom:8px;font-size:11px;line-height:1.3}
+ /* Export (journey-export.js), one column at the cell's foot: the button, CANCEL in its place while the film renders,
+    DOWNLOAD once it is ready, whose status takes the route line's room (the map above draws the route). The portrait
+    thumbnail stays on desktop. */
+ #homecoming:is([data-layout=dashboard],[data-leave=earth]) #home-share{display:flex;flex-direction:column;align-items:stretch;margin-top:auto}
+ #homecoming:is([data-layout=dashboard],[data-leave=earth]) :is(#home-film-preview,#home-film,#home-save:disabled){display:none}
+ #homecoming:is([data-layout=dashboard],[data-leave=earth]) .home-export-controls{flex-direction:column;align-items:stretch;gap:6px}
+ #homecoming:is([data-layout=dashboard],[data-leave=earth]) #home-archive:has(#home-download:not([hidden])) :is(.hc-body>hr,#home-stops){display:none}
+}
+/* A mouse in the split reads the way back as itself (BACK TO THE STARS ↗) in the caption's place; a touch, TAP TO GO TO <WHERE>. */
+@media(max-width:700px) and (min-height:501px) and (pointer:fine){
+ #homecoming:is([data-layout=dashboard],[data-leave=earth]) #home-resume .hc-wide{display:inline}
+ #homecoming:is([data-layout=dashboard],[data-leave=earth]) #home-resume .hc-tap{display:none}
+}
+/* Short portrait screens (402×654 in Safari, 375×667): the FLIGHT ARCHIVE tag titles the cell; the headline stands down. */
+@media(max-width:700px) and (min-height:501px) and (max-height:740px){
+ #homecoming:is([data-layout=dashboard],[data-leave=earth]) .hc-elong{display:none}
+ #homecoming:is([data-layout=dashboard],[data-leave=earth]) .hc-rows>div{padding:2px 0}
+ #homecoming:is([data-layout=dashboard],[data-leave=earth]) .hc-body hr{margin:5px 0}
+ /* A finished film (DOWNLOAD, and a status of up to three lines) packs the stats and controls a little tighter. */
+ #homecoming:is([data-layout=dashboard],[data-leave=earth]) #home-archive:has(#home-download:not([hidden])) .hc-rows>div{padding:1px 0}
+ #homecoming:is([data-layout=dashboard],[data-leave=earth]) #home-archive:has(#home-download:not([hidden])) #home-export-status{margin-top:4px}
+ #homecoming:is([data-layout=dashboard],[data-leave=earth]) .home-export-controls{gap:4px}
+}
+/* Narrow portrait screens (360, 320): the map tag (237px with NAV ONLINE) and SOJOURNER no longer fit one line; the tag
+   keeps its title. */
+@media(max-width:374px) and (min-height:501px){#homecoming:is([data-layout=dashboard],[data-leave=earth]) #home-map-tag .hc-nav{display:none}}
+/* Landscape phones: SOJOURNER on the VIEWPORT tag's line, top right (the one-column drop is for narrow windows), the credit under it. */
+@media(max-height:500px) and (pointer:coarse){#homecoming .hc-mast{top:8px}#homecoming[data-layout=dashboard] #home-earth-panel>.hc-mast>.hc-credit{display:flex;align-items:center;gap:8px;margin-top:3px;padding:1px 4px;border-radius:6px;font:400 10px/1.4 var(--hc-ui);letter-spacing:.025em;color:var(--hc-dim);white-space:nowrap;background:rgb(5 4 10 / .78);box-shadow:0 0 8px 4px rgb(5 4 10 / .78)}}
+/* Short screens (the one-column stack): MISSION TIME's slider stops short of the fixed BACK TO THE STARS in the corner, so its thumb
+   at the route's end is never under the button. */
+@media(max-height:500px){#homecoming[data-layout=dashboard] .hc-scrub{padding-right:calc(168px + var(--safe-right,0px))}}
+/* Subtitle and map never share the screen. A portrait phone has no free band above the open map (the instruments fill
+   it) or below it (SCAN and the touch row), so while a line is on screen the map steps aside: it fades out with its
+   expanded state kept and returns when the line ends, and the subtitle keeps its usual reading place. A mouse resting
+   on the dock, or keyboard focus in it, keeps it on devices that hover (its planet prompts stay usable; a phone's
+   tap leaves focus there, so touch does not); BRAKE still cancels an autopilot. BEARINGS stops 8px
+   above the open chart (168 top + 350 from the chart's top edge to the foot), scrolling, with three whole contact
+   rows; status lines drop into the 24px band between the chart and SCAN. */
+@media(max-width:700px){
+ body.free-roam:has(#subtitle:not([hidden])) #solar-dock :is(#minimap-chart,#autopilot-cancel){opacity:0;visibility:hidden;pointer-events:none;transition:opacity .25s ease,visibility 0s linear .25s}
+ body.free-roam:has(#solar-dock[data-expanded="true"]:not([hidden])) #radar-panel{max-height:calc(100dvh - var(--safe-top) - var(--safe-bottom) - 526px)}
+ body.free-roam:has(#solar-dock[data-expanded="true"]:not([hidden])) #contact-list{max-height:calc(3 * 32px)}
+ body.free-roam:has(#solar-dock[data-expanded="true"]:not([hidden])) .status-toast{bottom:calc(166px + var(--safe-bottom))}
+}
+/* Short phones (375×667): below ~730px tall the readouts and heading leave BEARINGS one whole row above the open chart.
+   While the map is open it keeps only its contact rows (LOOK and COURSE return when it closes): three whole rows. */
+@media(max-width:700px) and (max-height:740px){body.free-roam:has(#solar-dock[data-expanded="true"]:not([hidden])) #radar-panel :is(.bearing-readouts,.contacts-heading){display:none}}
+@media(hover:hover) and (max-width:700px){body.free-roam:has(#subtitle:not([hidden])) #solar-dock:is(:hover,:focus-within) :is(#minimap-chart,#autopilot-cancel){opacity:1;visibility:visible;pointer-events:auto}}
+@media(max-height:500px){#solar-dock{width:260px;bottom:65px}#solar-dock #minimap-chart{height:150px;margin-bottom:0}}
+/* Short landscape has room beside the map: the open map takes DRIVE's column (it sat on the panel at 18% show-through;
+   DRIVE returns on close) and the line moves into the band between the map and BEARINGS. */
+@media(min-width:701px) and (max-height:500px){
+ body.free-roam:has(#solar-dock[data-expanded="true"]:not([hidden])) #speed-panel{visibility:hidden}
+ body.free-roam:has(#solar-dock[data-expanded="true"]:not([hidden])) #subtitle{left:calc(294px + var(--safe-left));right:calc(206px + var(--safe-right));width:auto;transform:none}
+}
+/* Desktop below ~1430px wide: the centred line narrows to keep 16px clear of the open map on both sides; tablets set
+   it beside the map instead. */
+@media(min-width:1001px) and (min-height:501px){body.free-roam:has(#solar-dock[data-expanded="true"]:not([hidden])) #subtitle{width:min(570px,48vw,calc(100vw - 112px - 2 * clamp(290px,27vw,420px)))}}
+@media(min-width:701px) and (max-width:1000px) and (min-height:501px){body.free-roam:has(#solar-dock[data-expanded="true"]:not([hidden])) #subtitle{left:346px;right:var(--hud-side);width:auto;transform:none}}
+@media(prefers-reduced-motion:reduce){#homecoming,#homecoming *,#homecoming *::before,#homecoming *::after,#solar-dock,#solar-dock *,#return-home,body.hc-hud-return #helmet-hud{transition:none!important;animation:none!important}}

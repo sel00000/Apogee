@@ -1,0 +1,7 @@
+{
+  "name": "spherex-experience",
+  "version": "5.0.0",
+  "private": true,
+  "type": "module",
+  "description": "SOJOURNER experience integration; recovered third-party runtime, see NOTICE.md"
+}

@@ -1,0 +1,67 @@
+{
+  "id": "cassini",
+  "name": "Cassini",
+  "configuration": "Orbiter, Huygens absent; historical visualization for 2017",
+  "credit": "NASA/Brian E. Kumanchik",
+  "source_page": "https://science.nasa.gov/3d-resources/cassini-huygens-a/",
+  "source_url": "https://raw.githubusercontent.com/nasa/NASA-3D-Resources/11ebb4ee043715aefbba6aeec8a61746fad67fa7/3D%20Models/Cassini-Huygens%20(A)/Cassini-Huygens%20(A)%20(without%20Hyugens).glb",
+  "source_revision": "11ebb4ee043715aefbba6aeec8a61746fad67fa7",
+  "source_blob_sha": "383db9a4041ca1c83f2deadc6bd35142d94c5012",
+  "source_file": "assets/spacecraft/sources/cassini/cassini-orbiter-original.glb",
+  "source_sha256": "87424f2c11b8e0c6a212292221e317396735f5e0876b7bb1204351998dd22f2c",
+  "source_bytes": 1653316,
+  "file": "cassini.glb",
+  "bytes": 2448788,
+  "sha256": "f4ec2bd1299b40dd693caa15fb50ed0b658f64123d756b530d1e57cb61c53c15",
+  "prepared_by": "scripts/prepare-cassini-model.mjs",
+  "tools": {
+    "draco": "1.5.7",
+    "validator": "2.0.0-dev.3.10"
+  },
+  "changes": [
+    "Draco decoded offline; original topology, materials, images and transforms retained.",
+    "Removed only the materialless _root helper cube, preserving its transform parent and all eight spacecraft meshes.",
+    "Uniform scale calibrated to the published 4 m high-gain antenna diameter; source units were close to metres.",
+    "Unreferenced compressed and helper buffers removed; no runtime Draco dependency."
+  ],
+  "scale": {
+    "anchor": "High-gain antenna diameter",
+    "anchor_metres": 4,
+    "measured_source_diameter": 4.009003162384033,
+    "metres_per_source_unit": 0.9977542640852697,
+    "reference": "https://www.jpl.nasa.gov/news/cassini-spacecraft-at-saturns-doorstep/"
+  },
+  "bounds_metres": {
+    "min": [
+      -8.979780101035518,
+      -8.252559117234647,
+      -11.044362472552745
+    ],
+    "max": [
+      8.962796570786475,
+      3.383885485904293,
+      2.032694239575541
+    ],
+    "size": [
+      17.942576671821993,
+      11.63644460313894,
+      13.077056712128286
+    ]
+  },
+  "span_metres": 17.942576671821993,
+  "meshes": 8,
+  "triangles": 25052,
+  "vertices": 26271,
+  "embedded_images": 4,
+  "required_extensions": [],
+  "validator_errors": 0,
+  "validator_warnings": 0,
+  "limitations": [
+    "Visualization mesh, not a certified engineering assembly or complete audit of every 2017 instrument cover.",
+    "No trajectory, flight attitude or animation is encoded. Cassini no longer exists; do not add to the current spacecraft feed."
+  ],
+  "usage": {
+    "catalog": "https://science.nasa.gov/3d-resources/",
+    "guidelines": "https://www.nasa.gov/nasa-brand-center/images-and-media/"
+  }
+}
