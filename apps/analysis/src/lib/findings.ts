@@ -39,7 +39,7 @@ export function motionFinding(meta: TargetMeta, L: Tr = KO): Finding | null {
   const fit = fitProperMotion(meta)
   if (!fit) {
     return {
-      id: 'motion', kind: 'motion', title: L('움직임: 아직 판단 보류', 'Motion: not decided yet'), level: '판단 보류', prov: ['spherex', 'catalog'],
+      id: 'motion', kind: 'motion', title: L('움직임: 아직 판단 보류', 'Motion: undecided'), level: '판단 보류', prov: ['spherex', 'catalog'],
       body: L(`위치를 잰 관측이 ${nMeas}회라 직선 맞춤(3회 이상, 0.5년 이상)을 하지 못했습니다. 예측 경로로는 ${years.toFixed(1)}년 동안 ${span.toFixed(1)} px 움직입니다.`, `Only ${nMeas} visits have a measured position, too few for a straight-line fit (3 or more over 0.5 yr). The predicted path moves ${span.toFixed(1)} px in ${years.toFixed(1)} yr.`),
       reference: L(`${(catalog / 1000).toFixed(2)}″/년`, `${(catalog / 1000).toFixed(2)}″/yr`),
     }
@@ -60,7 +60,7 @@ export function motionFinding(meta: TargetMeta, L: Tr = KO): Finding | null {
     : L(`목록값과 ${fit.sigmaDiff.toFixed(1)}σ 어긋나 측정이 흔들렸을 수 있습니다(포화·겹친 별).`, `It is ${fit.sigmaDiff.toFixed(1)}σ off the catalogue; the measurement may be disturbed (saturation, blending).`)
   return {
     id: 'motion', kind: 'motion', level, prov: ['spherex', 'catalog', 'model'],
-    title: level === '후보' ? L('위치 변화 모델 · 이동 후보', 'Position-change model · motion candidate') : L('움직임: 아직 판단 보류', 'Motion: not decided yet'),
+    title: level === '후보' ? L('위치 변화 모델 · 이동 후보', 'Position-change model · motion candidate') : L('움직임: 아직 판단 보류', 'Motion: undecided'),
     body: L(`SPHEREx 영상 ${fit.n}회에서 잰 위치로 ${fit.baselineYr.toFixed(1)}년치 고유운동을 맞췄습니다. 아래 비교는 모델의 형식적 오차 기준입니다. `, `A proper motion fitted to positions measured in ${fit.n} SPHEREx visits over ${fit.baselineYr.toFixed(1)} yr. The comparison uses the model's formal errors. `) + agree + L(' 파장·PSF·정렬의 체계 오차와 이웃 별을 추가 검증해야 하며, 이동 검출의 확정 판정은 아닙니다.', ' Wavelength, PSF, registration systematics and neighbouring stars still need checks; this is not a confirmed motion detection.'),
     value: L(`${(mu / 1000).toFixed(2)} ± ${(err / 1000).toFixed(2)}″/년`, `${(mu / 1000).toFixed(2)} ± ${(err / 1000).toFixed(2)}″/yr`),
     reference: L(`${(catalog / 1000).toFixed(2)}″/년`, `${(catalog / 1000).toFixed(2)}″/yr`),
@@ -97,7 +97,7 @@ export function spectrumFinding(meta: Meta, L: Tr = KO): Finding | null {
   const pts = measuredPoints(rows)
   const fit = bestFitTemperature(pts)
   if (!fit) return {
-    id: 'spectrum', kind: 'spectrum', title: L('스펙트럼: 판단 보류', 'Spectrum: not decided'), level: '판단 보류', prov: ['spherex'],
+    id: 'spectrum', kind: 'spectrum', title: L('스펙트럼: 판단 보류', 'Spectrum: undecided'), level: '판단 보류', prov: ['spherex'],
     body: L('품질·불확도 조건을 통과한 측광점이 5개보다 적습니다. 불량·포화·잔상 또는 불확도가 없는 값은 모델에 쓰지 않았습니다.', 'Fewer than 5 photometry points pass quality and uncertainty checks. Defective, saturated, persistent or unquantified values are excluded from the model.'),
   }
   const strong = FEATURES.filter((f) => spec.expect.includes(f.id))

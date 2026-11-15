@@ -129,3 +129,14 @@ describe("WASD flight", () => {
     expect(easeStep(1 / 60, true)).toBe(1);
   });
 });
+
+import { markSkyUnavailable } from "../src/sky";
+describe("markSkyUnavailable", () => {
+  it("unticks and disables the box and sets the title key", () => {
+    const box = { checked: true, disabled: false };
+    const attrs: Record<string, string> = {};
+    markSkyUnavailable(box, { setAttribute: (k, v) => (attrs[k] = v) });
+    expect(box).toEqual({ checked: false, disabled: true });
+    expect(attrs["data-i18n-title"]).toBe("o.skyFail");
+  });
+});

@@ -58,3 +58,8 @@ export function readSkyPref(key: string, fallback: boolean, store: Store | null 
 export function writeSkyPref(key: string, on: boolean, store: Store | null = defaultStore()): void {
   try { store?.setItem(key, on ? '1' : '0') } catch { /* storage blocked: the choice lasts for this page only */ }
 }
+
+/** Whether the constellation figures should be downloaded now: only when the layer is on and they have not been requested yet. */
+export function needFigures(layerOn: boolean, requested: boolean): boolean {
+  return layerOn && !requested
+}

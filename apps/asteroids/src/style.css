@@ -288,14 +288,23 @@ h1 {
   font-size: 19px;
   color: #a7c5c8;
 }
-.scene-bottom {
+/* Controls line, check boxes and explanation line flow in one bottom block, so nothing is drawn over anything else. */
+.scene-foot {
   position: absolute;
-  bottom: 37px;
+  bottom: 16px;
   left: 26px;
   right: 26px;
   display: flex;
+  flex-direction: column;
+  gap: 2px;
+  pointer-events: none;
+}
+.scene-bottom {
+  display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
+  column-gap: 16px;
   font-size: 9px;
   color: #708997;
 }
@@ -303,13 +312,21 @@ h1 {
   display: flex;
   align-items: center;
   gap: 5px;
+  padding: 6px 0;
+  white-space: nowrap;
+  pointer-events: auto;
 }
 .scale-note {
-  position: absolute;
-  bottom: 16px;
-  left: 26px;
   font-size: 9px;
   color: #566d7d;
+}
+#sky-credit {
+  color: #708997;
+}
+.scene-foot .compass {
+  position: static;
+  align-self: flex-start;
+  margin-bottom: 8px;
 }
 .compare {
   border-left: 1px solid #22303b;
@@ -659,7 +676,11 @@ input[type="range"] {
     right: 18px;
   }
   .view-switch {
-    max-width: 160px;
+    flex-wrap: nowrap;
+  }
+  .view-switch button {
+    padding: 8px 7px;
+    white-space: nowrap;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -842,6 +863,14 @@ button:disabled {
   outline: 2px solid #87dfc9;
   outline-offset: -2px;
 }
+/* The scrim lies over the canvas, so the ring is also drawn above it on all four sides. */
+.universe:has(#scene canvas:focus-visible)::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 2px solid #87dfc9;
+  pointer-events: none;
+}
 /* Only while the Gaia background is shown: same shadow the body labels already use, so the small text stays readable. */
 .universe.sky-on .compass,
 .universe.sky-on .scene-bottom,
@@ -864,21 +893,19 @@ button:disabled {
 }
 /* Narrow screens: stack the controls line and the check boxes above the explanation line so longer text never runs into it (same layout in both languages). */
 @media (max-width: 800px) {
-  .scene-bottom {
-    left: 18px;
-    right: 18px;
-    bottom: 56px;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 6px;
-  }
-  .scene-toggles label {
-    white-space: nowrap;
-  }
-  .scale-note {
+  .scene-foot {
     left: 18px;
     right: 18px;
     bottom: 12px;
+  }
+  .scene-bottom {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .scene-bottom label {
+    padding: 15px 0;
+  }
+  .scale-note {
     line-height: 1.4;
   }
   .compass {

@@ -120,6 +120,7 @@ test('plan: validate, compile, describe', () => {
   assert.equal(g.sortUsed, 'famous'); // distance ordering is not offered for extended objects
   assert.match(g.adql, /CIRCLE\('ICRS', 83\.82000, -5\.39000, 1\.0\)/);
   assert.equal(describePlan(v.plan).ko, '갈색왜성 · 가까운 순 · 20개');
+  assert.match(describePlan(v.plan).en, /nearest first · 20 results\.$/);
   assert.equal(Object.keys(TYPES).length, 35);
 });
 

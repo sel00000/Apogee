@@ -11,8 +11,8 @@ import type { Radec } from '../lib/coords'
 import { useL } from '../lib/i18n'
 import { useTime } from '../store'
 import { readView, writeView } from '../lib/urlState'
-import { notifyShell } from '../lib/integration'
-import { SKY_PREF_CONSTELLATIONS, SKY_PREF_GROUND, planetariumMessage, readSkyPref, writeSkyPref } from '../lib/skyView'
+import { flushSkyModeFocus, notifyShell } from '../lib/integration'
+import { SKY_PREF_CONSTELLATIONS, SKY_PREF_GROUND, needFigures, planetariumMessage, readSkyPref, writeSkyPref } from '../lib/skyView'
 import { DETECTORS } from './PhotometryPanel'
 import { Badge } from './Badge'
 
@@ -40,7 +40,7 @@ const detectorOf = (um: number) => (um < 1.095 ? 1 : um < 1.625 ? 2 : um < 2.415
 
 type Pick = { ra: number; dec: number; name?: string }
 
-// Constellation figures (a guide drawing, not SPHEREx data): fetched once when the Find stage first opens.
+// Constellation figures (a guide drawing, not SPHEREx data): fetched once, the first time the layer is on in Find.
 // A failed fetch is not cached, so the next visit tries again.
 let figures: Promise<Constellation[]> | null = null
 function loadFigures(): Promise<Constellation[]> {
@@ -72,6 +72,7 @@ export function SkyPanel({ index, currentId, onOpenTarget, onPatch, embedded = f
   const [gs, setGs] = useState<GlobeGround>(() => ({ on: false, epochMs: Date.now() }))
   const [onScreen, setOnScreen] = useState(true)
   const globe = useRef<SkyGlobe | null>(null)
+  const figuresAsked = useRef(false)
   const targets = useMemo(() => index.targets.filter((t) => t.ra !== undefined && t.dec !== undefined && t.status === 'ok'), [index])
   const start = targets.find((t) => t.id === currentId) ?? targets[0]
   const [ci, setCi] = useState(() => Math.max(0, MAP_CHANNELS.findIndex((c) => c.um >= 1.2)))
@@ -92,8 +93,7 @@ export function SkyPanel({ index, currentId, onOpenTarget, onPatch, embedded = f
     g.setConstellationLang(useTime.getState().lang)
     g.setLabelAvoid([readRef.current, zoomRef.current].filter((x): x is HTMLDivElement => !!x))
     setGs(g.getGroundState())
-    let live = true
-    loadFigures().then((list) => { if (live) { setFiguresFailed(false); g.setConstellations(list) } }, () => { if (live) setFiguresFailed(true) })
+    figuresAsked.current = false
     const offPick = g.on('pick', (p) => {
       const t = p.markerId ? targets.find((x) => x.id === p.markerId) : undefined
       setPicked({ ra: t?.ra ?? p.ra, dec: t?.dec ?? p.dec, name: t?.display_name })
@@ -116,7 +116,6 @@ export function SkyPanel({ index, currentId, onOpenTarget, onPatch, embedded = f
     const ro = new ResizeObserver(() => g.resize())
     ro.observe(el)
     return () => {
-      live = false
       offPick(); offView(); offGround(); clearInterval(timer); clearTimeout(urlTimer); ro.disconnect(); io?.disconnect(); g.dispose(); globe.current = null
       // leaving Find: the next visit starts from the target again, as before
       writeView({ sky: null })
@@ -128,6 +127,17 @@ export function SkyPanel({ index, currentId, onOpenTarget, onPatch, embedded = f
   }, [targets, currentId])
   useEffect(() => { globe.current?.setChannel(MAP_CHANNELS[ci].channel) }, [ci])
   useEffect(() => { globe.current?.setConstellationsVisible(constOn); writeSkyPref(SKY_PREF_CONSTELLATIONS, constOn) }, [constOn])
+  // download the figures only while the layer is on: at start (the default) or the first time the box is ticked
+  useEffect(() => {
+    const g = globe.current
+    if (!g || !needFigures(constOn, figuresAsked.current)) return
+    figuresAsked.current = true
+    // results for a globe that has since been disposed (Find closed) are dropped
+    loadFigures().then((list) => { if (globe.current === g) { setFiguresFailed(false); g.setConstellations(list) } },
+      () => { if (globe.current === g) { setFiguresFailed(true); figuresAsked.current = false } })
+  }, [constOn])
+  // a portal focus request that came before Find was shown
+  useEffect(() => { flushSkyModeFocus() }, [])
   useEffect(() => { globe.current?.setGround(groundOn); writeSkyPref(SKY_PREF_GROUND, groundOn) }, [groundOn])
   useEffect(() => { globe.current?.setActive(onScreen && !suspended) }, [onScreen, suspended])
   useEffect(() => {

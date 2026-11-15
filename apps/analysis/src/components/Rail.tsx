@@ -81,7 +81,7 @@ export function SkyLocator({ index, current, patch, onPick, onOpenSky }: { index
         })}
         {patch && (() => { const [x, y] = mollweide(patch.ra, patch.dec, w, h); return <g className="sky-t on"><circle cx={x} cy={y} r={5} /><circle cx={x} cy={y} r={9} className="ring" /></g> })()}
       </svg>
-      <figcaption className="dim small"><i className="ln-gal" />{L('은하수 면', 'Milky Way')} <i className="ln-ecl" />{L('황도 · 점을 눌러 대상 열기', 'ecliptic · click a dot to open')}{onOpenSky && <button className="link sky-open" onClick={onOpenSky} data-testid="open-sky">{L('실시간 천구 열기', 'Open the live sky')}</button>}</figcaption>
+      <figcaption className="dim small"><i className="ln-gal" />{L('은하수 면', 'Milky Way')} <i className="ln-ecl" />{L('황도 · 점을 눌러 대상 열기', 'ecliptic · click a dot to open')}{onOpenSky && <button className="link sky-open" onClick={onOpenSky} data-testid="open-sky">{L('실시간 천구 열기', 'Open the sky in Find')}</button>}</figcaption>
     </figure>
   )
 }
@@ -139,7 +139,7 @@ export function Findings({ meta }: { meta: Meta }) {
           <div className="prov">{f.prov.map((p) => <Badge key={p} kind={p} />)}</div>
         </article>
       ))}
-      {list.length > 0 && <p className="dim small">{L('발견은 모두 후보로 적습니다. 다른 관측과 전문가 검토로 확인해야 합니다.', 'Every finding is a candidate, not a discovery. Other observations and expert review must confirm it.')}</p>}
+      {list.length > 0 && <p className="dim small">{L('발견은 모두 후보로 적습니다. 다른 관측과 전문가 검토로 확인해야 합니다.', 'Every finding is recorded as a candidate. Other observations and expert review must confirm it.')}</p>}
     </section>
   )
 }

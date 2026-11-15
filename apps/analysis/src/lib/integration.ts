@@ -86,3 +86,26 @@ export function stageMessage(value: unknown): 'sky' | 'workbench' | null {
   if (v.type !== 'spherex-analysis-stage') return null
   return v.stage === 'sky' || v.stage === 'workbench' ? v.stage : null
 }
+
+/** `{ type: 'spherex-analysis-focus', target: 'sky-mode' }` from the portal: focus the pressed view-switch segment of Find. */
+export function focusMessage(value: unknown): 'sky-mode' | null {
+  if (!value || typeof value !== 'object') return null
+  const v = value as Record<string, unknown>
+  if (v.type !== 'spherex-analysis-focus') return null
+  return v.target === 'sky-mode' ? 'sky-mode' : null
+}
+
+// A focus request that arrived before the Find stage was shown waits here until SkyPanel mounts.
+let pendingSkyModeFocus = false
+/** Moves focus to the pressed view-switch segment if it is on the page; otherwise keeps the request for later. */
+export function requestSkyModeFocus(): void {
+  pendingSkyModeFocus = true
+  flushSkyModeFocus()
+}
+export function flushSkyModeFocus(): void {
+  if (!pendingSkyModeFocus || typeof document === 'undefined') return
+  const el = document.querySelector<HTMLElement>('[data-testid="sky-mode-spherex"]')
+  if (!el) return
+  el.focus()
+  pendingSkyModeFocus = false
+}

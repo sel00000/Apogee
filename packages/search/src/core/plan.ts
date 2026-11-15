@@ -146,5 +146,5 @@ export function describePlan(plan: ListPlan, sortUsed?: Sort, nearLabel?: { ko: 
   const t = TYPES[plan.type]!;
   const nk = plan.near ? ` · ${nearLabel?.ko ?? plan.near} 주변 1°` : '';
   const ne = plan.near ? ` · within 1° of ${nearLabel?.en ?? plan.near}` : '';
-  return { ko: `${t.ko} · ${s.ko}${nk} · ${plan.limit}개`, en: `${t.en} · ${s.en}${ne} · ${plan.limit}` };
+  return { ko: `${t.ko} · ${s.ko}${nk} · ${plan.limit}개`, en: `${t.en} · ${s.en}${ne} · ${plan.limit} ${plan.limit === 1 ? 'result' : 'results'}.` };
 }

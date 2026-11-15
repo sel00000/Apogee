@@ -60,3 +60,19 @@ describe('remembered overlay switches', () => {
     expect(readSkyPref(SKY_PREF_GROUND, false)).toBe(false) // node: no localStorage at all
   })
 })
+
+describe('constellation download decision', () => {
+  it('downloads only while the layer is on and only once', async () => {
+    const { needFigures } = await import('./skyView')
+    expect(needFigures(true, false)).toBe(true)
+    expect(needFigures(false, false)).toBe(false)
+    expect(needFigures(true, true)).toBe(false)
+    expect(needFigures(false, true)).toBe(false)
+  })
+  it('a stored "0" keeps it off at start; no preference means on (the default)', async () => {
+    const { needFigures } = await import('./skyView')
+    const store = (v: string | null) => ({ getItem: () => v, setItem: () => {} })
+    expect(needFigures(readSkyPref(SKY_PREF_CONSTELLATIONS, true, store('0')), false)).toBe(false)
+    expect(needFigures(readSkyPref(SKY_PREF_CONSTELLATIONS, true, store(null)), false)).toBe(true)
+  })
+})

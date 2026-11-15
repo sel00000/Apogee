@@ -39,7 +39,7 @@ function verdict(d: BandDepth, expected = true): { text: string; cls: string } {
   const L = currentL()
   if (d.status === 'outside') return { text: L('관측 범위 밖', 'outside the data'), cls: 'dim' }
   if (d.status === 'insufficient') return { text: L('점이 부족해 판정 불가', 'too few points to judge'), cls: 'dim' }
-  if (!(d.sigma! > 0) || !Number.isFinite(d.sigma)) return { text: L('불확도 부족 · 판정 보류', 'uncertainty unavailable · not assessed'), cls: 'warn' }
+  if (!(d.sigma! > 0) || !Number.isFinite(d.sigma)) return { text: L('불확도 부족 · 판정 보류', 'uncertainty unavailable · undecided'), cls: 'warn' }
   const r = d.depth! / d.sigma!
   if (d.depth! > 0 && r >= 3) return expected
     ? { text: L('흡수 후보 · 보정·재관측 검증 필요', 'candidate absorption · calibration and repeat checks needed'), cls: 'warn' }

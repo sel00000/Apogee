@@ -262,9 +262,11 @@ select { border-radius: 6px; padding: 3px 6px; }
 .sky-overlays p { margin: 0; line-height: 1.5; }
 .sky-side label.check { display: inline-flex; gap: 6px; font-weight: 400; margin: 0; }
 .sky-below { margin: 0; line-height: 1.5; }
-@media (max-width: 600px) {
+@media (max-width: 600px), (max-height: 500px) and (pointer: coarse) {
   .sky-mode button, .sky-side label.check, .sky-below button.link { min-height: 44px; }
 }
+/* phone width: a wavelength-ruler segment is never narrower than its label (D1 was clipped by 2 px in English) */
+@media (max-width: 600px) { .ruler .ruler-bar .seg-d { min-width: max-content; } }
 .marks button.mark.gaia.active { background: rgba(122, 162, 255, .16); border-color: #7aa2ff; color: #a9c2ff; }
 .gaia-status { margin: 0; text-align: center; line-height: 1.5; }
 @media (max-width: 1000px) { .sky-panel { grid-template-columns: minmax(0, 1fr); } .globe-box { height: 60vh; } }

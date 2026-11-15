@@ -71,3 +71,25 @@ describe('portal stage message', () => {
       expect(stageMessage(v)).toBeNull()
   })
 })
+
+describe('portal focus message', () => {
+  it('accepts sky-mode only', async () => {
+    const { focusMessage } = await import('./integration')
+    expect(focusMessage({ type: 'spherex-analysis-focus', target: 'sky-mode' })).toBe('sky-mode')
+    for (const v of [null, 'sky-mode', {}, { type: 'spherex-analysis-focus' }, { type: 'spherex-analysis-focus', target: 'search' }, { type: 'spherex-analysis-stage', target: 'sky-mode' }])
+      expect(focusMessage(v)).toBeNull()
+  })
+  it('focuses the pressed segment now, or once Find is shown', async () => {
+    const { requestSkyModeFocus, flushSkyModeFocus } = await import('./integration')
+    const focus = vi.fn()
+    let el: { focus: () => void } | null = null
+    vi.stubGlobal('document', { querySelector: (sel: string) => (sel === '[data-testid="sky-mode-spherex"]' ? el : null) })
+    requestSkyModeFocus()
+    expect(focus).not.toHaveBeenCalled()
+    el = { focus }
+    flushSkyModeFocus()
+    expect(focus).toHaveBeenCalledTimes(1)
+    flushSkyModeFocus()
+    expect(focus).toHaveBeenCalledTimes(1)
+  })
+})

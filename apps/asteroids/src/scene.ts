@@ -185,6 +185,8 @@ export class SolarScene {
   onError: (message: () => string) => void = () => {};
   /** Called when the Gaia background becomes shown or hidden (for the credit line). */
   onSky: (shown: boolean) => void = () => {};
+  /** Called once when the Gaia background cannot be loaded at all. */
+  onSkyFail: () => void = () => {};
   constructor(
     private element: HTMLElement,
     private bodies: Body[],
@@ -568,7 +570,10 @@ export class SolarScene {
       this.applySky();
     } catch {
       // Silent: the flat background stays.
-      if (this.skyLevel === 0) this.skyFailed = true;
+      if (this.skyLevel === 0) {
+        this.skyFailed = true;
+        this.onSkyFail();
+      }
     } finally {
       this.skyLoading = false;
     }

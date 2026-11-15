@@ -17,7 +17,7 @@ import { BlinkViewer } from './components/BlinkViewer'
 import { Timeline } from './components/Timeline'
 import { PatchInfo } from './components/PatchInfo'
 import { Findings, Guides, MissionCard, SkyLocator } from './components/Rail'
-import { embeddedShareURL, movingArchiveContext, notifyAnalysisURL, notifyShell, selectionMessage, stageMessage } from './lib/integration'
+import { embeddedShareURL, movingArchiveContext, notifyAnalysisURL, notifyShell, requestSkyModeFocus, focusMessage, selectionMessage, stageMessage } from './lib/integration'
 
 const Scene3D = lazy(() => import('./components/Scene3D').then((m) => ({ default: m.Scene3D })))
 const SkyPanel = lazy(() => import('./components/SkyPanel').then((m) => ({ default: m.SkyPanel })))
@@ -192,6 +192,8 @@ export default function App() {
       const nextLang = langMessage(event.data)
       if (nextLang) { useTime.getState().setLang(nextLang); return }
       // the portal's menu switches between Find (sky) and the workbench without reloading this app
+      // the portal asks for focus on Find's view switch (now, or once the Find stage is shown)
+      if (focusMessage(event.data)) { requestSkyModeFocus(); return }
       const nextStage = stageMessage(event.data)
       if (nextStage) {
         // a changed stage reports its URL through writeView; an unchanged one reports it here

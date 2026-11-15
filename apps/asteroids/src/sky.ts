@@ -106,3 +106,14 @@ export function easeStep(dt: number, reduced: boolean) {
   return 1 - Math.exp(-dt / (FLIGHT.ease / 3));
 }
 export const FLIGHT_KEYS = new Set(["KeyW", "KeyA", "KeyS", "KeyD", "KeyQ", "KeyE"]);
+
+/** The sky picture could not be loaded: untick and disable the box and give its label the reason as a title.
+ * The stored preference is deliberately left alone. */
+export function markSkyUnavailable(
+  box: { checked: boolean; disabled: boolean },
+  label: { setAttribute(name: string, value: string): void } | null,
+) {
+  box.checked = false;
+  box.disabled = true;
+  label?.setAttribute("data-i18n-title", "o.skyFail");
+}
