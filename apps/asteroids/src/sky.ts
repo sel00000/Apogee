@@ -85,27 +85,13 @@ export const PLANET_POLES: Record<string, [number, number]> = {
   "899": [299.36, 43.46],
 };
 
-/** WASD flight. Speed in AU/s from the distance (AU) to the nearest body surface. */
-export const FLIGHT = { rate: 0.9, min: 0.0004, max: 30, boost: 4, ease: 0.12 };
-export function flightSpeed(surfaceDistance: number, boost = false) {
+/** Flight speed scale. Full throttle in AU/s from the distance (AU) to the nearest body surface,
+ * so the camera slows down by itself near a body. The controls themselves are in flight.ts. */
+export const FLIGHT = { rate: 0.9, min: 0.0004, max: 30 };
+export function flightSpeed(surfaceDistance: number) {
   const d = Number.isFinite(surfaceDistance) ? Math.max(0, surfaceDistance) : Infinity;
-  return Math.min(FLIGHT.max, Math.max(FLIGHT.min, FLIGHT.rate * d)) * (boost ? FLIGHT.boost : 1);
+  return Math.min(FLIGHT.max, Math.max(FLIGHT.min, FLIGHT.rate * d));
 }
-/** Held keys -> camera-local direction [right, up, back] (three.js camera looks along -Z).
- * Normalised so diagonals are not faster. */
-export function flightDirection(keys: ReadonlySet<string>): Vec3 {
-  const x = (keys.has("KeyD") ? 1 : 0) - (keys.has("KeyA") ? 1 : 0),
-    y = (keys.has("KeyE") ? 1 : 0) - (keys.has("KeyQ") ? 1 : 0),
-    z = (keys.has("KeyS") ? 1 : 0) - (keys.has("KeyW") ? 1 : 0),
-    n = Math.hypot(x, y, z);
-  return n ? [x / n, y / n, z / n] : [0, 0, 0];
-}
-/** Fraction of the remaining velocity change applied this frame (0.12 s ease; immediate if reduced). */
-export function easeStep(dt: number, reduced: boolean) {
-  if (reduced) return 1;
-  return 1 - Math.exp(-dt / (FLIGHT.ease / 3));
-}
-export const FLIGHT_KEYS = new Set(["KeyW", "KeyA", "KeyS", "KeyD", "KeyQ", "KeyE"]);
 
 /** The sky picture could not be loaded: untick and disable the box and give its label the reason as a title.
  * The stored preference is deliberately left alone. */

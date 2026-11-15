@@ -11,10 +11,20 @@ import {
   poleToEcliptic,
   PLANET_POLES,
   flightSpeed,
-  flightDirection,
-  easeStep,
-  FLIGHT_KEYS,
 } from "./sky";
+import {
+  CONTROLS,
+  FLIGHT_KEYS,
+  IDLE,
+  dragLook,
+  liftStep,
+  lookAngles,
+  lookInput,
+  lookVector,
+  throttleStep,
+  turn,
+  type Throttle,
+} from "./flight";
 /** Gaia background display stretch: screen = clamp((map - SKY_BLACK) / (1 - SKY_BLACK)) x SKY_DIM.
  * Chosen from screenshots so the thinnest orbit lines and labels stay readable over the Milky Way. */
 export const SKY_DIM = 0.75;
@@ -179,10 +189,14 @@ export class SolarScene {
   private photoBacking: T.Mesh;
   // WASD flight
   private keys = new Set<string>();
-  private boost = false;
   private pointerOver = false;
   private velocity = new T.Vector3();
   private flightActive = false;
+  private throttle: Throttle = IDLE;
+  /** Vertical speed, fraction of the local full speed (+ = up). */
+  private lift = 0;
+  /** Left-button look drag in progress. */
+  private lookDrag: { id: number; x: number; y: number } | null = null;
   onTick: (dt: number) => void = () => {};
   onSelect: (id: string) => void = () => {};
   onError: (message: () => string) => void = () => {};
@@ -209,12 +223,15 @@ export class SolarScene {
     this.controls.enableDamping = false;
     this.controls.minDistance = 0.01;
     this.controls.maxDistance = 90;
+    // Left drag looks around in place (lookStart/lookMove); right drag orbits the target; no panning.
+    this.controls.mouseButtons = {
+      LEFT: null,
+      MIDDLE: T.MOUSE.DOLLY,
+      RIGHT: T.MOUSE.ROTATE,
+    };
+    this.controls.enablePan = false;
     this.controls.addEventListener("change", () => this.request());
-    this.controls.addEventListener("start", () => {
-      this.tween = null;
-      this.observer = false;
-      this.following = false;
-    });
+    this.controls.addEventListener("start", () => this.takeOver());
     const g = transpose(GALACTIC_TO_ECLIPTIC);
     (this.skyMaterial.uniforms.toGalactic.value as T.Matrix3).set(
       ...g[0],
@@ -380,7 +397,13 @@ export class SolarScene {
       down = [e.clientX, e.clientY];
       if (e.pointerType === "mouse" && document.activeElement !== canvas)
         canvas.focus({ preventScroll: true });
+      this.lookStart(e);
     });
+    canvas.addEventListener("pointermove", (e) => this.lookMove(e));
+    for (const type of ["pointerup", "pointercancel", "lostpointercapture"])
+      canvas.addEventListener(type, (e) => {
+        if (this.lookDrag?.id === (e as PointerEvent).pointerId) this.lookDrag = null;
+      });
     const signal = this.lifecycle.signal;
     window.addEventListener("keydown", (e) => this.keyDown(e), { signal });
     window.addEventListener("keyup", (e) => this.keyUp(e), { signal });
@@ -442,9 +465,8 @@ export class SolarScene {
   ready() {
     return this.warmup;
   }
-  // ---------- WASD flight ----------
+  // ---------- Flight: you travel where you look ----------
   private keyDown(e: KeyboardEvent) {
-    if (e.key === "Shift") this.boost = true;
     if (!FLIGHT_KEYS.has(e.code)) return;
     if (e.ctrlKey || e.altKey || e.metaKey || this.observer || this.disposed || !this.active) return;
     const canvas = this.renderer.domElement,
@@ -458,26 +480,37 @@ export class SolarScene {
       return;
     if (!this.pointerOver && focus !== canvas) return;
     e.preventDefault();
-    this.boost = e.shiftKey;
     if (this.keys.has(e.code)) return;
     this.keys.add(e.code);
+    if (e.code === "KeyX") this.throttle = { ...this.throttle, braking: true };
     this.takeOver();
+    this.startFlight();
+  }
+  private keyUp(e: KeyboardEvent) {
+    if (this.keys.delete(e.code)) this.request();
+  }
+  private releaseKeys() {
+    this.keys.clear();
+    this.lookDrag = null;
+    this.request();
+  }
+  /** Wake the per-frame flight step. */
+  private startFlight() {
     if (!this.flightActive) {
       this.flightActive = true;
       if (!this.playing) this.previous = 0;
     }
     this.request();
   }
-  private keyUp(e: KeyboardEvent) {
-    if (e.key === "Shift") this.boost = false;
-    if (this.keys.delete(e.code)) this.request();
-  }
-  private releaseKeys() {
+  /** Full stop: throttle 0, no vertical motion, keys forgotten (view buttons, SPHEREx view). */
+  private stopFlight() {
     this.keys.clear();
-    this.boost = false;
-    this.request();
+    this.throttle = IDLE;
+    this.lift = 0;
+    this.velocity.set(0, 0, 0);
+    this.flightActive = false;
   }
-  /** Starting to fly is treated like starting a drag: follow released, running tween cancelled. */
+  /** Starting to fly, to look or to drag the controls: follow and SPHEREx view released, running tween cancelled. */
   private takeOver() {
     if (this.tween) {
       this.camera.up.copy(this.tween.up);
@@ -485,7 +518,47 @@ export class SolarScene {
       this.controls.enabled = true;
       this.controls.update();
     }
+    this.observer = false;
     this.following = false;
+  }
+  private lookStart(e: PointerEvent) {
+    if (e.pointerType !== "mouse" || e.button !== 0 || this.observer || this.disposed) return;
+    this.lookDrag = { id: e.pointerId, x: e.clientX, y: e.clientY };
+  }
+  private lookMove(e: PointerEvent) {
+    const drag = this.lookDrag;
+    if (!drag || drag.id !== e.pointerId) return;
+    if (this.observer || !(e.buttons & 1)) {
+      this.lookDrag = null;
+      return;
+    }
+    const dx = e.clientX - drag.x,
+      dy = e.clientY - drag.y;
+    if (!dx && !dy) return;
+    drag.x = e.clientX;
+    drag.y = e.clientY;
+    this.takeOver();
+    this.turnView(...dragLook(dx, dy));
+    this.request();
+  }
+  /** Turn the view in place about +Z (yaw) and the camera's right axis (pitch); no roll. */
+  private turnView(dYaw: number, dPitch: number) {
+    const dir = this.camera.getWorldDirection(new T.Vector3()),
+      [yaw, pitch] = turn(...lookAngles(dir.toArray() as [number, number, number]), dYaw, dPitch);
+    this.camera.up.set(0, 0, 1);
+    this.camera.lookAt(this.camera.position.clone().add(new T.Vector3(...lookVector(yaw, pitch))));
+    this.syncTarget();
+  }
+  /** Keep the orbit target straight ahead at the current target distance, so wheel zoom and right-drag
+   * orbit continue from the new pose and a later controls.update() does not snap back. */
+  private syncTarget() {
+    const distance = Math.max(
+        this.controls.minDistance,
+        this.camera.position.distanceTo(this.controls.target),
+      ),
+      dir = this.camera.getWorldDirection(new T.Vector3());
+    this.controls.target.copy(this.camera.position).addScaledVector(dir, distance);
+    this.camera.updateMatrixWorld();
   }
   private nearestSurface() {
     const c = this.camera.position;
@@ -501,27 +574,32 @@ export class SolarScene {
   private flightStep(dt: number) {
     if (!this.flightActive) return false;
     if (this.observer || this.tween) {
-      this.keys.clear();
+      this.stopFlight();
+      return false;
+    }
+    const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    this.throttle = throttleStep(this.throttle, this.keys, dt, reduced);
+    this.lift = liftStep(this.lift, this.keys, dt, reduced);
+    const [yawRate, pitchRate] = lookInput(this.keys);
+    if (dt > 0 && (yawRate || pitchRate))
+      this.turnView(yawRate * CONTROLS.lookRate * dt, pitchRate * CONTROLS.lookRate * dt);
+    const speed = flightSpeed(this.nearestSurface()),
+      forward = this.camera.getWorldDirection(new T.Vector3()),
+      up = new T.Vector3(0, 1, 0).applyQuaternion(this.camera.quaternion);
+    this.velocity
+      .copy(forward)
+      .multiplyScalar(this.throttle.value * speed)
+      .addScaledVector(up, this.lift * speed);
+    const moving = this.throttle.value !== 0 || this.lift !== 0;
+    if (!moving && this.keys.size === 0 && !this.throttle.braking) {
       this.velocity.set(0, 0, 0);
       this.flightActive = false;
       return false;
     }
-    const dir = flightDirection(this.keys),
-      held = dir[0] !== 0 || dir[1] !== 0 || dir[2] !== 0,
-      speed = flightSpeed(this.nearestSurface(), this.boost),
-      q = this.camera.quaternion,
-      desired = new T.Vector3(...dir).applyQuaternion(q).multiplyScalar(speed),
-      reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (dt > 0) this.velocity.lerp(desired, easeStep(dt, reduced));
-    if (!held && this.velocity.length() < speed * 0.02) {
-      this.velocity.set(0, 0, 0);
-      this.flightActive = this.keys.size > 0;
-      return this.flightActive;
-    }
-    if (dt > 0) {
-      const delta = this.velocity.clone().multiplyScalar(dt);
-      this.camera.position.add(delta);
-      this.controls.target.add(delta);
+    if (dt > 0 && moving) {
+      const distance = this.camera.position.distanceTo(this.controls.target);
+      this.camera.position.addScaledVector(this.velocity, dt);
+      this.controls.target.copy(this.camera.position).addScaledVector(forward, distance);
       this.camera.updateMatrixWorld();
     }
     return true;
@@ -812,6 +890,7 @@ export class SolarScene {
     up: T.Vector3;
     fov: number;
   }) {
+    this.stopFlight();
     const end = this.camera.clone();
     end.position.copy(pose.position);
     end.up.copy(pose.up);
@@ -1220,6 +1299,15 @@ export class SolarScene {
       sky: { enabled: this.skyEnabled, shown: this.sky.visible, level: this.skyLevel, failed: this.skyFailed, dim: this.skyMaterial.uniforms.dim.value, black: this.skyMaterial.uniforms.black.value, soften: this.skyMaterial.uniforms.soften.value },
       planetMaps: Object.fromEntries(this.planets.map((m) => [m.userData.id, m.userData.map])),
       wasdFlying: this.flightActive,
+      flight: {
+        throttle: this.throttle.value,
+        braking: this.throttle.braking,
+        lift: this.lift,
+        keys: [...this.keys],
+        speed: this.velocity.length(),
+        look: this.camera.getWorldDirection(new T.Vector3()).toArray(),
+        position: this.camera.position.toArray(),
+      },
       planetFill: Object.fromEntries(this.planets.map((m) => [m.userData.id, m.userData.fill ?? null])),
       planetPositions: Object.fromEntries(this.planets.map((m) => [m.userData.id, m.position.toArray()])),
       controlsTarget: this.controls.target.toArray(),
