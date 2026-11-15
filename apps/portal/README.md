@@ -5,7 +5,7 @@
 ## 화면
 
 - `#home`: 홈, 미션 소개, 망원경 모형, 파장 이야기, 가시광·적외선 비교
-- `#planetarium`: 천구 관찰. 숨긴 동안 엔진을 중지하고 카메라·선택 상태는 보존
+- `#planetarium`: 플라네타리움(상단 `천구 관찰`의 두 번째 보기, 첫 보기는 `#analysis?view=sky`). 숨긴 동안 엔진을 중지하고 카메라·선택 상태는 보존
 - `#analysis`: SPHEREx 관측 분석
 - `#asteroids?tab=orbit`: 소행성 3D
 - `#asteroids?tab=research`: 소행성 분석 결과와 새 분석

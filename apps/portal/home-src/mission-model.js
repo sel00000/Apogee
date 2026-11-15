@@ -11,14 +11,20 @@ const TARGET = new THREE.Vector3(0, 1.35, 0);
 const POSES = { front: [4.1, 3.4, 6.6], back: [-4.1, 3.0, -6.6], top: [0.4, 8.4, 1.8] };
 const ease = t => 1 - Math.pow(1 - t, 3);
 
-export function mountMissionModel(host, { url, onReady = () => {}, onError = () => {}, onUserOrbit = () => {} } = {}) {
+export function mountMissionModel(host, { url, onReady = () => {}, onError = () => {}, onUserOrbit = () => {}, quality = 'hero',
+  ariaLabel = 'SPHEREx 3D model. Drag to turn it. To zoom, use two fingers, or ⌘ or Ctrl together with scroll. The arrow keys turn it too.',
+  lostMessage = 'The graphics connection was lost. Reload the page to see it again.' } = {}) {
+  // Texts come from the portal (app.js) so the bundle stays free of the language module.
+  const labels = { ariaLabel, lostMessage };
+  // Pixel-ratio caps follow the 3D kit: Hero 1.75, Lite 1.25.
+  const DPR_CAP = quality === 'lite' ? 1.25 : 1.75;
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
   renderer.setClearColor(0x000000, 0);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 0.9;
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, DPR_CAP));
   const canvas = renderer.domElement;
-  canvas.setAttribute('aria-label', 'SPHEREx 3D 모형. 드래그해서 돌리고, 확대는 두 손가락이나 ⌘ 또는 Ctrl과 스크롤을 함께 쓰세요. 방향키로도 돌릴 수 있어요.');
+  canvas.setAttribute('aria-label', labels.ariaLabel);
   canvas.setAttribute('role', 'img');
   canvas.tabIndex = 0;
   host.append(canvas);
@@ -84,13 +90,13 @@ export function mountMissionModel(host, { url, onReady = () => {}, onError = () 
   io.observe(host);
   const onVisibility = () => { if (!document.hidden) invalidate(); };
   document.addEventListener('visibilitychange', onVisibility);
-  const onLost = e => { e.preventDefault(); host.dispatchEvent(new CustomEvent('model-error', { detail: '그래픽 연결이 끊겼어요. 새로고침하면 다시 볼 수 있어요.' })); };
+  const onLost = e => { e.preventDefault(); host.dispatchEvent(new CustomEvent('model-error', { detail: labels.lostMessage })); };
   canvas.addEventListener('webglcontextlost', onLost);
 
   // Exactly one render per display frame. While a frame is being drawn state.frame is -1, so the
   // 'change' events that controls.update() raises only extend the loop instead of starting another.
   // Moving frames draw at a lighter pixel ratio; once still for a moment, one sharp frame is drawn.
-  const HI_DPR = Math.min(window.devicePixelRatio || 1, 2), LO_DPR = Math.min(HI_DPR, 1.25);
+  const HI_DPR = Math.min(window.devicePixelRatio || 1, DPR_CAP), LO_DPR = Math.min(HI_DPR, 1.25);
   let sharpTimer = 0;
   function setDpr(v) {
     if (renderer.getPixelRatio() === v) return;
@@ -177,6 +183,11 @@ export function mountMissionModel(host, { url, onReady = () => {}, onError = () 
   }
 
   return {
+    /** Language switch: new aria-label and error text, in place. */
+    setLabels({ ariaLabel: a, lostMessage: m } = {}) {
+      if (typeof a === 'string') { labels.ariaLabel = a; canvas.setAttribute('aria-label', a); }
+      if (typeof m === 'string') labels.lostMessage = m;
+    },
     /** p: 0..1 through the sticky story. Drives yaw/lift and, until the user decides, the shields. */
     setProgress(p, step) {
       state.yawTarget = -0.55 + p * 2.6;

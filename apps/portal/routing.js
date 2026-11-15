@@ -1,11 +1,27 @@
 /** The shell owns navigation. Child paths are deployment-relative, never source paths. */
+/** [kicker, English title]; the title in the chosen language comes from VIEW_TITLES / viewTitle(). */
 export const VIEWS = Object.freeze({
-  home: ['SPHEREx FOR EVERYONE', '모두를 위한 SPHEREx'],
-  planetarium: ['EXPLORE THE SKY', '플라네타리움'],
-  analysis: ['READ THE OBSERVATIONS', 'SPHEREx 분석'],
-  asteroids: ['FOLLOW THE MOVEMENT', '소행성 분석'],
-  experience: ['A JOURNEY THROUGH SPACE', '우주 탐험'],
+  home: ['SPHEREx FOR EVERYONE', 'SPHEREx for Everyone'],
+  planetarium: ['EXPLORE THE SKY', 'Planetarium'],
+  analysis: ['READ THE OBSERVATIONS', 'SPHEREx Analysis'],
+  asteroids: ['FOLLOW THE MOVEMENT', 'Asteroid Analysis'],
+  experience: ['A JOURNEY THROUGH SPACE', 'Space Journey'],
 });
+export const VIEW_TITLES = Object.freeze({
+  en: Object.freeze({ home: 'SPHEREx for Everyone', planetarium: 'Planetarium', analysis: 'SPHEREx Analysis', asteroids: 'Asteroid Analysis', experience: 'Space Journey', suffix: 'SPHEREx for Everyone', homeTitle: 'SPHEREx for Everyone' }),
+  ko: Object.freeze({ home: '모두를 위한 SPHEREx', planetarium: '플라네타리움', analysis: 'SPHEREx 분석', asteroids: '소행성 분석', experience: '우주 탐험', suffix: '모두를 위한 SPHEREx', homeTitle: '모두를 위한 SPHEREx · SPHEREx for Everyone' }),
+});
+export function viewTitle(view, lang = 'en') {
+  const table = VIEW_TITLES[lang === 'ko' ? 'ko' : 'en'];
+  return Object.hasOwn(VIEWS, view) ? table[view] : table.home;
+}
+/** document.title: the home page keeps the page's own title, other views read "<view> · <site>". */
+export function documentTitle(view, lang = 'en') {
+  const table = VIEW_TITLES[lang === 'ko' ? 'ko' : 'en'];
+  return !Object.hasOwn(VIEWS, view) || view === 'home' ? table.homeTitle : `${table[view]} · ${table.suffix}`;
+}
+/** Errors carry an i18n key so the shell can show them in the chosen language; the message stays English. */
+function keyedError(key, message) { const e = new TypeError(message); e.i18nKey = key; return e; }
 export const HOME_ANCHORS = new Set(['about', 'mission', 'light', 'sky']);
 
 export function parseRoute(hash = '') {
@@ -34,19 +50,58 @@ export function routeHash(view, values = {}) {
   return `#${view}${params.size ? '?' + params : ''}`;
 }
 
+/**
+ * Which header item (its data-view) is current. The sky stage of the analysis app belongs to
+ * "천구 관찰"; the planetarium is its second view, so it is current there too.
+ */
+export function headerCurrent(view, params) {
+  const values = params instanceof URLSearchParams ? params : new URLSearchParams(params || '');
+  if (view === 'planetarium') return 'planetarium';
+  if (view === 'analysis') return values.get('view') === 'sky' ? 'planetarium' : 'analysis';
+  return Object.hasOwn(VIEWS, view) ? view : null;
+}
+
+/** The stage message for a header click: only the two analysis-backed items have one. */
+export function headerStage(dataView) {
+  return dataView === 'planetarium' ? 'sky' : dataView === 'analysis' ? 'workbench' : null;
+}
+
+/** Address for "SPHEREx 천구" in the planetarium row; the sky centre is added only when the state has it.
+ * Accepts state.center = { ra, dec, fov } (degrees, ICRS) first, then the older query / top-level fields. */
+export function skyReturnHash(state) {
+  const base = '#analysis?view=sky';
+  if (!state || typeof state !== 'object') return base;
+  const c = state.center;
+  if (c && typeof c === 'object') {
+    const num = v => (typeof v === 'number' || (typeof v === 'string' && v.trim() !== '') ? Number(v) : NaN);
+    const ra = num(c.ra), dec = num(c.dec), fov = num(c.fov);
+    if ([ra, dec, fov].every(Number.isFinite) && Math.abs(dec) <= 90 && fov > 0 && fov <= 360) return `${base}&sky=${((ra % 360) + 360) % 360},${dec},${fov}`;
+  }
+  const q = typeof state.query === 'string' ? new URLSearchParams(state.query) : new URLSearchParams(state.query && typeof state.query === 'object' ? state.query : '');
+  const read = key => {
+    const raw = q.get(key) ?? state[key];
+    if (raw === null || raw === undefined || raw === '' || typeof raw === 'boolean') return NaN;
+    return Number(raw);
+  };
+  const ra = read('ra'), dec = read('dec'), fov = read('fov');
+  if (![ra, dec, fov].every(Number.isFinite) || Math.abs(dec) > 90 || !(fov > 0 && fov <= 360)) return base;
+  const wrapped = ((ra % 360) + 360) % 360;
+  return `${base}&sky=${wrapped},${dec},${fov}`;
+}
+
 export function analysisParams(target) {
-  if (!target || typeof target !== 'object') throw new TypeError('분석할 대상을 선택해 주세요.');
+  if (!target || typeof target !== 'object') throw keyedError('err.noTarget', 'Choose an object to analyse.');
   const params = new URLSearchParams();
   const prepared = target.preparedTargetId ?? target.target;
   if (typeof prepared === 'string' && /^[a-z0-9_-]{1,64}$/.test(prepared)) params.set('target', prepared);
   else {
     const ra = target.raDeg ?? target.ra, dec = target.decDeg ?? target.dec;
     if (typeof ra !== 'number' || typeof dec !== 'number' || !Number.isFinite(ra) || !Number.isFinite(dec) || Math.abs(dec) > 90) {
-      throw new TypeError('유효한 적경·적위가 필요합니다. 이동 천체는 소행성 분석에서 선택해 주세요.');
+      throw keyedError('err.needCoords', 'A valid right ascension and declination are needed. Choose moving objects in Asteroid Analysis.');
     }
     // Apparent solar-system coordinates must not masquerade as an ICRS field.
     if (target.frame && !['ICRS', 'ASTROM'].includes(target.frame)) {
-      throw new TypeError('이동 천체의 겉보기 위치는 고정 좌표 분석에 바로 사용할 수 없습니다. 천구에서 스피어x 데이터 분석으로 영역을 선택해 주세요.');
+      throw keyedError('err.apparent', 'The apparent position of a moving object cannot be used directly for a fixed-coordinate analysis. Select an area in the sky with SPHEREx data analysis.');
     }
     params.set('ra', String(ra >= 0 && ra < 360 ? ra : ((ra % 360) + 360) % 360));
     params.set('dec', String(dec));

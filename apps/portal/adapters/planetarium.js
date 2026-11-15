@@ -1,4 +1,5 @@
 import {childURL, trustedFrameMessage} from '../routing.js';
+import {t} from '../i18n.js';
 
 // Keep the native engine document connected while hidden so returning from an
 // analysis restores selection/camera. Its render loop is explicitly suspended.
@@ -6,7 +7,7 @@ let cached=null;
 
 function createEntry(params){
  const frame=document.createElement('iframe');
- frame.className='planetarium-original-frame';frame.title='플라네타리움 · 별과 별자리 관찰';frame.allowFullscreen=true;
+ frame.className='planetarium-original-frame';frame.title=t('pl.frame');frame.dataset.i18nAttr='title:pl.frame';frame.allowFullscreen=true;
  Object.assign(frame.style,{position:'absolute',border:'0',display:'none',background:'#080d13',zIndex:'2'});
  frame.hidden=true;frame.setAttribute('aria-hidden','true');frame.inert=true;
  let resolveReady;
@@ -33,7 +34,7 @@ function createEntry(params){
   }
   if(data.type==='spherex-planetarium-home')entry.options?.onNavigate?.('home');
   if(data.type==='spherex-tutorial-open')document.querySelector('[data-sky-tutorial-open]')?.click();
-  if(data.type==='spherex-planetarium-error')entry.options?.toast?.('천구 설정을 적용하지 못했습니다. 입력한 위치와 시각을 확인해 주세요.');
+  if(data.type==='spherex-planetarium-error'){const o=entry.options;if(o?.toastKeyed)o.toastKeyed('pl.error');else o?.toast?.(t('pl.error'));}
   if(data.type==='spherex-planetarium-share'&&typeof data.query==='string'){
    entry.query=data.query;entry.options?.onShare?.(data.query);
   }
