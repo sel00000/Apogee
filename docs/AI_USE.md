@@ -51,7 +51,7 @@ Limits of the checks, as the agents reported them: they used headless Chromium w
 
 ## 5. AI at run time
 
-- The search can ask Llama 3.1 8B on Cloudflare Workers AI for a search plan, only when `askUrl` is set in `deployment/public.json` (or in the environment variable `SPHEREX_ASK_URL`). In this repository the value is set to the TrueBlink function `https://trueblink.pages.dev/api/ask`, so the helper is on; with an empty value the helper is off and no request is made. Since 2026-11-15 20:39 KST the function accepts requests from this site's public origin (`https://jp-feynman.github.io`) and from local `http://127.0.0.1` and `http://localhost` origins. The portal reads the value from `config.json` (built from `deployment/public.json` by `scripts/public-config.mjs`) and passes it to the search package.
+- The search can ask Llama 3.1 8B on Cloudflare Workers AI for a search plan, only when `askUrl` is set in `deployment/public.json` (or in the environment variable `SPHEREX_ASK_URL`). In this repository the value is set to the TrueBlink function `https://trueblink.pages.dev/api/ask`, so the helper is on; with an empty value the helper is off and no request is made. Since 2026-11-15 (20:39 KST for the first, 21:33 KST for the second) the function accepts requests from this site's public origins (`https://jp-feynman.github.io` and `https://sel00000.github.io`) and from local `http://127.0.0.1` and `http://localhost` origins. The portal reads the value from `config.json` (built from `deployment/public.json` by `scripts/public-config.mjs`) and passes it to the search package.
 - Results that came through the model are labelled "AI-interpreted candidate" ("AI 해석 후보" in the Korean interface), as described in `packages/search/AI_USE.md`, section 6.
 - The model never supplies objects, positions or numbers. It returns a plan, and the search code checks the plan against its own closed lists before use. Names, coordinates and values come from the name index, the CDS and IMCCE services and the team's data.
 - If the helper call fails, the visitor sees the ordinary "nothing found" answer and no warning.
@@ -121,7 +121,7 @@ The team fills in these lines. The AI has not filled them in.
 
 ## 5. 실행 중의 AI
 
-- 검색은 `deployment/public.json`(또는 환경 변수 `SPHEREX_ASK_URL`)에 `askUrl`이 설정된 경우에만 Cloudflare Workers AI의 Llama 3.1 8B에게 검색 계획을 물을 수 있습니다. 이 저장소에서는 값이 TrueBlink의 함수 `https://trueblink.pages.dev/api/ask`로 설정되어 있어 도우미가 켜져 있고, 값이 비어 있으면 도우미는 꺼지며 요청도 보내지 않습니다. 이 함수는 2026-11-15 20:39 KST부터 이 사이트의 공개 origin(`https://jp-feynman.github.io`)과 로컬 `http://127.0.0.1`·`http://localhost` origin의 요청을 받습니다. 포털이 `config.json`(`scripts/public-config.mjs`가 `deployment/public.json`에서 만듦)에서 값을 읽어 검색 패키지에 넘깁니다.
+- 검색은 `deployment/public.json`(또는 환경 변수 `SPHEREX_ASK_URL`)에 `askUrl`이 설정된 경우에만 Cloudflare Workers AI의 Llama 3.1 8B에게 검색 계획을 물을 수 있습니다. 이 저장소에서는 값이 TrueBlink의 함수 `https://trueblink.pages.dev/api/ask`로 설정되어 있어 도우미가 켜져 있고, 값이 비어 있으면 도우미는 꺼지며 요청도 보내지 않습니다. 이 함수는 2026-11-15부터(첫째 주소는 20:39 KST, 둘째 주소는 21:33 KST) 이 사이트의 공개 origin(`https://jp-feynman.github.io`, `https://sel00000.github.io`)과 로컬 `http://127.0.0.1`·`http://localhost` origin의 요청을 받습니다. 포털이 `config.json`(`scripts/public-config.mjs`가 `deployment/public.json`에서 만듦)에서 값을 읽어 검색 패키지에 넘깁니다.
 - 모형을 거쳐 나온 결과에는 "AI 해석 후보"(영어 화면은 "AI-interpreted candidate") 표시가 붙습니다(`packages/search/AI_USE.md` 6절).
 - 도우미 호출이 실패하면 방문자에게는 경고 없이 보통의 "찾지 못함" 답이 나옵니다.
 - 모형은 천체, 위치, 숫자를 주지 않습니다. 모형이 돌려주는 것은 검색 계획이며, 검색 코드가 자기의 닫힌 목록으로 계획을 확인한 뒤에 씁니다. 이름·좌표·값은 이름 색인, CDS·IMCCE 서비스, 팀의 자료에서 옵니다.

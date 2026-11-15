@@ -76,7 +76,7 @@
 |---|---|---|
 | `apiBase` | `deployment/public.json`, 환경 변수 `SPHEREX_API_BASE` | 공개 Python 서버의 HTTPS 주소. 기본은 빈 값입니다. |
 | `experienceUrl` | `deployment/public.json`, 환경 변수 `SPHEREX_EXPERIENCE_URL` | 우주 탐험 중계 서비스의 주소. |
-| `askUrl` | `deployment/public.json`, 환경 변수 `SPHEREX_ASK_URL` | 검색이 언어 모형 도우미에게 검색 계획을 물을 `/api/ask` 주소. 이 저장소의 `deployment/public.json`에는 TrueBlink의 함수 `https://trueblink.pages.dev/api/ask`가 설정되어 있어 도우미가 켜져 있고, 값이 비어 있으면 도우미를 쓰지 않으며 요청도 보내지 않습니다. 이 함수는 `https://jp-feynman.github.io`와 로컬 `http://127.0.0.1`·`http://localhost` origin의 요청을 2026-11-15 20:39 KST부터 받습니다. 모형을 거친 결과에는 "AI 해석 후보" 표시가 붙고, 도우미 호출이 실패해도 방문자에게는 보통의 "찾지 못함" 답만 보입니다. 포털은 검색을 처음 열 때 `config.json`을 한 번 읽어 값이 있으면 `mountSearch(…, {askUrl})`로 넘깁니다. 도우미 서버 함수는 이 저장소에 없습니다. |
+| `askUrl` | `deployment/public.json`, 환경 변수 `SPHEREX_ASK_URL` | 검색이 언어 모형 도우미에게 검색 계획을 물을 `/api/ask` 주소. 이 저장소의 `deployment/public.json`에는 TrueBlink의 함수 `https://trueblink.pages.dev/api/ask`가 설정되어 있어 도우미가 켜져 있고, 값이 비어 있으면 도우미를 쓰지 않으며 요청도 보내지 않습니다. 이 함수는 `https://jp-feynman.github.io`, `https://sel00000.github.io`와 로컬 `http://127.0.0.1`·`http://localhost` origin의 요청을 2026-11-15부터 받습니다. 모형을 거친 결과에는 "AI 해석 후보" 표시가 붙고, 도우미 호출이 실패해도 방문자에게는 보통의 "찾지 못함" 답만 보입니다. 포털은 검색을 처음 열 때 `config.json`을 한 번 읽어 값이 있으면 `mountSearch(…, {askUrl})`로 넘깁니다. 도우미 서버 함수는 이 저장소에 없습니다. |
 
 `public.json`의 값은 `scripts/public-config.mjs`가 읽고(환경 변수가 우선) `/config.json`으로 제공합니다. 로컬 서버(`scripts/serve.mjs`)의 `/config.json`도 같은 `askUrl`을 줍니다.
 

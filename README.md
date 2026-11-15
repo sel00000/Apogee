@@ -2,13 +2,13 @@
 
 통합V2의 화면을 기반으로 천구 관찰, SPHEREx 관측 분석, 소행성 분석, 우주 탐험을 연결한 로컬 통합 프로젝트입니다.
 
-공개 웹: https://jp-feynman.github.io/stellarium-web-preview/
+공개 웹: https://sel00000.github.io/Apogee/ (이 저장소에서 배포) · https://jp-feynman.github.io/stellarium-web-preview/ (팀원 저장소에서 배포)
 
 팀 소스 저장소: https://github.com/sel00000/Apogee
 
 GitHub Pages에서는 준비된 관측·소행성 결과, 천구, 검색과 튜토리얼을 제공합니다. 우주 탐험은 공개 HTTPS 중계 서비스를 통해 홈페이지 안에서 실행합니다. 새 좌표의 관측 처리와 새 Python 분석은 로컬 또는 별도로 배포한 Python 서버가 필요합니다. 현재 `deployment/public.json`의 `apiBase`는 서버 계정 연결 전까지 비워 둡니다.
 
-`main`에 push하면 웹 검증과 빌드가 실행됩니다. `jp-feynman/stellarium-web-preview`에서는 Pages 배포까지 이어지고, `sel00000/Apogee`에서는 검증·빌드만 수행합니다. 두 저장소 사이에 자동 동기화는 설정하지 않았습니다.
+`main`에 push하면 웹 검증과 빌드가 실행됩니다. `jp-feynman/stellarium-web-preview`에서는 Pages 배포까지 이어지고, `sel00000/Apogee`에서는 검증·빌드만 수행합니다. `sel00000/Apogee`의 공개 주소는 빌드 결과(`dist`)를 올린 `gh-pages` 브랜치에서 제공합니다(저장소 설정의 Pages Source: Deploy from a branch, `gh-pages`). 두 저장소 사이에 자동 동기화는 설정하지 않았습니다.
 
 ## 실행
 
@@ -36,7 +36,7 @@ Python 라이브러리가 없거나 외부 아카이브가 응답하지 않아�
 - SPHEREx 분석: 준비 대상 및 임의 좌표의 실제 관측 자료. 임의 영역에는 준비 대상과 동일한 연구 결과가 존재하지 않을 수 있습니다.
 - 소행성 분석: 준비된 Python 결과, 새 분석 실행/취소, 관측 영상·궤도 3D. 궤도 3D(Orbit 3D)는 Gaia 전천 지도로 그린 은하수 배경(체크 상자로 끌 수 있음), 가까이 가면 입혀지는 행성 질감(실제 공개 지도, 크기는 설명용), `W` `A` `S` `D` 이동(위·아래는 `E` `Q`, `Shift`는 빠르게) 비행을 갖습니다. 3D 자료 생성은 분석 완료 이후 별도 단계입니다.
 - 우주 탐험: Sojourner 비행·스캔·발견 체험. 분광 분석 도구가 아니며 원사이트 API·일부 자산에 의존합니다. 이 화면 안쪽은 다른 출처의 영어 전용 화면이라 한국어로 바뀌지 않고, 감싸는 포털 쪽 문구만 바뀝니다.
-- 상단 검색: 한국어·영어 천체 검색과 좌표 입력. 이동 천체에는 임의의 고정 좌표를 만들지 않습니다. 언어 모형 도우미(Llama 3.1 8B)는 `deployment/public.json`의 `askUrl`(환경 변수 `SPHEREX_ASK_URL`로도 지정)에 주소가 있을 때만 검색 계획을 묻습니다. 이 저장소에서는 값이 TrueBlink의 함수 `https://trueblink.pages.dev/api/ask`로 설정되어 있어 도우미가 켜져 있습니다. 값을 빈 문자열로 두면 도우미는 꺼지고 요청도 보내지 않습니다. 이 함수는 이 사이트의 공개 origin(`https://jp-feynman.github.io`)과 로컬 `http://127.0.0.1`·`http://localhost` origin의 요청을 2026-11-15 20:39 KST부터 받습니다. 모형을 거쳐 나온 결과에는 "AI 해석 후보"(영어 화면은 "AI-interpreted candidate")라는 표시가 붙고, 모형은 천체·위치·숫자를 만들지 않으며 도우미 호출이 실패해도 방문자에게는 알리지 않고 보통의 "찾지 못함" 답이 나옵니다. 도우미 서버 함수는 이 저장소에 없습니다.
+- 상단 검색: 한국어·영어 천체 검색과 좌표 입력. 이동 천체에는 임의의 고정 좌표를 만들지 않습니다. 언어 모형 도우미(Llama 3.1 8B)는 `deployment/public.json`의 `askUrl`(환경 변수 `SPHEREX_ASK_URL`로도 지정)에 주소가 있을 때만 검색 계획을 묻습니다. 이 저장소에서는 값이 TrueBlink의 함수 `https://trueblink.pages.dev/api/ask`로 설정되어 있어 도우미가 켜져 있습니다. 값을 빈 문자열로 두면 도우미는 꺼지고 요청도 보내지 않습니다. 이 함수는 이 사이트의 공개 origin(`https://jp-feynman.github.io`, `https://sel00000.github.io`)과 로컬 `http://127.0.0.1`·`http://localhost` origin의 요청을 2026-11-15부터 받습니다. 모형을 거쳐 나온 결과에는 "AI 해석 후보"(영어 화면은 "AI-interpreted candidate")라는 표시가 붙고, 모형은 천체·위치·숫자를 만들지 않으며 도우미 호출이 실패해도 방문자에게는 알리지 않고 보통의 "찾지 못함" 답이 나옵니다. 도우미 서버 함수는 이 저장소에 없습니다.
 - 튜토리얼: 처음 진입 시 안내, 스킵, 일반인·연구자 과정과 선택 재생.
 
 ## 언어
