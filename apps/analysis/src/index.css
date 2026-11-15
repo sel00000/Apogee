@@ -296,3 +296,9 @@ button.link { background: none; border: 0; padding: 0; color: var(--accent); tex
 .depths td.ok { color: #6fdc9c; }
 .note-card pre { white-space: pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 16px; line-height: 1.6; color: #dfe6f3; background: #0b111d; border-radius: 8px; padding: 10px 12px; margin: 0 0 10px; }
 .spec-nav { display: flex; justify-content: space-between; }
+
+/* Native drop-down lists: the list of options opens on the page's dark surface with readable text,
+   never as a white box with pale letters. */
+select { color-scheme: dark; }
+select option, select optgroup { background-color: #10151d; color: #f4f2ee; }
+select option:disabled { color: #8d96a3; }
