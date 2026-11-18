@@ -14,6 +14,7 @@
 
 <p>
 <a href="https://sel00000.github.io/Apogee">공개 사이트</a> ·
+<a href="https://www.spaceappschallenge.org/2026/find-a-team/apogee5/">NASA Space Apps 팀 페이지</a> ·
 <a href="README.md">English</a> ·
 <a href="Apogee_Presentation.pdf">발표 자료 (PDF)</a> ·
 <a href="#무엇인가">하는 일</a> ·

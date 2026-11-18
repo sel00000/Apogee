@@ -12,6 +12,7 @@
 
 <p>
 <a href="https://sel00000.github.io/Apogee">Live site</a> ·
+<a href="https://www.spaceappschallenge.org/2026/find-a-team/apogee5/">NASA Space Apps team page</a> ·
 <a href="README.ko.md">한국어</a> ·
 <a href="Apogee_Presentation.pdf">Presentation (PDF)</a> ·
 <a href="#what-it-is">What it does</a> ·
